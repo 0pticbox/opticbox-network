@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="description" content="Sign in to the 0PTICBOX Network."/>
+  <meta name="theme-color" content="#080b13"/>
+  <title>Sign In | 0PTICBOX Productions</title>
+  <link href="styles.css" rel="stylesheet"/>
+</head>
+<body>
+  <canvas aria-hidden="true" id="page-particles"></canvas>
+  <a class="skip-link" href="#signin-main">Skip to sign in</a>
+  <div class="ticker"><div class="ticker-track"><span>★ 0PTICBOX NETWORK ACCESS ★ MEMBERS ONLY ★</span><span aria-hidden="true">★ 0PTICBOX NETWORK ACCESS ★ MEMBERS ONLY ★</span></div></div>
+  <header class="topbar" id="top"><div class="shell topbar-inner">
+    <a class="wordmark" href="index.html"><b>0</b><span><strong>PTICBOX</strong><small>network access</small></span></a>
+    <button aria-controls="site-nav" aria-expanded="false" class="menu-toggle" type="button">Menu</button>
+    <nav aria-label="Primary navigation" class="site-nav" id="site-nav"><a href="index.html">Home</a><a href="community.html">Community</a><a href="members.html">Member area</a></nav>
+  </div></header>
+  <main class="shell signin-page" id="signin-main">
+    <section class="box signin-intro"><div class="box-title split-title"><span>Account access</span><small>separate sign-in screen</small></div><div class="signin-intro-body"><div><span class="mini-label">0PTICBOX NETWORK</span><h1>Sign in first. Then enter your account.</h1><p>This page now handles account access by itself so the Member Area can refresh cleanly after sign-in.</p></div><a class="retro-button" href="members.html">Back to Member Area</a></div></section>
+    <p class="member-warning" hidden id="signin-config-warning">Connect Supabase before using member accounts.</p>
+    <section class="box signin-session" hidden id="signin-session"><div class="box-title"><span>You are already signed in</span></div><div class="signin-session-body"><p id="signin-session-label">Your session is ready.</p><div class="signin-session-actions"><a class="retro-button primary" id="signin-continue" href="members.html">Continue</a><button class="retro-button danger" id="signin-signout" type="button">Sign out</button></div></div></section>
+    <section class="signin-grid" id="signin-forms">
+      <form class="box member-form signin-card" id="signin-form"><div class="box-title"><span>Sign in</span></div><label for="signin-email">Email</label><input autocomplete="email" id="signin-email" required type="email"/><label for="signin-password">Password</label><input autocomplete="current-password" id="signin-password" minlength="8" required type="password"/><button class="retro-button primary" type="submit">Sign in</button></form>
+      <form class="box member-form signin-card" id="signup-form"><div class="box-title"><span>Create account</span></div><label for="signup-name">Display name</label><input autocomplete="nickname" id="signup-name" maxlength="32" minlength="2" placeholder="Your public name" required/><label for="signup-email">Email</label><input autocomplete="email" id="signup-email" required type="email"/><label for="signup-password">Password</label><input autocomplete="new-password" id="signup-password" minlength="8" required type="password"/><button class="retro-button" type="submit">Create account</button></form>
+    </section>
+    <p class="member-message signin-message" id="signin-message" aria-live="polite"></p>
+  </main>
+  <footer><div class="shell footer-inner"><p>© <span id="year"></span> 0PTICBOX Productions</p><div><a href="members.html">Member Area</a><a href="community.html">Community</a></div></div></footer>
+  <script src="signin.js?v=9" type="module"></script><script src="site.js?v=9"></script>
+</body>
+</html>
