@@ -100,6 +100,28 @@ function relation(row) {
   return Array.isArray(row?.profiles) ? row.profiles[0] || null : row?.profiles || null;
 }
 
+async function attachProfiles(rows) {
+  const source = Array.isArray(rows) ? rows : [];
+  const userIds = [...new Set(source.map((row) => row?.user_id).filter(Boolean))];
+  if (!userIds.length) return source;
+
+  const result = await supabase
+    .from('profiles')
+    .select('id,display_name,avatar_url')
+    .in('id', userIds);
+
+  if (result.error) throw result.error;
+
+  const profilesById = new Map(
+    (result.data || []).map((item) => [item.id, item]),
+  );
+
+  return source.map((row) => ({
+    ...row,
+    profiles: profilesById.get(row.user_id) || null,
+  }));
+}
+
 function formatDate(value) {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return '';
@@ -477,7 +499,7 @@ async function loadEngagement() {
       .in('post_id', postIds),
     supabase
       .from('activity_post_comments')
-      .select('id,post_id,user_id,body,created_at,profiles(id,display_name,avatar_url)')
+      .select('id,post_id,user_id,body,created_at')
       .in('post_id', postIds)
       .eq('visible', true)
       .order('created_at', { ascending: true })
@@ -487,13 +509,15 @@ async function loadEngagement() {
   if (likesResult.error) throw likesResult.error;
   if (commentsResult.error) throw commentsResult.error;
 
+  const commentsWithProfiles = await attachProfiles(commentsResult.data || []);
+
   for (const like of likesResult.data || []) {
     const key = String(like.post_id);
     likesByPost.set(key, (likesByPost.get(key) || 0) + 1);
     if (user?.id && like.user_id === user.id) likedByMe.add(key);
   }
 
-  for (const comment of commentsResult.data || []) {
+  for (const comment of commentsWithProfiles) {
     const key = String(comment.post_id);
     if (!commentsByPost.has(key)) commentsByPost.set(key, []);
     commentsByPost.get(key).push(comment);
@@ -505,12 +529,12 @@ async function loadEngagement() {
 async function load() {
   const result = await supabase
     .from('activity_posts')
-    .select('id,user_id,post_type,title,subtitle,caption,media_url,image_url,event_date,city,visible,created_at,updated_at,profiles(id,display_name,avatar_url)')
+    .select('id,user_id,post_type,title,subtitle,caption,media_url,image_url,event_date,city,visible,created_at,updated_at')
     .eq('visible', true)
     .order('created_at', { ascending: false })
     .limit(100);
   if (result.error) throw result.error;
-  posts = result.data || [];
+  posts = await attachProfiles(result.data || []);
 
   try {
     await loadEngagement();

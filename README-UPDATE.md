@@ -1,39 +1,21 @@
-# 0PTICBOX Network — v11 likes and comments
+# 0PTICBOX Network v12 — Supabase relationship fix
 
-This is a drop-in update for the existing `opticbox-network` repository.
+This update fixes the PostgREST error:
 
-## Added in v11
+`Could not embed because more than one relationship was found for activity_posts and profiles.`
 
-- One like per signed-in member on every community post.
-- Live like counts for signed-in and signed-out visitors.
-- Expandable comment sections underneath every post.
-- Comments up to 600 characters.
-- Members can delete their own comments.
-- Post owners can remove comments from their own posts.
-- Site admins can delete or moderate any comment through Supabase.
-- Signed-out visitors can read comments, then sign in to participate.
-- Mobile-friendly like and comment controls.
-- Existing post deletion automatically removes that post’s likes and comments.
+## What changed
 
-The package also keeps the v10 messaging reliability fixes.
+- Community posts no longer depend on an automatic embedded `activity_posts -> profiles` relationship.
+- Comments no longer depend on an automatic embedded `activity_post_comments -> profiles` relationship.
+- The page now loads profile rows separately and safely attaches them by `user_id`.
+- `community.html` uses `community.js?v=12` so browsers do not keep the broken cached JavaScript.
 
 ## Install
 
-1. Copy every file and folder in this package into the root of the GitHub repository.
-2. Replace matching files when asked.
-3. Keep the repository’s existing `supabase-config.js`; it is intentionally not included.
-4. Open **Supabase → SQL Editor**.
-5. Run `supabase/2026-08-community-likes-comments.sql`.
-6. Commit and push the repository changes.
-7. Wait for GitHub Pages to deploy, then refresh `community.html`.
+1. Replace your repository files with the files in this package.
+2. Keep your existing `supabase-config.js`.
+3. Commit and push to GitHub.
+4. Wait for GitHub Pages to deploy, then hard-refresh the Community page.
 
-## Important
-
-The new SQL file must be run before the Like and Comment buttons can work. It is safe to run the SQL again if you are unsure whether it completed.
-
-## Main v11 files
-
-- `community.html`
-- `community.js`
-- `network-upgrade.css`
-- `supabase/2026-08-community-likes-comments.sql`
+No new Supabase SQL query is required for this relationship fix. Keep the likes/comments and activity-post constraint migrations you already ran.
