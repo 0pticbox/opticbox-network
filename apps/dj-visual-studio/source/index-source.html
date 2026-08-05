@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>DJ Visual Studio</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <aside id="control-panel">
+
+    <div id="control-island">
+      <button
+        id="menu-drag-handle"
+        class="menu-drag-handle"
+        type="button"
+        aria-label="Drag down to detach the control menu"
+        title="Drag down to detach the menu"
+      >
+        <span class="island-grip" aria-hidden="true"></span>
+
+        <span class="island-title">
+          <strong>VJ CONTROLS</strong>
+          <small id="island-status">DRAG DOWN TO DETACH</small>
+        </span>
+      </button>
+
+      <div class="island-actions">
+        <button
+          id="collapse-menu-button"
+          class="island-action"
+          type="button"
+          title="Collapse or expand the menu"
+          aria-label="Collapse or expand the menu"
+        >
+          ▤
+        </button>
+
+        <button
+          id="detach-menu-button"
+          class="island-action"
+          type="button"
+          title="Open controls in a floating window"
+          aria-label="Open controls in a floating window"
+        >
+          ↗
+        </button>
+
+        <button
+          id="dock-menu-button"
+          class="island-action"
+          type="button"
+          title="Return controls to the main window"
+          aria-label="Return controls to the main window"
+          hidden
+        >
+          ↙
+        </button>
+      </div>
+
+      <div
+        id="detach-progress"
+        aria-hidden="true"
+      ></div>
+    </div>
+    <header>
+      <p class="eyebrow">LIVE VISUAL SYSTEM</p>
+      <h1>DJ Visual Studio</h1>
+
+      <p class="subtitle">
+        Perform, customize, and record keyboard-driven visuals.
+      </p>
+    </header>
+
+    <section class="panel-section">
+      <h2>Tempo</h2>
+
+      <div class="bpm-row">
+        <label for="bpm-input">BPM</label>
+
+        <input
+          id="bpm-input"
+          type="number"
+          min="40"
+          max="240"
+          value="120"
+        >
+
+        <button id="tap-button" type="button">
+          Tap BPM
+        </button>
+      </div>
+
+      <label class="checkbox-row" for="beat-sync">
+        <input id="beat-sync" type="checkbox">
+        Quantize triggers to the next beat
+      </label>
+    </section>
+
+
+    <section class="panel-section video-background-panel">
+      <div class="section-heading">
+        <h2>Live Video Background</h2>
+
+        <button
+          id="stop-video-button"
+          class="small-button"
+          type="button"
+          disabled
+        >
+          Stop
+        </button>
+      </div>
+
+      <div class="video-source-row">
+        <button id="camera-video-button" type="button">
+          Camera
+        </button>
+
+        <button id="screen-video-button" type="button">
+          Screen / Window
+        </button>
+      </div>
+
+      <label class="file-picker" for="video-input">
+        <span>Choose a local video</span>
+
+        <input
+          id="video-input"
+          type="file"
+          accept="video/*"
+        >
+      </label>
+
+      <div class="control-grid">
+        <label>
+          Fit
+          <select id="video-fit">
+            <option value="cover">Fill / Crop</option>
+            <option value="contain">Show Entire Video</option>
+            <option value="stretch">Stretch</option>
+          </select>
+        </label>
+
+        <label class="checkbox-control" for="video-mirror">
+          <span>Mirror</span>
+          <input id="video-mirror" type="checkbox">
+        </label>
+      </div>
+
+      <label class="range-row video-range-row">
+        <span>Video</span>
+
+        <input
+          id="video-opacity"
+          type="range"
+          min="0"
+          max="1"
+          step="0.05"
+          value="1"
+        >
+
+        <output id="video-opacity-output">100%</output>
+      </label>
+
+      <label class="range-row video-range-row">
+        <span>Visuals</span>
+
+        <input
+          id="video-visual-opacity"
+          type="range"
+          min="0"
+          max="1"
+          step="0.05"
+          value="0.35"
+        >
+
+        <output id="video-visual-opacity-output">35%</output>
+      </label>
+
+      <p class="microcopy">
+        Camera and screen sharing stay behind the generated effects.
+        Screen sharing can capture a window, browser tab, or display.
+      </p>
+    </section>
+
+    <section class="panel-section">
+      <div class="section-heading">
+        <h2>Image Layer</h2>
+
+        <button
+          id="remove-png-button"
+          class="small-button"
+          type="button"
+        >
+          Remove
+        </button>
+      </div>
+
+      <label class="checkbox-control png-visibility-control" for="png-visible">
+        <span>Show image layer</span>
+        <input id="png-visible" type="checkbox" checked>
+      </label>
+
+      <label class="file-picker" for="png-input">
+        <span>Choose PNG or image</span>
+
+        <input
+          id="png-input"
+          type="file"
+          accept="image/png,image/webp,image/jpeg"
+        >
+      </label>
+
+      <div class="control-grid">
+        <label>
+          Motion
+          <select id="png-mode">
+            <option value="spin">Center Spin</option>
+            <option value="orbit">Orbit</option>
+            <option value="pulse">Beat Pulse</option>
+            <option value="kaleido">Kaleido Copies</option>
+            <option value="tunnel">Logo Tunnel</option>
+          </select>
+        </label>
+
+        <label>
+          Blend
+          <select id="png-blend">
+            <option value="source-over">Normal</option>
+            <option value="screen">Screen</option>
+            <option value="lighter">Glow</option>
+            <option value="difference">Difference</option>
+          </select>
+        </label>
+      </div>
+
+      <label class="range-row">
+        <span>Size</span>
+
+        <input
+          id="png-size"
+          type="range"
+          min="10"
+          max="90"
+          value="34"
+        >
+
+        <output id="png-size-output">34%</output>
+      </label>
+
+      <label class="range-row">
+        <span>Spin</span>
+
+        <input
+          id="png-speed"
+          type="range"
+          min="-4"
+          max="4"
+          step="0.1"
+          value="1.2"
+        >
+
+        <output id="png-speed-output">1.2×</output>
+      </label>
+
+      <label class="range-row">
+        <span>Opacity</span>
+
+        <input
+          id="png-opacity"
+          type="range"
+          min="0.1"
+          max="1"
+          step="0.05"
+          value="0.95"
+        >
+
+        <output id="png-opacity-output">95%</output>
+      </label>
+
+      <button
+        class="wide-button effect-key png-effect-key"
+        id="png-burst-button"
+        data-code="KeyJ"
+        type="button"
+      >
+        J — Logo Spin Burst
+      </button>
+    </section>
+
+    <section class="panel-section">
+      <div class="section-heading">
+        <h2>Visual Variation</h2>
+
+        <button
+          id="next-variation-button"
+          class="small-button"
+          type="button"
+        >
+          V — Next
+        </button>
+      </div>
+
+      <select id="variation-select">
+        <option value="0">Neon Grid</option>
+        <option value="1">Prism Rush</option>
+        <option value="2">Acid Reactor</option>
+        <option value="3">Midnight Chrome</option>
+        <option value="4">Solar Flare</option>
+        <option value="5">Ice Circuit</option>
+      </select>
+
+      <label class="range-row">
+        <span>FX Power</span>
+
+        <input
+          id="fx-power"
+          type="range"
+          min="0.35"
+          max="1.6"
+          step="0.05"
+          value="1"
+        >
+
+        <output id="fx-power-output">1.0×</output>
+      </label>
+    </section>
+
+    <section class="panel-section">
+      <h2>Main Visual Triggers</h2>
+
+      <p class="microcopy latch-help">
+        Tap for a one-shot effect. Hold a key or button for about
+        half a second to latch it on. Hold it again to turn it off.
+      </p>
+
+      <div class="key-grid">
+        <button class="effect-key" data-code="KeyA" type="button">
+          <kbd>A</kbd>
+          <span>Color Pulse</span>
+        </button>
+
+        <button class="effect-key" data-code="KeyS" type="button">
+          <kbd>S</kbd>
+          <span>Particle Burst</span>
+        </button>
+
+        <button class="effect-key" data-code="KeyD" type="button">
+          <kbd>D</kbd>
+          <span>Light Rings</span>
+        </button>
+
+        <button class="effect-key" data-code="KeyF" type="button">
+          <kbd>F</kbd>
+          <span>Screen Shake</span>
+        </button>
+
+        <button class="effect-key" data-code="KeyG" type="button">
+          <kbd>G</kbd>
+          <span>3D Tunnel</span>
+        </button>
+
+        <button
+          class="effect-key kaleidoscope-key"
+          data-code="KeyH"
+          type="button"
+        >
+          <kbd>H</kbd>
+          <span>Kaleidoscope</span>
+        </button>
+
+        <button
+          class="effect-key drop-key"
+          data-code="Space"
+          type="button"
+        >
+          <kbd>SPACE</kbd>
+          <span>Beat Drop Stack</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="panel-section">
+      <h2>Distortion FX</h2>
+
+      <div class="key-grid compact-grid">
+        <button class="effect-key" data-code="KeyQ" type="button">
+          <kbd>Q</kbd>
+          <span>RGB Split</span>
+        </button>
+
+        <button class="effect-key" data-code="KeyW" type="button">
+          <kbd>W</kbd>
+          <span>Wave Warp</span>
+        </button>
+
+        <button class="effect-key" data-code="KeyE" type="button">
+          <kbd>E</kbd>
+          <span>Pixel Glitch</span>
+        </button>
+
+        <button class="effect-key" data-code="KeyR" type="button">
+          <kbd>R</kbd>
+          <span>Mirror Slice</span>
+        </button>
+
+        <button
+          class="effect-key feedback-key"
+          data-code="KeyT"
+          type="button"
+        >
+          <kbd>T</kbd>
+          <span>Feedback Echo</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="panel-section">
+      <h2>Extended FX</h2>
+
+      <div class="key-grid compact-grid">
+        <button class="effect-key" data-code="KeyY" type="button">
+          <kbd>Y</kbd>
+          <span>Prism Bloom</span>
+        </button>
+
+        <button class="effect-key" data-code="KeyU" type="button">
+          <kbd>U</kbd>
+          <span>Scanline Drift</span>
+        </button>
+
+        <button class="effect-key" data-code="KeyI" type="button">
+          <kbd>I</kbd>
+          <span>Negative Pulse</span>
+        </button>
+
+        <button class="effect-key" data-code="KeyO" type="button">
+          <kbd>O</kbd>
+          <span>Zoom Echo</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="panel-section recording-panel">
+      <div class="section-heading">
+        <h2>Record Video</h2>
+        <span id="recording-timer">00:00</span>
+      </div>
+
+      <label>
+        Output layout
+
+        <select id="output-preset">
+          <option value="youtube">
+            Landscape 16:9 — 1280×720
+          </option>
+
+          <option value="vertical">
+            Vertical 9:16 — 720×1280
+          </option>
+
+          <option value="square">
+            Square 1:1 — 1080×1080
+          </option>
+        </select>
+      </label>
+
+      <label class="checkbox-row" for="record-audio">
+        <input id="record-audio" type="checkbox">
+        Include microphone or audio input
+      </label>
+
+      <p class="microcopy">
+        Audio input requires browser permission. Video-only
+        recording works without it.
+      </p>
+
+      <div class="record-row">
+        <button id="record-button" type="button">
+          ● Start Recording
+        </button>
+
+        <button
+          id="stop-record-button"
+          type="button"
+          disabled
+        >
+          ■ Stop &amp; Save
+        </button>
+      </div>
+    </section>
+
+    <section class="panel-section action-row">
+      <button id="fullscreen-button" type="button">
+        Enter Fullscreen
+      </button>
+
+      <button id="clear-button" type="button">
+        Clear Visuals
+      </button>
+    </section>
+
+    <p id="status-text" role="status" aria-live="polite">
+      System ready
+    </p>
+
+    <p class="hint">
+      The menu scrolls independently. Drag its top grip downward
+      to turn it into a floating control island, then move that
+      window to another monitor.
+    </p>
+  </aside>
+
+  <main id="visual-stage" tabindex="0">
+    <video
+      id="background-video"
+      muted
+      autoplay
+      loop
+      playsinline
+      aria-hidden="true"
+    ></video>
+
+    <canvas
+      id="visual-canvas"
+      width="1280"
+      height="720"
+      aria-label="Live DJ visual output"
+    ></canvas>
+
+    <div id="beat-indicator">
+      BEAT
+    </div>
+
+    <div id="recording-indicator">
+      ● REC
+    </div>
+
+    <div id="stage-help">
+      CLICK TO FOCUS
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

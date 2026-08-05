@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DISTORTION — Live Video Remix Studio</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <div class="brand">DISTORTION</div>
+        <div class="subtitle">LIVE VIDEO REMIX STUDIO</div>
+      </div>
+      <div class="top-actions">
+        <button id="detachBtn" class="btn">DETACH CONTROLS</button>
+        <button id="fullscreenBtn" class="btn">FULLSCREEN OUTPUT</button>
+        <button id="helpBtn" class="btn accent">HELP</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="panel media-panel">
+        <section>
+          <h2>MEDIA</h2>
+          <label class="file-label">UPLOAD SONG
+            <input id="audioInput" type="file" accept="audio/*" />
+          </label>
+          <div id="audioName" class="status-line">NO SONG LOADED</div>
+          <div class="transport">
+            <button id="audioPlayBtn" class="btn small">PLAY / PAUSE</button>
+            <button id="audioStopBtn" class="btn small">STOP</button>
+          </div>
+          <input id="audioSeek" type="range" min="0" max="1000" value="0" />
+          <div class="transport-readout"><span id="audioTime">00:00</span><span id="audioDuration">00:00</span></div>
+        </section>
+
+        <section>
+          <label class="file-label">UPLOAD VIDEOS
+            <input id="videoInput" type="file" accept="video/*" multiple />
+          </label>
+          <div id="videoLibrary" class="video-library"></div>
+        </section>
+
+        <section>
+          <h2>LOGO LAYER</h2>
+          <label class="file-label">UPLOAD LOGO
+            <input id="logoInput" type="file" accept="image/png,image/webp,image/jpeg" />
+          </label>
+          <div class="control-grid two">
+            <label>OPACITY<input id="logoOpacity" type="range" min="0" max="1" step="0.01" value="0.9" /></label>
+            <label>SIZE<input id="logoScale" type="range" min="0.05" max="0.8" step="0.01" value="0.2" /></label>
+          </div>
+          <label class="check-row"><input id="logoVisible" type="checkbox" checked /> SHOW LOGO</label>
+          <label class="check-row"><input id="logoAffected" type="checkbox" /> DISTORT LOGO WITH VIDEO</label>
+          <button id="logoResetBtn" class="btn small full">RESET LOGO POSITION</button>
+        </section>
+      </aside>
+
+      <section class="center-stage">
+        <div class="output-frame" id="outputFrame">
+          <canvas id="outputCanvas" width="1280" height="720"></canvas>
+          <div id="dropHint" class="drop-hint">UPLOAD A VIDEO TO BEGIN</div>
+          <div id="recordBadge" class="record-badge hidden">● REC <span id="recordTimer">00:00</span></div>
+        </div>
+
+        <div class="timeline-wrap">
+          <div class="timeline-head">
+            <span>HOVER SCRUB / SHIFT + CLICK TO ADD HOT CUE</span>
+            <label class="check-row compact"><input id="hoverPlayToggle" type="checkbox" checked /> HOVER JUMPS LIVE VIDEO</label>
+          </div>
+          <canvas id="timelineCanvas" width="1200" height="96"></canvas>
+          <div id="hoverTime" class="hover-time hidden">00:00.000</div>
+        </div>
+
+        <div class="cue-toolbar">
+          <label>ARM CUE KEY
+            <select id="cueKeySelect"></select>
+          </label>
+          <label>TRIGGER MODE
+            <select id="cueModeSelect">
+              <option value="continue">CONTINUE</option>
+              <option value="hold">HOLD</option>
+              <option value="freeze">FREEZE ON RELEASE</option>
+              <option value="loop">2 SECOND LOOP</option>
+            </select>
+          </label>
+          <button id="deselectCueBtn" class="btn small">DESELECT CUE</button>
+          <button id="clearCuesBtn" class="btn small danger">CLEAR CUES</button>
+        </div>
+
+        <div id="cuePads" class="cue-pads"></div>
+      </section>
+
+      <aside class="panel fx-panel">
+        <section>
+          <h2>MASTER SIGNAL</h2>
+          <label>MASTER DISTORTION <span id="masterValue">45%</span>
+            <input id="masterDistortion" type="range" min="0" max="1" step="0.01" value="0.45" />
+          </label>
+          <label>AUDIO REACTIVITY <span id="reactValue">35%</span>
+            <input id="audioReact" type="range" min="0" max="1" step="0.01" value="0.35" />
+          </label>
+          <div class="transport">
+            <button id="panicBtn" class="btn danger">CLEAR ALL FX</button>
+            <button id="randomBtn" class="btn">DESTROY SIGNAL</button>
+          </div>
+        </section>
+
+        <section>
+          <h2>DISTORTION BANK</h2>
+          <div id="fxButtons" class="fx-grid"></div>
+          <div class="mode-row">
+            <label>KEY MODE
+              <select id="fxModeSelect">
+                <option value="hold">HOLD</option>
+                <option value="latch">LATCH</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2>TRANSITIONS</h2>
+          <div id="transitionButtons" class="fx-grid compact-grid"></div>
+          <label>SNAP DECAY <span id="transitionValue">0.12s</span>
+            <input id="transitionDuration" type="range" min="0.05" max="0.65" step="0.01" value="0.12" />
+          </label>
+        </section>
+
+        <section>
+          <h2>RECORDING</h2>
+          <label>OUTPUT FORMAT
+            <select id="aspectSelect">
+              <option value="16:9">16:9 YOUTUBE</option>
+              <option value="9:16">9:16 TIKTOK</option>
+              <option value="1:1">1:1 SQUARE</option>
+            </select>
+          </label>
+          <div class="transport">
+            <button id="recordBtn" class="btn accent">START RECORDING</button>
+            <button id="stopRecordBtn" class="btn danger" disabled>STOP</button>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <footer class="statusbar">
+      <span id="statusText">READY — LOAD MEDIA</span>
+      <span>SPACE: SONG PLAY/PAUSE · F1 / ?: HELP · ESC: EXIT FULLSCREEN</span>
+    </footer>
+  </div>
+
+  <audio id="song" crossorigin="anonymous"></audio>
+  <video id="sourceVideo" muted playsinline crossorigin="anonymous"></video>
+
+  <dialog id="helpDialog">
+    <div class="help-shell">
+      <div class="help-header">
+        <div>
+          <h1>DISTORTION HELP</h1>
+          <p>Live video hot cues, effects, logo layers, detached controls, and recording.</p>
+        </div>
+        <button id="closeHelpBtn" class="btn">CLOSE</button>
+      </div>
+      <nav class="help-tabs" id="helpTabs">
+        <button class="active" data-tab="quick">QUICK START</button>
+        <button data-tab="cues">HOT CUES</button>
+        <button data-tab="effects">EFFECTS</button>
+        <button data-tab="logo">LOGO</button>
+        <button data-tab="detach">DETACH</button>
+        <button data-tab="record">RECORDING</button>
+        <button data-tab="trouble">TROUBLESHOOTING</button>
+      </nav>
+      <div class="help-content">
+        <section data-help="quick" class="active">
+          <h2>QUICK START</h2>
+          <ol>
+            <li>Upload one song and one or more video files.</li>
+            <li>Select a video from the media library.</li>
+            <li>Hover across the timeline to jump instantly to that moment.</li>
+            <li>Hold Shift and click the timeline to add a new hot cue at that starting point.</li>
+            <li>Press Q–V cue keys while the song keeps playing.</li>
+            <li>Hold the labeled distortion keys for effects, or switch effects into latch mode.</li>
+            <li>Add a logo, move it directly on the video, then record the performance.</li>
+          </ol>
+          <div class="help-callout">Recommended starting point: Master 45%, Reactivity 35%, Snap Decay 0.12 seconds, Logo 90% opacity.</div>
+        </section>
+        <section data-help="cues">
+          <h2>HOT CUES</h2>
+          <p>Hovering previews and, when enabled, immediately continues playback from the hovered position. A normal click jumps playback without saving. Hold <strong>Shift</strong> and click to add a new cue in the selected empty slot or the next available key.</p>
+          <p>Use <strong>DESELECT CUE</strong> to remove the menu selection without deleting any saved cue point.</p>
+          <p><strong>Keys:</strong> Q W E R / A S D F / Z X C V</p>
+          <p><strong>Continue:</strong> starts at the cue and keeps playing. <strong>Hold:</strong> plays while the key is held, then returns. <strong>Freeze:</strong> pauses on release. <strong>Loop:</strong> repeats two seconds from the cue.</p>
+        </section>
+        <section data-help="effects">
+          <h2>DISTORTION EFFECTS</h2>
+          <p>Keys Y U I O H J K L and 7–0 trigger the original bank. The new extreme bank uses [ ] ; ' , . / and backslash. Use HOLD for momentary hits or LATCH to keep effects active.</p>
+          <p><strong>Extreme effects:</strong> Mirror Grid, Vortex Shredder, Random Slicer, Color Crush, Infinite Tunnel, Split Zoom, Block Detonator, and Negative Strobe.</p>
+          <p>Effects can stack. Use CLEAR ALL FX for an instant clean signal. DESTROY SIGNAL generates a randomized stack.</p>
+        </section>
+        <section data-help="logo">
+          <h2>LOGO LAYER</h2>
+          <p>Upload PNG, WebP, or JPG. Drag the logo directly on the output. Use opacity and size controls. Enable “Distort logo with video” to send it through the active signal effects.</p>
+        </section>
+        <section data-help="detach">
+          <h2>DETACHED CONTROLS</h2>
+          <p>Press DETACH CONTROLS and allow the browser pop-up. Move that window to another monitor. The original page continues rendering and recording the final output.</p>
+          <p>Keep the original performance page open. The detached panel sends cue, effect, transport, panic, and recording commands back to it.</p>
+        </section>
+        <section data-help="record">
+          <h2>RECORDING</h2>
+          <p>Select 16:9, 9:16, or 1:1 before recording. The canvas output, song audio, logo, transitions, and active effects are captured into a WebM file.</p>
+          <p>For reliable audio recording, press PLAY once before starting the recording so the browser can activate its audio engine.</p>
+        </section>
+        <section data-help="trouble">
+          <h2>TROUBLESHOOTING</h2>
+          <ul>
+            <li><strong>Buttons do nothing:</strong> click once inside the page and check that no browser dialog is blocking input.</li>
+            <li><strong>No detached window:</strong> allow pop-ups for this page.</li>
+            <li><strong>No recording audio:</strong> start the song once before recording and use Chrome or Edge.</li>
+            <li><strong>Video is lagging:</strong> reduce Master Distortion, disable Feedback, or use a lower-resolution video.</li>
+            <li><strong>Keyboard shortcuts type into controls:</strong> click the video output to return focus to performance mode.</li>
+            <li><strong>Logo has a background:</strong> use a transparent PNG or WebP.</li>
+          </ul>
+          <div class="help-actions">
+            <button id="resetControlsBtn" class="btn">RESET PERFORMANCE CONTROLS</button>
+            <button id="resetProjectBtn" class="btn danger">RESET ENTIRE PROJECT</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

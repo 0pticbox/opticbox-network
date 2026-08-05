@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="noindex,nofollow" name="robots"/>
+<meta content="#080b13" name="theme-color"/>
+<title>0PTICBOX Admin Sign In</title>
+<link href="styles.css" rel="stylesheet"/>
+</head>
+<body class="admin-page admin-login-page">
+<canvas aria-hidden="true" id="page-particles"></canvas>
+<header class="topbar">
+<div class="shell topbar-inner">
+<a class="wordmark" href="index.html"><b>0</b><span><strong>PTICBOX</strong><small>admin</small></span></a>
+<nav aria-label="Admin navigation" class="site-nav admin-nav">
+<a href="index.html">View site</a>
+<a href="messages.html">Messages</a><a href="profile-settings.html">Settings</a></nav>
+</div>
+</header>
+<main class="shell admin-login-shell">
+<section class="box admin-intro">
+<div class="box-title split-title"><span>0PTICBOX Admin</span><small>private access</small></div>
+<div class="admin-intro-body">
+<p>Sign in with the owner account to open the private dashboard.</p>
+<p class="admin-warning" hidden="" id="config-warning">This copy is not connected yet. Complete <strong>ADMIN-SETUP.md</strong> and update <strong>supabase-config.js</strong>.</p>
+</div>
+</section>
+<section aria-labelledby="login-title" class="box admin-login" id="login-panel">
+<h1 class="box-title" id="login-title">Admin sign in</h1>
+<form class="admin-form" id="login-form">
+<label for="admin-email">Email</label>
+<input autocomplete="username" id="admin-email" name="email" required="" type="email"/>
+<label for="admin-password">Password</label>
+<input autocomplete="current-password" id="admin-password" name="password" required="" type="password"/>
+<button class="retro-button primary" type="submit">Sign in</button>
+<p aria-live="polite" class="admin-message" id="login-message"></p>
+</form>
+</section>
+</main>
+<script src="site.js?v=8"></script>
+<script src="admin.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Opticbox Visualizer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="visualizer"></canvas>
+
+  <header class="topbar">
+    <a class="brand" href="../../index.html">OPTICBOX</a>
+    <nav class="topnav" aria-label="Main navigation">
+      <a href="../../index.html">Home</a>
+      <a href="../../index.html#games">Game</a>
+      <a class="active" href="./">Visualizer</a>
+    </nav>
+  </header>
+
+  <aside class="control-dock" id="controlDock">
+    <div class="dock-heading">
+      <div>
+        <p class="kicker">AUDIO REACTIVE</p>
+        <h1>Visual Studio</h1>
+      </div>
+      <button id="collapseButton" class="icon-button" type="button" aria-label="Collapse controls">−</button>
+    </div>
+
+    <div class="dock-content">
+      <section class="control-section">
+        <h2>Source</h2>
+        <div class="button-grid">
+          <button id="micButton" type="button">Microphone</button>
+          <button id="fileButton" type="button">Audio File</button>
+          <button id="desktopButton" type="button">Desktop Audio</button>
+          <button id="stopButton" type="button" disabled>Disconnect</button>
+          <button id="pipButton" type="button">Picture in Picture</button>
+        </div>
+        <input id="audioFileInput" type="file" accept="audio/*" hidden>
+        <audio id="audioPlayer" controls></audio>
+        <div class="status-row">
+          <span id="statusDot" class="status-dot"></span>
+          <span id="statusText">No audio source connected</span>
+        </div>
+      </section>
+
+      <section class="control-section">
+        <div class="section-heading">
+          <h2>Visual — Lite Mode</h2>
+          <button id="randomizeButton" class="text-button" type="button">Randomize</button>
+        </div>
+        <label>Mode
+          <select id="modeSelect">
+            <option value="flow">Flow Ribbons</option>
+            <option value="orb">Liquid Orb</option>
+            <option value="spectrum">Spectrum Bloom</option>
+            <option value="rings">Echo Rings</option>
+            <option value="mandala">Mandala Tunnel</option>
+            <option value="imageFractal">PNG Fractal</option>
+          
+            <option value="liveCapture">Live Capture</option>
+          </select>
+        </label>
+
+        <div class="remix-card">
+          <label class="toggle-row remix-toggle">
+            <input id="remixEnabled" type="checkbox">
+            <span>Remix two visuals</span>
+          </label>
+
+          <div id="remixControls" class="remix-controls" aria-hidden="true">
+            <div class="remix-selects">
+              <label>Visual A
+                <select id="remixModeA">
+            <option value="flow">Flow Ribbons</option>
+            <option value="orb">Liquid Orb</option>
+            <option value="spectrum">Spectrum Bloom</option>
+            <option value="rings">Echo Rings</option>
+            <option value="mandala">Mandala Tunnel</option>
+            <option value="imageFractal">PNG Fractal</option>
+          
+            <option value="liveCapture">Live Capture</option>
+          </select>
+              </label>
+
+              <label>Visual B
+                <select id="remixModeB">
+            <option value="flow">Flow Ribbons</option>
+            <option value="orb">Liquid Orb</option>
+            <option value="spectrum">Spectrum Bloom</option>
+            <option value="rings">Echo Rings</option>
+            <option value="mandala" selected>Mandala Tunnel</option>
+            <option value="imageFractal">PNG Fractal</option>
+          
+            <option value="liveCapture">Live Capture</option>
+          </select>
+              </label>
+            </div>
+
+            <label class="crossfade-label">
+              <span>Crossfade</span>
+              <output id="crossfadeValue">50% / 50%</output>
+              <input id="crossfade" type="range" min="0" max="100" step="1" value="50">
+            </label>
+
+            <label class="toggle-row">
+              <input id="autoCrossfade" type="checkbox">
+              <span>Auto crossfade</span>
+            </label>
+
+            <label id="autoSpeedLabel">Auto Speed
+              <select id="autoCrossfadeSpeed">
+                <option value="0.002">Slow</option>
+                <option value="0.005" selected>Medium</option>
+                <option value="0.01">Fast</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <label>Color Theme
+          <select id="themeSelect">
+            <option value="ocean">Ocean</option>
+            <option value="violet">Violet</option>
+            <option value="aurora">Aurora</option>
+            <option value="ember">Ember</option>
+            <option value="monochrome">Monochrome</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="control-section sliders">
+        <label><span>Sensitivity</span><output id="sensitivityValue">1.8</output><input id="sensitivity" type="range" min="0.5" max="4" step="0.1" value="1.8"></label>
+        <label><span>Motion</span><output id="motionValue">1.0</output><input id="motion" type="range" min="0.2" max="3" step="0.1" value="1"></label>
+        <label><span>Trails</span><output id="trailsValue">0.16</output><input id="trails" type="range" min="0.03" max="0.5" step="0.01" value="0.16"></label>
+        <label><span>Glow</span><output id="glowValue">24</output><input id="glow" type="range" min="0" max="60" step="1" value="24"></label>
+      </section>
+
+
+
+
+      <section class="control-section recording-section">
+        <div class="section-heading">
+          <h2>Video Recorder</h2>
+          <span id="recordingTimer" class="recording-timer">00:00</span>
+        </div>
+
+        <label>Recording Ratio
+          <select id="recordingRatio">
+            <option value="tiktok">TikTok / Shorts — 9:16</option>
+            <option value="youtube">YouTube — 16:9</option>
+          </select>
+        </label>
+
+        <label class="toggle-row">
+          <input id="showRecordingGuide" type="checkbox" checked>
+          <span>Show center recording frame</span>
+        </label>
+
+        <div class="recording-buttons">
+          <button id="startRecordingButton" class="wide-button record-button" type="button">Start Recording</button>
+          <button id="stopRecordingButton" class="wide-button" type="button" disabled>Stop & Save</button>
+        </div>
+
+        <p id="recordingStatus" class="control-note">Records the centered visual at 30 FPS. TikTok uses 720×1280; YouTube uses 1280×720.</p>
+      </section>
+
+      <section class="control-section">
+        <div class="section-heading">
+          <h2>Live Capture</h2>
+          <button id="stopCaptureButton" class="text-button" type="button" disabled>Stop</button>
+        </div>
+
+        <button id="startCaptureButton" class="wide-button" type="button">Choose Screen / Window</button>
+
+        <div class="capture-preview-wrap">
+          <video id="capturePreview" muted autoplay playsinline></video>
+          <div id="captureStatus" class="capture-placeholder">No live capture selected</div>
+        </div>
+
+        <label>
+          Crop Width
+          <output id="cropWidthValue">100%</output>
+          <input id="cropWidth" type="range" min="10" max="100" step="1" value="100">
+        </label>
+
+        <label>
+          Crop Height
+          <output id="cropHeightValue">100%</output>
+          <input id="cropHeight" type="range" min="10" max="100" step="1" value="100">
+        </label>
+
+        <label>
+          Crop X
+          <output id="cropXValue">50%</output>
+          <input id="cropX" type="range" min="0" max="100" step="1" value="50">
+        </label>
+
+        <label>
+          Crop Y
+          <output id="cropYValue">50%</output>
+          <input id="cropY" type="range" min="0" max="100" step="1" value="50">
+        </label>
+
+        <label>
+          Capture Opacity
+          <output id="captureOpacityValue">100%</output>
+          <input id="captureOpacity" type="range" min="10" max="100" step="5" value="100">
+        </label>
+
+        <label class="toggle-row">
+          <input id="captureMirror" type="checkbox">
+          <span>Mirror capture</span>
+        </label>
+
+        <p class="control-note">
+          Select a screen, app window, or browser tab. The crop sliders choose the part of that live video used by the visualizer.
+        </p>
+      </section>
+
+      <section class="control-section">
+        <div class="section-heading">
+          <h2>Image Fractal</h2>
+          <button id="removeImageButton" class="text-button" type="button">Remove</button>
+        </div>
+
+        <button id="imageButton" class="wide-button" type="button">Upload PNG / Photo</button>
+        <input id="imageFileInput" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+
+        <div id="imageDropZone" class="image-drop-zone" tabindex="0">
+          <strong>DROP IMAGE HERE</strong>
+          <span id="imageFileName">PNG, JPG, or WEBP</span>
+        </div>
+
+        <label>
+          Mandala Symmetry
+          <output id="symmetryValue">12</output>
+          <input id="symmetry" type="range" min="4" max="32" step="2" value="12">
+        </label>
+
+        <label>
+          Fractal Zoom
+          <output id="fractalZoomValue">1.0</output>
+          <input id="fractalZoom" type="range" min="0.3" max="3" step="0.1" value="1">
+        </label>
+
+        <label>
+          Image Strength
+          <output id="imageStrengthValue">85%</output>
+          <input id="imageStrength" type="range" min="10" max="100" step="5" value="85">
+        </label>
+
+        <label class="toggle-row">
+          <input id="mirrorImage" type="checkbox" checked>
+          <span>Mirror image wedges</span>
+        </label>
+
+        <p class="control-note">
+          Select PNG Fractal as a visual, or mix it with Mandala Tunnel in Remix Mode.
+        </p>
+      </section>
+
+      <section class="control-section">
+        <label>Custom Title<input id="titleInput" type="text" maxlength="40" placeholder="OPTICBOX"></label>
+        <label class="toggle-row"><input id="showTitle" type="checkbox" checked><span>Show title overlay</span></label>
+      </section>
+    </div>
+  </aside>
+
+  <div class="now-playing">
+    <span class="live-indicator"></span>
+    <div>
+      <strong id="overlayTitle">OPTICBOX</strong>
+      <span id="overlayMode">FLOW RIBBONS</span>
+    </div>
+  </div>
+
+  <div id="recordingGuide" class="recording-guide" aria-hidden="true"><span id="recordingGuideLabel">TIKTOK 9:16</span></div>
+  <canvas id="recordingCanvas" hidden></canvas>
+  <video id="pipVideo" muted playsinline hidden></video>
+
+  <script src="script.js"></script>
+</body>
+</html>

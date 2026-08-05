@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inner Light Runner — 0PTICBOX Arcade</title>
+<style>
+:root{
+  --bg:#05060b;--panel:#0d1020;--panel2:#151a2d;--ink:#f7f8ff;
+  --muted:#aeb6cd;--line:#48516d;--pink:#ff5ca8;--cyan:#65e8ff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink)}
+body{
+  font-family:Verdana,Arial,sans-serif;
+  background:
+    radial-gradient(circle at 15% 15%,rgba(255,92,168,.16),transparent 26rem),
+    radial-gradient(circle at 85% 80%,rgba(101,232,255,.12),transparent 30rem),
+    #05060b;
+  padding:clamp(12px,3vw,28px);
+}
+a{color:var(--cyan)}
+.page{width:min(100%,1050px);margin:auto}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.title-wrap h1{margin:0;font-size:clamp(25px,5vw,48px);overflow-wrap:anywhere}
+.title-wrap p{margin:6px 0 0;color:var(--muted);line-height:1.5}
+.back{
+  display:inline-flex;align-items:center;gap:7px;text-decoration:none;
+  border:1px solid var(--line);background:#101426;padding:10px 13px;border-radius:8px;
+}
+.cabinet{
+  border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#171c31,#0b0e19);
+  padding:clamp(10px,2.5vw,22px);box-shadow:0 22px 80px rgba(0,0,0,.55);
+}
+.screen-frame{
+  width:min(100%,760px);margin:auto;padding:clamp(8px,1.7vw,16px);
+  border:1px solid #666f8a;border-radius:14px;background:#090b12;
+  box-shadow:inset 0 0 0 3px #1d2235,0 0 34px rgba(255,92,168,.13);
+}
+.screen{
+  position:relative;width:100%;aspect-ratio:1/1;background:#000;overflow:hidden;
+  border-radius:8px;image-rendering:pixelated;
+}
+iframe{width:100%;height:100%;border:0;display:block;background:#000}
+.loading,.missing{
+  position:absolute;inset:0;display:grid;place-items:center;padding:26px;text-align:center;
+  background:radial-gradient(circle at center,#181d34,#06070d 70%);
+}
+.status-inner{max-width:590px}
+.status-inner h2{margin:0 0 12px;font-size:clamp(20px,4vw,34px)}
+.status-inner p{color:var(--muted);line-height:1.65;margin:8px 0}
+code{background:#262c43;color:#fff;padding:2px 6px;border-radius:4px;overflow-wrap:anywhere}
+.toolbar{
+  display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;
+  margin:16px auto 0;
+}
+button,.button{
+  appearance:none;border:1px solid var(--line);background:#1a2033;color:#fff;
+  font:700 14px Verdana,Arial,sans-serif;padding:10px 14px;border-radius:8px;
+  text-decoration:none;cursor:pointer;
+}
+button:hover,.button:hover{border-color:var(--cyan)}
+.primary{background:var(--pink);border-color:#ff8cc3;color:#090910}
+.help{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;
+  margin:17px auto 0;width:min(100%,760px)
+}
+.help div{border:1px solid var(--line);background:#111628;border-radius:9px;padding:11px;text-align:center;color:var(--muted)}
+.help strong{display:block;color:#fff;margin-bottom:5px}
+.notice{margin:15px auto 0;width:min(100%,760px);color:var(--muted);font-size:13px;line-height:1.6;text-align:center}
+@media(max-width:650px){.help{grid-template-columns:1fr}.screen-frame{padding:7px}.cabinet{padding:9px}}
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <div class="title-wrap">
+      <h1>Inner Light Runner</h1>
+      <p>A fast PICO-8 runner through a glowing world.</p>
+    </div>
+    <a class="back" href="../../">← Back to 0PTICBOX</a>
+  </header>
+
+  <section class="cabinet" aria-label="PICO-8 game player">
+    <div class="screen-frame" id="screen-frame">
+      <div class="screen" id="screen">
+        <div class="loading" id="status">
+          <div class="status-inner">
+            <h2>Loading cartridge…</h2>
+            <p>The embedded player is starting.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button class="primary" id="start-button" type="button">Start / focus game</button>
+      <button id="restart-button" type="button">Restart</button>
+      <button id="mute-button" type="button">Mute</button>
+      <button id="fullscreen-button" type="button">Fullscreen</button>
+      <a class="button" href="../../downloads/inner-light-runner.p8" download>Download cartridge</a>
+    </div>
+
+    <div class="help">
+      <div><strong>Move</strong>Arrow keys</div>
+      <div><strong>Buttons</strong>Z and X</div>
+      <div><strong>Audio</strong>Click Start once</div>
+    </div>
+
+    <p class="notice">The game runs inside the page like an old browser game. The official PICO-8 web export must exist at <code>player/index.html</code>.</p>
+  </section>
+</main>
+
+<script>
+(() => {
+  const screen = document.getElementById('screen');
+  const frameWrap = document.getElementById('screen-frame');
+  const startButton = document.getElementById('start-button');
+  const restartButton = document.getElementById('restart-button');
+  const muteButton = document.getElementById('mute-button');
+  const fullscreenButton = document.getElementById('fullscreen-button');
+  let frame = null;
+  let muted = false;
+
+  function missingPlayer() {
+    screen.innerHTML = `
+      <div class="missing">
+        <div class="status-inner">
+          <h2>Browser export not uploaded yet</h2>
+          <p>A raw <code>.p8</code> cartridge is source data, not a browser executable. Export this game from PICO-8 as HTML, then place the generated files inside this folder's <code>player</code> directory.</p>
+          <p>The required entry file is <code>player/index.html</code>.</p>
+        </div>
+      </div>`;
+  }
+
+  async function loadPlayer() {
+    try {
+      const response = await fetch('player/index.html', { method: 'HEAD', cache: 'no-store' });
+      if (!response.ok) throw new Error('missing player');
+      frame = document.createElement('iframe');
+      frame.src = 'player/index.html';
+      frame.title = 'Inner Light Runner PICO-8 player';
+      frame.allow = 'autoplay; fullscreen';
+      frame.setAttribute('loading', 'eager');
+      screen.replaceChildren(frame);
+      frame.addEventListener('load', () => {
+        try { frame.contentWindow.focus(); } catch (_) {}
+      });
+    } catch (_) {
+      missingPlayer();
+    }
+  }
+
+  startButton.addEventListener('click', () => {
+    if (frame) {
+      frame.focus();
+      try { frame.contentWindow.focus(); } catch (_) {}
+    }
+  });
+
+  restartButton.addEventListener('click', () => {
+    if (frame) frame.src = frame.src;
+  });
+
+  muteButton.addEventListener('click', () => {
+    if (!frame) return;
+    muted = !muted;
+    muteButton.textContent = muted ? 'Unmute' : 'Mute';
+    try {
+      const win = frame.contentWindow;
+      win.codo_volume = muted ? 0 : 256;
+      win.codo_command = 2;
+      win.codo_command_p = win.codo_volume;
+    } catch (_) {}
+  });
+
+  fullscreenButton.addEventListener('click', async () => {
+    try {
+      if (!document.fullscreenElement) await frameWrap.requestFullscreen();
+      else await document.exitFullscreen();
+    } catch (_) {}
+  });
+
+  loadPlayer();
+})();
+</script>
+</body>
+</html>

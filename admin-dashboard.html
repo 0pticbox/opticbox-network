@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="noindex,nofollow" name="robots"/>
+<meta content="#080b13" name="theme-color"/>
+<title>0PTICBOX Admin Dashboard</title>
+<link href="styles.css" rel="stylesheet"/>
+</head>
+<body class="admin-page">
+<canvas aria-hidden="true" id="page-particles"></canvas>
+<header class="topbar">
+<div class="shell topbar-inner">
+<a class="wordmark" href="index.html"><b>0</b><span><strong>PTICBOX</strong><small>admin</small></span></a>
+<nav aria-label="Admin navigation" class="site-nav admin-nav">
+<a href="index.html">View site</a><a href="community.html">Community feed</a>
+<button class="admin-sign-out" hidden="" id="sign-out-button" type="button">Sign out</button>
+<a href="messages.html">Messages</a><a href="profile-settings.html">Settings</a></nav>
+</div>
+</header>
+<main class="shell admin-shell">
+<section class="box admin-intro">
+<div class="box-title split-title"><span>0PTICBOX Dashboard</span><small>signed-in owner tools</small></div>
+<div class="admin-intro-body">
+<p>Publish community posts, update profile text, and moderate member ratings and comments.</p>
+<p class="admin-warning" hidden="" id="config-warning">This copy is not connected yet. Complete <strong>ADMIN-SETUP.md</strong> and update <strong>supabase-config.js</strong>.</p>
+</div>
+</section>
+<div class="admin-dashboard" id="admin-dashboard">
+<section aria-labelledby="post-editor-title" class="box admin-editor">
+<div class="box-title split-title"><span id="post-editor-title">Community Post Editor</span><small>create or edit</small></div>
+<form class="admin-form" id="post-form">
+<input id="post-id" type="hidden"/>
+<label for="post-title">Title</label>
+<input id="post-title" maxlength="120" required=""/>
+<label for="post-body">Post</label>
+<textarea id="post-body" maxlength="5000" required="" rows="8"></textarea>
+<label for="post-image">Optional image URL</label>
+<input id="post-image" inputmode="url" placeholder="https://..." type="url"/>
+<label class="form-check form-switch" for="post-published">
+<input checked="" class="form-check-input" id="post-published" type="checkbox"/>
+<span class="form-check-label">Publish immediately</span>
+</label>
+<div class="admin-actions">
+<button class="retro-button primary" type="submit">Save post</button>
+<button class="retro-button" id="reset-post-button" type="button">Clear form</button>
+</div>
+<p aria-live="polite" class="admin-message" id="post-message"></p>
+</form>
+</section>
+<section aria-labelledby="posts-title" class="box admin-post-list">
+<div class="box-title split-title"><span id="posts-title">Your Posts</span><small id="post-count">0 posts</small></div>
+<div aria-live="polite" class="admin-posts" id="admin-posts"></div>
+</section>
+<section aria-labelledby="admin-reviews-title" class="box admin-review-list">
+<div class="box-title split-title"><span id="admin-reviews-title">Member Reviews</span><small id="admin-review-count">0 reviews</small></div>
+<div aria-live="polite" class="admin-posts" id="admin-reviews"></div>
+</section>
+<section aria-labelledby="admin-activity-title" class="box admin-review-list">
+<div class="box-title split-title"><span id="admin-activity-title">Member Activity</span><small id="admin-activity-count">0 posts</small></div>
+<div aria-live="polite" class="admin-posts" id="admin-activity-posts"></div>
+<p aria-live="polite" class="admin-message" id="admin-activity-message"></p>
+</section>
+<section aria-labelledby="content-title" class="box admin-content">
+<div class="box-title split-title"><span id="content-title">Profile Text</span><small>updates the landing page</small></div>
+<form class="admin-form" id="content-form">
+<label for="content-profile-status">Profile status</label>
+<input data-key="profile_status" id="content-profile-status" maxlength="160"/>
+<label for="content-profile-bio">Short profile bio</label>
+<textarea data-key="profile_bio" id="content-profile-bio" maxlength="500" rows="3"></textarea>
+<label for="content-featured-title">Featured project title</label>
+<input data-key="featured_title" id="content-featured-title" maxlength="100"/>
+<label for="content-featured-description">Featured project description</label>
+<textarea data-key="featured_description" id="content-featured-description" maxlength="700" rows="4"></textarea>
+<label for="content-site-status">“0PTICBOX is...” text</label>
+<textarea data-key="site_status" id="content-site-status" maxlength="500" rows="3"></textarea>
+<div class="admin-background-editor">
+<div>
+<label for="content-background-gif">Site background GIF</label>
+<input data-key="background_gif_url" id="content-background-gif" inputmode="url" maxlength="2048" placeholder="assets/background.gif or https://example.com/background.gif" type="text"/>
+<p class="admin-field-help">Use a direct GIF/image URL or a file path from this site. Leave it blank to use the original background.</p>
+</div>
+<div aria-label="Background preview" class="background-gif-preview" id="background-gif-preview">
+<span>No custom background selected</span>
+</div>
+<button class="retro-button" id="clear-background-button" type="button">Clear background GIF</button>
+</div>
+<button class="retro-button primary" type="submit">Save site settings</button>
+<p aria-live="polite" class="admin-message" id="content-message"></p>
+</form>
+</section>
+</div>
+</main>
+<script src="site.js?v=8"></script>
+<script src="admin.js" type="module"></script>
+<script src="admin-activity.js" type="module"></script>
+</body>
+</html>

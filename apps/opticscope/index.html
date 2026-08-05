@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>0PTICSCOPE — Oscilloscope Art Laboratory</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="instrument">
+    <header class="topbar">
+      <div>
+        <p class="kicker">VECTOR SIGNAL LABORATORY</p>
+        <h1>0PTICSCOPE</h1>
+      </div>
+      <div class="status" aria-live="polite"><span id="powerLamp" class="lamp"></span><span id="statusText">STANDBY</span></div>
+    </header>
+
+    <div class="workbench">
+      <section class="display-column">
+        <div class="crt-bezel">
+          <div class="crt-glass">
+            <canvas id="scopeCanvas" width="1280" height="720" aria-label="Oscilloscope display"></canvas>
+            <div class="glass-sheen"></div>
+            <div id="recordGuide" class="record-guide" hidden></div>
+          </div>
+        </div>
+        <div class="readout">
+          <span id="modeReadout">TIME</span>
+          <span id="inputReadout">NO INPUT</span>
+          <span id="signalReadout">0.000 V</span>
+          <span id="recordReadout">REC OFF</span>
+        </div>
+      </section>
+
+      <aside class="right-console">
+        <nav class="tabs" aria-label="Main menu">
+          <button class="tab active" data-page="scope" type="button">SCOPE</button>
+          <button class="tab" data-page="art" type="button">ART LAB</button>
+          <button class="tab" data-page="help" type="button">HELP</button>
+        </nav>
+
+        <section id="page-scope" class="page active">
+          <fieldset><legend>INPUT</legend>
+            <div class="button-grid">
+              <button id="micBtn" type="button">MIC</button>
+              <button id="desktopBtn" type="button">DESKTOP</button>
+              <label class="file-button" for="audioFile">AUDIO FILE</label>
+              <input id="audioFile" type="file" accept="audio/*">
+              <button id="stopInputBtn" type="button">DISCONNECT</button>
+            </div>
+            <audio id="audioElement" controls preload="metadata"></audio>
+          </fieldset>
+
+          <fieldset><legend>DISPLAY</legend>
+            <div class="button-grid two">
+              <button class="mode-button active" data-mode="time" type="button">TIME</button>
+              <button class="mode-button" data-mode="xy" type="button">X-Y</button>
+            </div>
+            <label>PHOSPHOR<select id="phosphorSelect"><option value="p31">P31 GREEN</option><option value="p7">P7 AMBER</option><option value="p39">P39 WHITE</option><option value="blue">BLUE LAB</option><option value="pink">PINK NEON</option></select></label>
+            <label class="check"><input id="gridToggle" type="checkbox" checked> GRATICULE</label>
+            <button id="fullscreenBtn" type="button">FULLSCREEN VISUAL</button>
+          </fieldset>
+
+          <fieldset><legend>BEAM</legend>
+            <label>GAIN <output id="gainOut">1.00×</output><input id="gain" type="range" min="0.25" max="4" step="0.05" value="1"></label>
+            <label>FOCUS <output id="focusOut">1.50</output><input id="focus" type="range" min="0.6" max="4" step="0.1" value="1.5"></label>
+            <label>INTENSITY <output id="intensityOut">1.00</output><input id="intensity" type="range" min="0.2" max="2.5" step="0.05" value="1"></label>
+            <label>PERSISTENCE <output id="persistenceOut">0.88</output><input id="persistence" type="range" min="0.65" max="0.98" step="0.01" value="0.88"></label>
+          </fieldset>
+
+          <fieldset><legend>PHOSPHOR PARTICLES</legend>
+            <label class="check"><input id="particlesToggle" type="checkbox" checked> TRACE PARTICLES</label>
+            <label>AMOUNT <output id="particleAmountOut">42</output><input id="particleAmount" type="range" min="0" max="100" step="1" value="42"></label>
+            <label>DECAY <output id="particleDecayOut">0.955</output><input id="particleDecay" type="range" min="0.88" max="0.985" step="0.001" value="0.955"></label>
+            <label>DRIFT <output id="particleDriftOut">0.8</output><input id="particleDrift" type="range" min="0" max="2" step="0.1" value="0.8"></label>
+          </fieldset>
+
+          <fieldset><legend>TIME BASE</legend>
+            <label>TIME / DIV <output id="sweepOut">1.00</output><input id="sweep" type="range" min="0.25" max="4" step="0.05" value="1"></label>
+            <label>TRIGGER <output id="triggerOut">0.00</output><input id="triggerLevel" type="range" min="-0.8" max="0.8" step="0.01" value="0"></label>
+            <label class="check"><input id="triggerToggle" type="checkbox" checked> AUTO TRIGGER</label>
+          </fieldset>
+
+          <fieldset><legend>X-Y CALIBRATION</legend>
+            <label>X GAIN <output id="xGainOut">1.00×</output><input id="xGain" type="range" min="0.2" max="3" step="0.05" value="1"></label>
+            <label>Y GAIN <output id="yGainOut">1.00×</output><input id="yGain" type="range" min="0.2" max="3" step="0.05" value="1"></label>
+            <label>ROTATION <output id="rotationOut">0°</output><input id="rotation" type="range" min="-180" max="180" step="1" value="0"></label>
+            <label>PHASE <output id="xyPhaseOut">-180°</output><input id="xyPhase" type="range" min="-180" max="180" step="1" value="-180"></label>
+            <label class="check"><input id="zSpinToggle" type="checkbox"> Z-AXIS AUTO SPIN</label>
+            <label>Z SPIN SPEED <output id="zSpinSpeedOut">0.08×</output><input id="zSpinSpeed" type="range" min="-1" max="1" step="0.01" value="0.08"></label>
+            <label class="check"><input id="invertY" type="checkbox"> INVERT Y</label>
+            <label class="check"><input id="xyAutoGain" type="checkbox" checked> AUTO LEVEL X-Y</label>
+            <button id="resetXYBtn" type="button">ZERO CALIBRATION</button>
+          </fieldset>
+
+          <fieldset><legend>RECORD</legend>
+            <label>FORMAT<select id="recordFormat"><option value="16:9">YOUTUBE 16:9</option><option value="9:16">TIKTOK 9:16</option><option value="1:1">SQUARE 1:1</option></select></label>
+            <div class="button-grid two"><button id="recordBtn" type="button">START</button><button id="stopRecordBtn" type="button" disabled>STOP</button></div>
+            <div id="recordTime" class="record-time">00:00</div>
+          </fieldset>
+        </section>
+
+        <section id="page-art" class="page">
+          <div class="notice">ART LAB converts a path into a looping stereo signal. LEFT = X. RIGHT = Y.</div>
+          <fieldset><legend>VECTOR PRESETS</legend>
+            <div id="presetGrid" class="preset-grid">
+              <button data-preset="circle" type="button">CIRCLE</button><button data-preset="infinity" type="button">INFINITY</button>
+              <button data-preset="heart" type="button">HEART</button><button data-preset="star" type="button">STAR</button>
+              <button data-preset="flower" type="button">FLOWER</button><button data-preset="spiral" type="button">SPIRAL</button>
+            </div>
+          </fieldset>
+
+          <fieldset><legend>DRAW A SIGNAL</legend>
+            <canvas id="drawPad" width="520" height="360" aria-label="Freehand oscilloscope art drawing pad"></canvas>
+            <div class="button-grid two"><button id="clearDrawingBtn" type="button">CLEAR</button><button id="playDrawingBtn" type="button">PLAY DRAWING</button></div>
+            <p class="small">Draw one continuous line. The order of your stroke becomes beam travel order.</p>
+          </fieldset>
+
+          <fieldset><legend>SVG LINE ART</legend>
+            <label class="file-button" for="svgFile">LOAD SVG</label><input id="svgFile" type="file" accept="image/svg+xml,.svg">
+            <button id="playSvgBtn" type="button" disabled>PLAY SVG</button>
+            <p id="svgStatus" class="small">Use simple stroked paths. Filled artwork and disconnected paths may create travel lines.</p>
+          </fieldset>
+
+          <fieldset><legend>PNG DETAIL OUTLINE</legend>
+            <label class="file-button" for="pngFile">PASTE / LOAD IMAGE</label><input id="pngFile" type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp">
+            <canvas id="pngPreview" width="520" height="300" aria-label="Detailed image outline preview"></canvas>
+            <label>IMAGE DETAIL <output id="pngDetailOut">224</output><input id="pngDetail" type="range" min="96" max="480" step="8" value="224"></label>
+            <label>EDGE THINNING <output id="pngLineSpacingOut">1</output><input id="pngLineSpacing" type="range" min="1" max="6" step="1" value="1"></label>
+            <label>EDGE DETAIL <output id="edgeThresholdOut">222</output><input id="edgeThreshold" type="range" min="80" max="250" step="1" value="222"></label>
+            <label>EDGE STRENGTH <output id="pngEtchStrengthOut">1.00</output><input id="pngEtchStrength" type="range" min="0.1" max="2" step="0.05" value="1"></label>
+            <label>VECTOR SPOTS <output id="pngVectorPointsOut">12288</output><input id="pngVectorPoints" type="range" min="2048" max="24576" step="1024" value="12288"></label>
+            <label>SPIN SPEED <output id="spinSpeedOut">0.35×</output><input id="spinSpeed" type="range" min="-2" max="2" step="0.05" value="0.35"></label>
+            <label>DEPTH <output id="spinDepthOut">0.45</output><input id="spinDepth" type="range" min="0" max="1.2" step="0.05" value="0.45"></label>
+            <div class="button-grid two"><button id="playPngBtn" type="button" disabled>PLAY OUTLINE</button><button id="stopPngBtn" type="button" disabled>STOP IMAGE</button></div>
+            <p id="pngStatus" class="small">Loads any image and detects visible edges throughout the entire picture, including internal shapes, text, facial features, shadows, and transparent boundaries.</p>
+          </fieldset>
+
+          <fieldset><legend>SIGNAL GENERATOR</legend>
+            <label>TRACE RATE <output id="traceRateOut">60 Hz</output><input id="traceRate" type="range" min="10" max="180" step="1" value="60"></label>
+            <label>POINTS <output id="pointCountOut">4096</output><input id="pointCount" type="range" min="256" max="16384" step="256" value="4096"></label>
+            <label>SMOOTHING <output id="smoothOut">2</output><input id="smooth" type="range" min="0" max="8" step="1" value="2"></label>
+            <label>OUTPUT LEVEL <output id="artLevelOut">35%</output><input id="artLevel" type="range" min="0.05" max="0.8" step="0.01" value="0.35"></label>
+            <div class="button-grid two"><button id="stopArtBtn" type="button">STOP SIGNAL</button><button id="exportWavBtn" type="button">EXPORT WAV</button></div>
+          </fieldset>
+        </section>
+
+        <section id="page-help" class="page help-page">
+          <h2>0PTICSCOPE QUICK START</h2>
+          <p>Use this starting setup before fine-tuning a song or image. It gives the beam a sharp analog look, keeps particles controlled, and provides a stable X-Y orientation.</p>
+          <button id="applyRecommendedBtn" type="button">APPLY RECOMMENDED START SETTINGS</button>
+          <p id="recommendedStatus" class="small">This changes display controls only. It does not replace your loaded audio or image.</p>
+
+          <h2>RECOMMENDED START SETTINGS</h2>
+          <dl>
+            <dt>BEAM</dt><dd>Gain 0.60× · Focus 3.00 · Intensity 1.20 · Persistence 0.85</dd>
+            <dt>PHOSPHOR PARTICLES</dt><dd>Trace particles ON · Amount 6 · Decay 0.955 · Drift 0.8</dd>
+            <dt>TIME BASE</dt><dd>Time/Div 1.00 · Trigger 0.00 · Auto Trigger ON</dd>
+            <dt>X-Y CALIBRATION</dt><dd>X Gain 1.20× · Y Gain 1.35× · Rotation 0° · Phase −180° · Z Auto Spin OFF · Z Spin Speed 0.05× · Invert Y OFF · Auto Level X-Y ON</dd>
+          </dl>
+
+          <h2>FIRST AUDIO SETUP</h2>
+          <ol>
+            <li>Select DESKTOP AUDIO, MICROPHONE, or AUDIO FILE.</li>
+            <li>For YouTube, share the browser tab when possible and enable tab audio. Sharing an entire screen can add more delay.</li>
+            <li>Start in TIME mode to confirm audio is reaching the scope.</li>
+            <li>Switch to X-Y. Stereo material uses left audio for X and right audio for Y.</li>
+            <li>Use GAIN first, then X GAIN and Y GAIN to fit the trace inside the screen.</li>
+          </ol>
+
+          <h2>HOW AN OSCILLOSCOPE WORKS</h2>
+          <p>In TIME mode, the beam moves horizontally at a controlled sweep rate while the audio voltage moves it vertically. A repeating signal can look unstable unless the trigger begins each sweep at nearly the same point.</p>
+          <p>In X-Y mode, the normal sweep is removed. One signal controls horizontal movement and another controls vertical movement. A stereo waveform can therefore draw loops, Lissajous figures, and complete vector artwork.</p>
+          <div class="diagram"><span>LEFT AUDIO</span><b>→ X AXIS</b><span>RIGHT AUDIO</span><b>→ Y AXIS</b></div>
+
+          <h2>X-Y CALIBRATION</h2>
+          <dl>
+            <dt>X GAIN</dt><dd>Controls the width of the figure without changing its height.</dd>
+            <dt>Y GAIN</dt><dd>Controls the height of the figure without changing its width.</dd>
+            <dt>ROTATION</dt><dd>Turns the complete X-Y image clockwise or counterclockwise.</dd>
+            <dt>PHASE</dt><dd>Offsets the Y signal relative to X. Start at −180°. Move it slowly when a figure looks collapsed, twisted, or mirrored.</dd>
+            <dt>Z-AXIS AUTO SPIN</dt><dd>Continuously rotates the complete drawing. Leave it off while calibrating, then enable it as an effect.</dd>
+            <dt>INVERT Y</dt><dd>Flips the image vertically. Use it when text or artwork appears upside down.</dd>
+            <dt>AUTO LEVEL X-Y</dt><dd>Automatically enlarges quiet incoming signals. Turn it off when you need fixed, repeatable calibration.</dd>
+          </dl>
+
+          <h2>BEAM AND PHOSPHOR</h2>
+          <dl>
+            <dt>GAIN</dt><dd>Overall trace size. Too much gain pushes the drawing beyond the CRT edges.</dd>
+            <dt>FOCUS</dt><dd>Controls beam sharpness. Higher values create a thinner, more precise trace; very high values can make dim details harder to see.</dd>
+            <dt>INTENSITY</dt><dd>Controls the brightness of the active trace.</dd>
+            <dt>PERSISTENCE</dt><dd>Controls how long previous beam positions remain. Lower values look crisp and fast; higher values leave longer trails.</dd>
+            <dt>PARTICLE AMOUNT</dt><dd>Adds small phosphor sparks around the active beam. Keep this low for detailed PNG outlines.</dd>
+            <dt>PARTICLE DECAY</dt><dd>Controls how long particles remain visible.</dd>
+            <dt>PARTICLE DRIFT</dt><dd>Controls how far particles float away from the trace.</dd>
+          </dl>
+
+          <h2>PNG DETAIL OUTLINE</h2>
+          <p>Paste or load a PNG, JPG, or WebP in ART LAB. The image processor searches the complete picture for visible contrast boundaries, not only the outside silhouette. It can trace internal shapes, text, facial features, transparent boundaries, and strong shading changes.</p>
+          <ol>
+            <li>Load or paste an image and wait for the green preview.</li>
+            <li>Raise IMAGE DETAIL for small features. Start around 224–320.</li>
+            <li>Keep EDGE THINNING at 1 for maximum detail. Increase it only when lines become doubled or noisy.</li>
+            <li>Raise EDGE DETAIL to include weaker features. Lower it when the result becomes cluttered.</li>
+            <li>Use EDGE STRENGTH around 0.90–1.20.</li>
+            <li>Increase VECTOR SPOTS when curves or lettering look blocky. Start around 12,288 and raise it gradually.</li>
+            <li>Set SIGNAL GENERATOR smoothing to 0 or 1 for sharp image outlines.</li>
+            <li>Press PLAY OUTLINE, then adjust beam gain and X-Y calibration.</li>
+          </ol>
+
+          <h2>WHY IMAGE OUTLINES CAN LOOK WRONG</h2>
+          <p>A real X-Y beam cannot teleport between disconnected details. It must travel from one contour to the next, which may create short connecting lines. The program orders contours to reduce those jumps, but simple high-contrast artwork will still produce the cleanest result.</p>
+          <dl>
+            <dt>ONLY A FEW LINES APPEAR</dt><dd>Increase EDGE DETAIL, IMAGE DETAIL, and VECTOR SPOTS.</dd>
+            <dt>THE PREVIEW IS TOO BUSY</dt><dd>Lower EDGE DETAIL or increase EDGE THINNING.</dd>
+            <dt>TEXT IS HARD TO READ</dt><dd>Use a larger source image, set smoothing to 0, and increase VECTOR SPOTS.</dd>
+            <dt>THE IMAGE FLICKERS</dt><dd>Increase TRACE RATE slightly. Extremely detailed paths may need a lower point count or fewer detected edges.</dd>
+            <dt>THE IMAGE IS STRETCHED</dt><dd>Correct it with X GAIN and Y GAIN.</dd>
+          </dl>
+
+          <h2>SIGNAL GENERATOR</h2>
+          <dl>
+            <dt>TRACE RATE</dt><dd>How many times per second the complete art path is redrawn. Faster rates can look steadier but produce a higher audio pitch.</dd>
+            <dt>POINTS</dt><dd>General vector resolution for presets, drawings, and SVG artwork.</dd>
+            <dt>SMOOTHING</dt><dd>Rounds corners and removes jitter. Use 0–1 for detailed PNGs and higher values for flowing shapes.</dd>
+            <dt>OUTPUT LEVEL</dt><dd>Audio level of generated stereo art. Keep it below 50% when connecting to real hardware, then raise carefully.</dd>
+          </dl>
+
+          <h2>FULLSCREEN AND RECORDING</h2>
+          <p>FULLSCREEN VISUAL expands only the CRT display. Recording captures the visual in the selected aspect ratio and includes generated or connected audio when the browser provides it.</p>
+
+          <h2>REAL HARDWARE SAFETY</h2>
+          <p>Use a normal audio interface or headphone output at a low level. Never connect an oscilloscope directly to mains electricity or an unknown high-voltage circuit.</p>
+        </section>
+      </aside>
+    </div>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

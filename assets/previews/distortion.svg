@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 640">
+      <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#101219"/><stop offset="1" stop-color="#252a35"/></linearGradient>
+        <linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff4b72"/><stop offset="1" stop-color="#ffffff" stop-opacity=".75"/></linearGradient>
+        <filter id="glow"><feGaussianBlur stdDeviation="12" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#bg)"/>
+      <path d="M0 0 H900 V640 H0Z" fill="none" stroke="#fff" stroke-opacity=".05" stroke-width="2"/>
+      <g opacity=".08" stroke="#fff"><path d="M0 160.0 H900"/><path d="M0 320.0 H900"/><path d="M0 480.0 H900"/><path d="M225.0 0 V640"/><path d="M450.0 0 V640"/><path d="M675.0 0 V640"/></g>
+      <g filter="url(#glow)">
+        <g opacity=".9">
+          <rect x="90" y="135" width="650" height="58" rx="12" fill="url(#a)"/>
+          <rect x="260" y="235" width="520" height="36" rx="10" fill="#fff" opacity=".72"/>
+          <rect x="145" y="330" width="590" height="92" rx="14" fill="url(#a)" opacity=".72"/>
+          <rect x="330" y="465" width="420" height="34" rx="10" fill="#fff" opacity=".45"/>
+          <path d="M80 560 L780 80" stroke="#fff" stroke-width="18" opacity=".08"/>
+        </g></g>
+      <text x="70" y="90" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="42" font-weight="800" letter-spacing="-1">DISTORTION</text>
+      <text x="70" y="132" fill="#b7bdc9" font-family="Arial,Helvetica,sans-serif" font-size="18" font-weight="600" letter-spacing="2">VIDEO REMIX STUDIO</text>
+      <rect x="804" y="40" width="48" height="48" rx="10" fill="#ff4b72"/><text x="828" y="74" text-anchor="middle" fill="#121318" font-family="Arial" font-size="25" font-weight="900">0</text>
+    </svg>
