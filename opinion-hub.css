@@ -1,0 +1,56 @@
+/* 0PTICBOX front-page opinion hub — v14 */
+.hub-feed-header{align-items:flex-start}
+.hub-feed-header p{max-width:500px;margin:7px 0 0;color:#8d98ae;font-size:13px;line-height:1.45}
+.hub-compose-card{background:linear-gradient(90deg,rgba(255,107,54,.065),transparent 70%)}
+.hub-feed-message{min-height:0;margin:0;padding:0 19px;color:#8beeff;font-size:12px}
+.hub-feed-message:not(:empty){min-height:39px;padding-top:11px;padding-bottom:11px;border-bottom:1px solid rgba(121,139,177,.18)}
+.hub-feed-message.is-error{color:#ff9da3}
+.hub-about-card small{color:#ff9f7e;letter-spacing:.14em;font-size:9px;font-weight:800}
+.hub-about-card h2{margin:7px 0 8px;font-size:20px}
+.hub-about-card p{margin:0 0 12px;color:#9ba6ba;font-size:13px;line-height:1.55}
+.hub-about-card a{color:#8beeff;text-decoration:none;font-weight:700;font-size:12px}
+.hub-about-card a:hover{text-decoration:underline}
+
+/* Engagement controls live inside the existing thread cards. */
+.hub-engagement{margin:15px 0 0 53px;border-top:1px solid rgba(121,139,177,.2)}
+.hub-engagement-bar{display:flex;align-items:center;gap:7px;padding:10px 0 0}
+.hub-like-button,.hub-comment-toggle{display:inline-flex;align-items:center;gap:7px;min-height:34px;border:1px solid rgba(121,139,177,.32);border-radius:999px;background:rgba(255,255,255,.025);color:#aab5ca;padding:6px 11px;font:600 12px "Roboto",Arial,sans-serif;cursor:pointer}
+.hub-like-button:hover,.hub-comment-toggle:hover{border-color:rgba(101,232,255,.55);color:#fff}
+.hub-like-button:disabled,.hub-comment-toggle:disabled{opacity:.55;cursor:wait}
+.hub-like-button span,.hub-comment-toggle span{font-size:16px;line-height:1}
+.hub-like-button small,.hub-comment-toggle small{min-width:19px;color:#7f8da7;text-align:center}
+.hub-like-button.is-liked{border-color:rgba(255,77,166,.6);background:rgba(255,77,166,.09);color:#ffc5df}
+.hub-like-button.is-liked span{color:#ff5ca8}
+.hub-comment-toggle.is-open{border-color:rgba(101,232,255,.6);color:#aaf2ff}
+.hub-comment-panel{margin-top:10px;padding-top:11px;border-top:1px solid rgba(121,139,177,.17)}
+.hub-comment-list{display:grid;gap:8px}
+.hub-comment{position:relative;padding:10px 11px;border:1px solid rgba(121,139,177,.22);border-radius:10px;background:rgba(4,7,13,.48)}
+.hub-comment-person{display:flex;align-items:center;gap:8px;color:#fff;text-decoration:none}
+.hub-comment-avatar{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;overflow:hidden;border:1px solid rgba(147,164,199,.4);border-radius:50%;background:#13192a;font-size:11px;font-weight:800}
+.hub-comment-avatar img{width:100%;height:100%;object-fit:cover}
+.hub-comment-person>span:last-child{display:grid;min-width:0}
+.hub-comment-person strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.hub-comment-person small{color:#77839a;font-size:10px}
+.hub-comment p{margin:8px 0 0;color:#c4cde0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.52}
+.hub-comment-delete{position:absolute;right:7px;top:7px;border:0;background:transparent;color:#ff949b;padding:5px;font:600 10px "Roboto",Arial,sans-serif;cursor:pointer}
+.hub-comment-delete:hover{text-decoration:underline}
+.hub-comment-empty,.hub-comment-signin{margin:0;padding:10px;border:1px dashed rgba(121,139,177,.3);border-radius:9px;color:#8995ab;font-size:12px}
+.hub-comment-signin a{color:#8beeff}
+.hub-comment-form{display:grid;gap:8px;margin-top:9px}
+.hub-comment-form textarea{width:100%;min-height:66px;resize:vertical;border:1px solid rgba(121,139,177,.4);border-radius:9px;background:#060911;color:#f4f7ff;padding:10px;font:400 13px "Roboto",Arial,sans-serif}
+.hub-comment-form textarea:focus{outline:2px solid rgba(55,216,255,.65);outline-offset:1px}
+.hub-comment-form-footer{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hub-comment-form-footer small{color:#77839a;font-size:10px}
+.hub-comment-submit{border:1px solid rgba(255,107,54,.6);border-radius:999px;background:#ff6b36;color:#07090f;padding:7px 13px;font:700 12px "Roboto",Arial,sans-serif;cursor:pointer}
+.hub-comment-submit:disabled{opacity:.55;cursor:wait}
+
+@media(max-width:680px){
+ .hub-feed-header p{font-size:12px}
+ .hub-engagement{margin-left:0}
+ .hub-engagement-bar{display:grid;grid-template-columns:1fr 1fr}
+ .hub-like-button,.hub-comment-toggle{justify-content:center}
+ .hub-comment-form-footer{align-items:stretch;flex-direction:column}
+ .hub-comment-submit{width:100%}
+}
+#hub-compose-avatar.has-image{overflow:hidden}
+#hub-compose-avatar.has-image img{width:100%;height:100%;object-fit:cover}

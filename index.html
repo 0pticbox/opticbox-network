@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<meta content="0PTICBOX Network — music, rave plans, visual tools, reviews, and community profiles." name="description"/>
+<meta content="0PTICBOX Network opinion hub — every public member post, track, event, review, comment, and community update in one feed." name="description"/>
 <meta content="#07090f" name="theme-color"/>
-<title>0PTICBOX Network</title>
-<link href="styles.css" rel="stylesheet"/>
+<title>Opinion Hub | 0PTICBOX Network</title>
+<link href="styles.css?v=14" rel="stylesheet"/>
+<link href="opinion-hub.css?v=14" rel="stylesheet"/>
 </head>
 <body class="social-home">
 <canvas aria-hidden="true" id="page-particles"></canvas>
-<a class="skip-link" href="#thread-feed">Skip to feed</a>
+<a class="skip-link" href="#thread-feed">Skip to opinion feed</a>
 <header class="social-topbar">
 <div class="social-topbar-inner">
 <a aria-label="0PTICBOX Network home" class="social-brand" href="index.html">
@@ -19,7 +19,8 @@
 <span><strong>PTICBOX</strong><small>network</small></span>
 </a>
 <nav aria-label="Quick actions" class="social-top-actions">
-<a href="messages.html">Messages</a><a href="community.html">Create post</a>
+<a href="messages.html">Messages</a>
+<a href="community.html">Create post</a>
 <a href="members.html">Account</a>
 <a class="social-profile-button" href="opticbox.html">0PTICBOX profile</a>
 </nav>
@@ -28,71 +29,67 @@
 <main class="social-layout">
 <aside aria-label="Site navigation" class="social-left-rail">
 <nav class="social-rail-nav">
-<a class="is-active" href="index.html"><span aria-hidden="true">⌂</span><b>Home</b></a>
+<a class="is-active" href="index.html"><span aria-hidden="true">⌂</span><b>Hub</b></a>
 <a href="community.html"><span aria-hidden="true">＋</span><b>Post</b></a>
 <a href="opticbox.html"><span aria-hidden="true">◎</span><b>0PTICBOX</b></a>
 <a href="opticbox.html#projects"><span aria-hidden="true">◇</span><b>Projects</b></a>
-<a href="messages.html"><span aria-hidden="true">✉</span><b>Messages</b></a><a href="members.html"><span aria-hidden="true">♙</span><b>Members</b></a>
+<a href="messages.html"><span aria-hidden="true">✉</span><b>Messages</b></a>
+<a href="members.html"><span aria-hidden="true">♙</span><b>Members</b></a>
 <a href="https://cash.app/$0pticBox" rel="noopener" target="_blank"><span aria-hidden="true">$</span><b>Support</b></a>
 </nav>
 </aside>
 <section aria-labelledby="feed-title" class="social-feed-column">
-<header class="social-feed-header">
+<header class="social-feed-header hub-feed-header">
 <div>
-<small>0PTICBOX NETWORK</small>
-<h1 id="feed-title">Home</h1>
+<small>EVERYONE'S PUBLIC FEED</small>
+<h1 id="feed-title">Opinion Hub</h1>
+<p>Every public post, track, event, review, and update—newest first.</p>
 </div>
 <a aria-label="Create a community post" class="social-round-button" href="community.html">＋</a>
 </header>
 <div aria-label="Filter feed" class="social-feed-tabs" role="group">
-<button aria-pressed="true" class="is-active" data-thread-filter="all" type="button">For you</button>
-<button aria-pressed="false" data-thread-filter="post" type="button">Posts</button><button aria-pressed="false" data-thread-filter="listening" type="button">Listening</button>
+<button aria-pressed="true" class="is-active" data-thread-filter="all" type="button">All opinions</button>
+<button aria-pressed="false" data-thread-filter="post" type="button">Posts</button>
+<button aria-pressed="false" data-thread-filter="listening" type="button">Listening</button>
 <button aria-pressed="false" data-thread-filter="event" type="button">Events</button>
 <button aria-pressed="false" data-thread-filter="review" type="button">Reviews</button>
 <button aria-pressed="false" data-thread-filter="official" type="button">Official</button>
 </div>
-<section aria-label="Create post" class="social-compose-card">
-<a aria-label="Open member area" class="social-compose-avatar" href="members.html">?</a>
+<section aria-label="Create post" class="social-compose-card hub-compose-card">
+<a aria-label="Open member area" class="social-compose-avatar" href="members.html" id="hub-compose-avatar">?</a>
 <div>
-<strong>Start a thread</strong>
-<p>Write a normal post, share a track, add an image, or post an event.</p>
+<strong>What do you think?</strong>
+<p>Start a discussion, share a track, add an image, or post an event.</p>
 </div>
-<a class="social-post-button" href="community.html">Post</a>
+<a class="social-post-button" href="community.html">Share opinion</a>
 </section>
-<p class="member-warning" hidden="" id="social-config-warning">
-      Connect Supabase and run the latest schema to load the social feed.
-    </p>
+<p class="member-warning" hidden id="social-config-warning">Connect Supabase and run the latest schema to load the opinion hub.</p>
+<p aria-live="polite" class="hub-feed-message" id="hub-feed-message"></p>
 <div aria-live="polite" class="thread-feed" id="thread-feed">
 <article class="thread-empty">
-<h2>Loading the network…</h2>
-<p>Member posts, reviews, and official updates will appear here.</p>
+<h2>Loading everyone's posts…</h2>
+<p>The newest public opinions will appear here.</p>
 </article>
 </div>
 </section>
 <aside class="social-right-rail">
-<section class="social-side-card social-creator-card">
-<div class="social-creator-cover"></div>
-<img alt="0PTICBOX profile" src="assets/profile/0pticbox-avatar.jpg"/>
-<div>
-<small>FEATURED CREATOR</small>
-<h2>0PTICBOX</h2>
-<p>Electronic music, visual tools, browser experiments, and tiny games.</p>
-<a href="opticbox.html">View full profile</a>
-</div>
+<section class="social-side-card hub-about-card">
+<small>THE MAIN ROOM</small>
+<h2>Everyone gets a voice.</h2>
+<p>This front page now pulls every public community post instead of only a limited selection.</p>
+<a href="community.html">Add your opinion</a>
 </section>
 <section class="social-side-card">
 <div class="social-side-heading">
 <h2>New members</h2>
 <a href="members.html">Join</a>
 </div>
-<div class="social-member-list" id="social-member-list">
-<p>Loading members…</p>
-</div>
+<div class="social-member-list" id="social-member-list"><p>Loading members…</p></div>
 </section>
 <section class="social-side-card">
 <h2>Explore</h2>
 <div class="social-topic-list">
-<a href="opticbox.html#projects"><strong>Visual software</strong><span>Browser tools and VJ experiments</span></a>
+<a href="index.html"><strong>Everyone's opinions</strong><span>All public posts in one timeline</span></a>
 <a href="community.html"><strong>Listening now</strong><span>Tracks and mixes from members</span></a>
 <a href="community.html"><strong>Event plans</strong><span>Public shows, raves, and festivals</span></a>
 <a href="members.html"><strong>Product reviews</strong><span>Ratings from the community</span></a>
@@ -101,12 +98,12 @@
 </aside>
 </main>
 <nav aria-label="Mobile navigation" class="social-mobile-nav">
-<a class="is-active" href="index.html"><span>⌂</span><small>Home</small></a>
+<a class="is-active" href="index.html"><span>⌂</span><small>Hub</small></a>
 <a href="community.html"><span>＋</span><small>Post</small></a>
 <a href="opticbox.html"><span>◎</span><small>0PTICBOX</small></a>
 <a href="messages.html"><span>✉</span><small>Messages</small></a>
 </nav>
-<script src="social-home.js?v=8" type="module"></script>
-<script src="site.js?v=8"></script>
+<script src="social-home.js?v=14" type="module"></script>
+<script src="site.js?v=14"></script>
 </body>
 </html>
