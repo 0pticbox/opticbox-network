@@ -1,0 +1,117 @@
+/* 0PTICBOX FREE TOOLS — separate project page */
+.free-tools-page{
+  display:grid;
+  gap:18px;
+  padding-top:22px;
+  padding-bottom:46px;
+}
+
+.free-tools-hero{
+  overflow:hidden;
+}
+
+.free-tools-hero>.box-title,
+.free-tools-projects>.box-title,
+.free-tools-note>.box-title{
+  background:linear-gradient(90deg,#944117,#e26324 60%,#ff8a3d);
+}
+
+.free-tools-hero-body{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:28px;
+  padding:clamp(24px,5vw,56px);
+  background:
+    radial-gradient(circle at 12% 10%,rgba(255,107,54,.18),transparent 34%),
+    radial-gradient(circle at 88% 90%,rgba(55,216,255,.12),transparent 38%),
+    linear-gradient(135deg,rgba(8,12,23,.98),rgba(16,10,27,.98));
+  color:#f7f8ff;
+}
+
+.free-tools-hero-body>div:first-child{
+  max-width:720px;
+}
+
+.free-tools-hero .feature-label{
+  margin:0 0 13px;
+  color:#ff9f7e;
+}
+
+.free-tools-hero h1{
+  margin:0;
+  color:#fff;
+  font:1000 clamp(42px,9vw,96px)/.84 Arial Black,Impact,sans-serif;
+  letter-spacing:-.055em;
+  text-shadow:4px 4px 0 rgba(0,0,0,.6);
+}
+
+.free-tools-hero-body p:last-child{
+  max-width:62ch;
+  margin:22px 0 0;
+  color:#b7c3d9;
+  font-size:clamp(12px,1.7vw,16px);
+  line-height:1.65;
+}
+
+.free-tools-hero-actions{
+  display:flex;
+  flex:0 0 auto;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:10px;
+}
+
+.free-tools-projects{
+  margin:0;
+}
+
+.free-tools-projects .top-eight{
+  padding:18px;
+}
+
+.free-tools-projects .project{
+  transition:transform .16s ease,box-shadow .16s ease;
+}
+
+.free-tools-projects .project:hover{
+  transform:translateY(-3px);
+  box-shadow:4px 5px 0 rgba(15,32,66,.22);
+}
+
+.free-tools-note-body{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+  padding:20px;
+  background:#eaf0ff;
+  color:#172747;
+}
+
+.free-tools-note-body p{
+  max-width:760px;
+  margin:0;
+  font-size:11px;
+  line-height:1.6;
+}
+
+.site-nav a[aria-current="page"]{
+  color:#06101a;
+  background:var(--cyan);
+  box-shadow:2px 2px 0 #000;
+}
+
+@media(max-width:760px){
+  .free-tools-page{padding-top:15px}
+  .free-tools-hero-body{align-items:flex-start;flex-direction:column}
+  .free-tools-hero-actions{width:100%;justify-content:flex-start}
+  .free-tools-hero-actions .retro-button{flex:1 1 145px;text-align:center}
+  .free-tools-note-body{align-items:flex-start;flex-direction:column}
+  .free-tools-note-body .retro-button{width:100%;text-align:center}
+}
+
+@media(max-width:420px){
+  .free-tools-hero h1{font-size:clamp(38px,17vw,64px)}
+  .free-tools-projects .top-eight{padding:10px}
+}
