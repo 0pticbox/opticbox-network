@@ -1,279 +1,955 @@
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, isSupabaseConfigured } from './supabase-config.js';
+import {
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY,
+  isSupabaseConfigured,
+} from './supabase-config.js';
 
 const $ = (id) => document.getElementById(id);
 const warning = $('messages-config-warning');
-const signedOut = $('messages-signed-out');
-const app = $('messages-app');
-const search = $('messages-member-search');
-const searchResults = $('messages-member-results');
-const friendList = $('messages-friend-list');
-const incomingRequests = $('messages-incoming-requests');
-const outgoingRequests = $('messages-outgoing-requests');
-const threadList = $('messages-thread-list');
-const threadCount = $('messages-thread-count');
-const empty = $('messages-empty-state');
-const active = $('messages-conversation-active');
-const profileLink = $('messages-conversation-profile');
-const avatar = $('messages-conversation-avatar');
-const nameEl = $('messages-conversation-name');
-const statusEl = $('messages-conversation-status');
-const blockButton = $('messages-block-button');
-const log = $('messages-log');
-const form = $('messages-compose-form');
-const body = $('messages-body');
-const charCount = $('messages-character-count');
-const feedback = $('messages-message');
-const videoInput = $('messages-video');
-const videoRemove = $('messages-video-remove');
-const videoPreview = $('messages-video-preview');
-const videoName = $('messages-video-name');
-const videoElement = videoPreview?.querySelector('video');
+const friendList = $('friend-list');
+const friendCount = $('friend-count');
+const requestList = $('request-list');
+const requestSection = $('request-section');
+const searchInput = $('friend-search-input');
+const searchResults = $('friend-search-results');
+const searchStatus = $('friend-search-status');
+const threadList = $('thread-list');
+const threadCount = $('thread-count');
+const conversationAvatar = $('conversation-avatar');
+const conversationName = $('conversation-name');
+const conversationStatus = $('conversation-status');
+const blockButton = $('block-button');
+const messageLog = $('message-log');
+const messageForm = $('message-form');
+const messageBody = $('message-body');
+const messageCount = $('message-count');
+const messageStatus = $('message-status');
+const sendButton = $('send-message');
+const videoInput = $('message-video');
+const videoPreview = $('video-preview');
+const videoPreviewPlayer = $('video-preview-player');
+const videoPreviewName = $('video-preview-name');
+const videoPreviewSize = $('video-preview-size');
+const removeVideoButton = $('remove-video');
+const uploadProgress = $('message-upload-progress');
+const uploadProgressBar = $('message-upload-progress-bar');
+const uploadProgressText = $('message-upload-progress-text');
+const cancelUploadButton = $('cancel-upload');
 
+const VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
+const VIDEO_TYPE_BY_EXTENSION = new Map([
+  ['mp4', 'video/mp4'],
+  ['m4v', 'video/mp4'],
+  ['webm', 'video/webm'],
+  ['mov', 'video/quicktime'],
+]);
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024;
+const SIGNED_URL_TTL_SECONDS = 300;
 let supabase = null;
 let user = null;
-let selfProfile = null;
-let profiles = [];
-let profileMap = new Map();
-let friendships = [];
-let blockedIds = new Set();
+let friends = [];
+let requests = [];
 let threads = [];
-let latest = new Map();
 let currentThread = null;
-let otherProfile = null;
-let channel = null;
-let previewUrl = '';
+let currentFriend = null;
+let currentChannel = null;
+let selectedVideo = null;
+let selectedVideoContentType = '';
+let blockedIds = new Set();
+let selectedVideoPreviewUrl = '';
+let searchTimer = 0;
+let threadRefreshTimer = 0;
+let socialRefreshTimer = 0;
+let messageLoadGeneration = 0;
+let isSending = false;
+let currentUploadRequest = null;
+const signedUrlCache = new Map();
+const renderedMessageIds = new Set();
 
-function say(text, error = false) {
-  feedback.textContent = text;
-  feedback.classList.toggle('is-error', error);
+function setStatus(text, isError = false) {
+  messageStatus.textContent = text;
+  messageStatus.classList.toggle('is-error', isError);
 }
-function fallbackName(value) {
-  const named = value?.user_metadata?.display_name;
-  return (typeof named === 'string' && named.trim().length >= 2 ? named.trim() : value?.email?.split('@')[0] || 'Member').slice(0, 32);
+
+function text(element, value) {
+  element.textContent = value ?? '';
 }
-function formatDate(value) {
+
+function initials(name) {
+  return (name || 'Member').trim().slice(0, 1).toUpperCase() || 'M';
+}
+
+function formatBytes(bytes) {
+  const amount = Number(bytes) || 0;
+  if (amount < 1024) return `${amount} B`;
+  if (amount < 1024 * 1024) return `${(amount / 1024).toFixed(1)} KB`;
+  return `${(amount / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function formatTime(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
-  const same = date.toDateString() === new Date().toDateString();
-  return new Intl.DateTimeFormat('en-US', same ? { hour: 'numeric', minute: '2-digit' } : { month: 'short', day: 'numeric' }).format(date);
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date);
 }
-function otherId(thread) { return thread.user_a === user.id ? thread.user_b : thread.user_a; }
-function pairOther(friendship) { return friendship.user_a === user.id ? friendship.user_b : friendship.user_a; }
-function acceptedFriendIds() { return new Set(friendships.filter((row) => row.status === 'accepted').map(pairOther).filter((id) => !blockedIds.has(id))); }
-function avatarNode(profile, className = 'messages-avatar') {
-  const node = document.createElement('span');
-  node.className = className;
-  if (profile?.avatar_url) {
-    const img = document.createElement('img'); img.src = profile.avatar_url; img.alt = ''; img.loading = 'lazy'; node.append(img);
-  } else node.textContent = (profile?.display_name || 'M').slice(0, 1).toUpperCase();
-  return node;
+
+function safeFileName(name) {
+  return name.toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'video';
 }
-function memberRow(profile, action, label) {
-  const row = document.createElement('div'); row.className = 'messages-member-row';
-  row.append(avatarNode(profile));
-  const copy = document.createElement('span'); const strong = document.createElement('strong'); const small = document.createElement('small');
-  strong.textContent = profile?.display_name || 'Member'; small.textContent = profile?.profile_tagline || profile?.status || '0PTICBOX member'; copy.append(strong, small); row.append(copy);
-  if (action) { const button = document.createElement('button'); button.type = 'button'; button.className = 'retro-button compact'; button.dataset[action.name] = action.value; button.textContent = label; row.append(button); }
-  return row;
+
+function videoTypeForFile(file) {
+  const browserType = String(file?.type || '').toLowerCase();
+  if (VIDEO_TYPES.has(browserType)) return browserType;
+  const extension = String(file?.name || '').split('.').pop()?.toLowerCase() || '';
+  return VIDEO_TYPE_BY_EXTENSION.get(extension) || '';
 }
-async function ensureProfile() {
-  const fields = 'id,display_name,avatar_url,status,profile_tagline';
-  const found = await supabase.from('profiles').select(fields).eq('id', user.id).maybeSingle();
-  if (found.error) throw found.error;
-  if (found.data) return found.data;
-  const created = await supabase.from('profiles').insert({ id: user.id, display_name: fallbackName(user), avatar_url: '', status: '', profile_tagline: '' }).select(fields).single();
-  if (created.error) throw created.error;
-  return created.data;
+
+function setUploadProgress(percent, label) {
+  if (!uploadProgress || !uploadProgressBar || !uploadProgressText) return;
+  const next = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));
+  uploadProgress.hidden = false;
+  uploadProgressBar.value = next;
+  uploadProgressText.textContent = label || `${next}% uploaded`;
 }
+
+function hideUploadProgress() {
+  if (!uploadProgress || !uploadProgressBar || !uploadProgressText) return;
+  uploadProgress.hidden = true;
+  uploadProgressBar.value = 0;
+  uploadProgressText.textContent = '';
+}
+
+async function uploadVideoWithProgress(path, file, contentType) {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) throw error;
+  const accessToken = data.session?.access_token;
+  if (!accessToken) throw new Error('Your sign-in session expired. Please sign in again.');
+
+  const encodedPath = path.split('/').map(encodeURIComponent).join('/');
+  const uploadUrl = `${SUPABASE_URL.replace(/\/+$/, '')}/storage/v1/object/message-media/${encodedPath}`;
+
+  await new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    currentUploadRequest = request;
+    request.open('POST', uploadUrl, true);
+    request.setRequestHeader('Authorization', `Bearer ${accessToken}`);
+    request.setRequestHeader('apikey', SUPABASE_PUBLISHABLE_KEY);
+    request.setRequestHeader('x-upsert', 'false');
+
+    request.upload.addEventListener('progress', (event) => {
+      if (!event.lengthComputable) {
+        setUploadProgress(0, 'Uploading video…');
+        return;
+      }
+      const percent = (event.loaded / event.total) * 100;
+      setUploadProgress(percent, `${Math.round(percent)}% uploaded`);
+    });
+
+    request.addEventListener('load', () => {
+      currentUploadRequest = null;
+      if (request.status >= 200 && request.status < 300) {
+        if (cancelUploadButton) cancelUploadButton.disabled = true;
+        setUploadProgress(100, 'Upload complete');
+        resolve();
+        return;
+      }
+      let detail = '';
+      try {
+        const parsed = JSON.parse(request.responseText || '{}');
+        detail = parsed.message || parsed.error || '';
+      } catch (_) {
+        detail = request.responseText || '';
+      }
+      reject(new Error(detail || `Video upload failed (${request.status}).`));
+    });
+
+    request.addEventListener('error', () => {
+      currentUploadRequest = null;
+      reject(new Error('The video upload lost its network connection.'));
+    });
+
+    request.addEventListener('abort', () => {
+      currentUploadRequest = null;
+      const abortError = new Error('Video upload canceled.');
+      abortError.name = 'AbortError';
+      reject(abortError);
+    });
+
+    const formData = new FormData();
+    formData.append('cacheControl', '3600');
+    const normalizedVideo = file.type === contentType ? file : file.slice(0, file.size, contentType);
+    formData.append('', normalizedVideo, file.name);
+    request.send(formData);
+  });
+}
+
+function makeId() {
+  if (crypto.randomUUID) return crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function setAvatar(element, profile) {
+  const avatarUrl = profile?.avatar_url || '';
+  element.textContent = avatarUrl ? '' : initials(profile?.display_name);
+  element.style.backgroundImage = avatarUrl ? `url("${avatarUrl.replaceAll('"', '%22')}")` : '';
+}
+
+function profileById(id) {
+  return friends.find((friend) => friend.id === id) || null;
+}
+
+function empty(container, message) {
+  container.replaceChildren();
+  const paragraph = document.createElement('p');
+  paragraph.className = 'empty-state';
+  paragraph.textContent = message;
+  container.append(paragraph);
+}
+
+function actionButton(label, className = '') {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = `retro-button ${className}`.trim();
+  button.textContent = label;
+  return button;
+}
+
+function profileRow(profile, className) {
+  const row = document.createElement('div');
+  row.className = className;
+  const avatar = document.createElement('span');
+  avatar.className = 'friend-avatar';
+  setAvatar(avatar, profile);
+  const copy = document.createElement('span');
+  copy.className = 'friend-copy';
+  const name = document.createElement('strong');
+  name.textContent = profile.display_name || 'Member';
+  const note = document.createElement('small');
+  note.textContent = profile.profile_tagline || profile.status || '0PTICBOX member';
+  copy.append(name, note);
+  const actions = document.createElement('span');
+  actions.className = 'friend-actions';
+  row.append(avatar, copy, actions);
+  return { row, actions, copy, avatar };
+}
+
+
 async function loadBlocks() {
-  const result = await supabase.from('blocked_users').select('blocker_id,blocked_id').or(`blocker_id.eq.${user.id},blocked_id.eq.${user.id}`);
-  if (result.error) throw result.error;
-  blockedIds = new Set((result.data || []).map((row) => row.blocker_id === user.id ? row.blocked_id : row.blocker_id));
+  const { data, error } = await supabase
+    .from('blocked_users')
+    .select('blocker_id,blocked_id');
+  if (error) throw error;
+  blockedIds = new Set(
+    (data || []).map((row) => row.blocker_id === user.id ? row.blocked_id : row.blocker_id)
+  );
 }
-async function loadFriendships() {
-  const result = await supabase.from('friendships').select('id,user_a,user_b,requested_by,status,created_at,updated_at').or(`user_a.eq.${user.id},user_b.eq.${user.id}`).order('updated_at', { ascending: false });
-  if (result.error) throw result.error;
-  friendships = result.data || [];
-  const ids = [...new Set(friendships.map(pairOther))].filter((id) => !profileMap.has(id));
-  if (ids.length) {
-    const found = await supabase.from('profiles').select('id,display_name,avatar_url,status,profile_tagline').in('id', ids);
-    if (found.error) throw found.error;
-    for (const profile of found.data || []) profileMap.set(profile.id, profile);
-  }
+
+async function loadFriends() {
+  const { data, error } = await supabase.rpc('list_friends');
+  if (error) throw error;
+  friends = (data || []).map((item) => ({
+    id: item.friend_id,
+    display_name: item.display_name || 'Member',
+    avatar_url: item.avatar_url || '',
+    status: item.profile_status || '',
+    profile_tagline: item.profile_tagline || '',
+    friends_since: item.friends_since,
+  }));
   renderFriends();
+}
+
+function renderFriends() {
+  friendCount.textContent = String(friends.length);
+  friendList.replaceChildren();
+  if (!friends.length) {
+    empty(friendList, 'No friends yet. Use “Add a friend” below to send a request.');
+    return;
+  }
+
+  friends.forEach((friend) => {
+    const { row, actions } = profileRow(friend, 'friend-row');
+    const open = actionButton('Message', 'primary');
+    open.addEventListener('click', () => void startConversation(friend));
+    actions.append(open);
+    row.addEventListener('dblclick', () => void startConversation(friend));
+    friendList.append(row);
+  });
+}
+
+async function loadRequests() {
+  const { data, error } = await supabase.rpc('list_friend_requests');
+  if (error) throw error;
+  requests = data || [];
   renderRequests();
 }
-async function loadProfiles() {
-  const result = await supabase.from('profiles').select('id,display_name,avatar_url,status,profile_tagline,created_at').neq('id', user.id).order('display_name').limit(250);
-  if (result.error) throw result.error;
-  profiles = (result.data || []).filter((profile) => !blockedIds.has(profile.id));
-  profileMap = new Map(profiles.map((profile) => [profile.id, profile]));
-  profileMap.set(selfProfile.id, selfProfile);
-  renderSearch();
-}
-function renderFriends() {
-  friendList.replaceChildren();
-  const ids = [...acceptedFriendIds()];
-  if (!ids.length) {
-    const p = document.createElement('p'); p.className = 'review-empty'; p.textContent = 'No accepted friends yet. Use Find friends below.'; friendList.append(p); return;
-  }
-  for (const id of ids) {
-    const profile = profileMap.get(id);
-    const row = memberRow(profile, { name: 'openFriend', value: id }, 'Message');
-    row.dataset.openFriend = id;
-    friendList.append(row);
-  }
-}
+
 function renderRequests() {
-  incomingRequests.replaceChildren(); outgoingRequests.replaceChildren();
-  const incoming = friendships.filter((row) => row.status === 'pending' && row.requested_by !== user.id && !blockedIds.has(pairOther(row)));
-  const outgoing = friendships.filter((row) => row.status === 'pending' && row.requested_by === user.id && !blockedIds.has(pairOther(row)));
-  const incomingTitle = document.createElement('strong'); incomingTitle.textContent = 'Incoming'; incomingRequests.append(incomingTitle);
-  if (!incoming.length) { const p = document.createElement('p'); p.className = 'review-empty'; p.textContent = 'No incoming requests.'; incomingRequests.append(p); }
-  for (const row of incoming) {
-    const profile = profileMap.get(pairOther(row));
-    const wrapper = memberRow(profile, null, '');
-    const actions = document.createElement('span'); actions.className = 'messages-request-actions';
-    for (const [label, value] of [['Accept', 'accept'], ['Decline', 'decline']]) { const button = document.createElement('button'); button.type = 'button'; button.className = `retro-button compact${value === 'decline' ? ' danger' : ''}`; button.dataset.friendResponse = value; button.dataset.friendshipId = row.id; button.textContent = label; actions.append(button); }
-    wrapper.append(actions); incomingRequests.append(wrapper);
+  requestList.replaceChildren();
+  requestSection.hidden = requests.length === 0;
+  if (!requests.length) {
+    empty(requestList, 'No pending requests.');
+    return;
   }
-  const outgoingTitle = document.createElement('strong'); outgoingTitle.textContent = 'Sent'; outgoingRequests.append(outgoingTitle);
-  if (!outgoing.length) { const p = document.createElement('p'); p.className = 'review-empty'; p.textContent = 'No pending sent requests.'; outgoingRequests.append(p); }
-  for (const row of outgoing) outgoingRequests.append(memberRow(profileMap.get(pairOther(row)), null, ''));
+
+  requests.forEach((request) => {
+    const profile = {
+      id: request.other_user_id,
+      display_name: request.display_name,
+      avatar_url: request.avatar_url,
+      status: request.profile_status,
+      profile_tagline: request.profile_tagline,
+    };
+    const { row, actions } = profileRow(profile, 'request-row');
+
+    if (request.direction === 'incoming') {
+      const accept = actionButton('Accept', 'primary');
+      const decline = actionButton('Decline', 'danger');
+      accept.addEventListener('click', async () => {
+        accept.disabled = true;
+        const { error } = await supabase.rpc('respond_friend_request', {
+          p_requester: request.other_user_id,
+          p_accept: true,
+        });
+        if (error) setStatus(error.message, true);
+        await refreshSocialLists();
+      });
+      decline.addEventListener('click', async () => {
+        decline.disabled = true;
+        const { error } = await supabase.rpc('respond_friend_request', {
+          p_requester: request.other_user_id,
+          p_accept: false,
+        });
+        if (error) setStatus(error.message, true);
+        await loadRequests();
+      });
+      actions.append(accept, decline);
+    } else {
+      const pending = document.createElement('small');
+      pending.textContent = 'Pending';
+      const cancel = actionButton('Cancel');
+      cancel.addEventListener('click', async () => {
+        cancel.disabled = true;
+        const { error } = await supabase.rpc('remove_friend', { p_other_user: request.other_user_id });
+        if (error) setStatus(error.message, true);
+        await loadRequests();
+      });
+      actions.append(pending, cancel);
+    }
+    requestList.append(row);
+  });
 }
-function renderSearch() {
+
+async function refreshSocialLists() {
+  await Promise.all([loadFriends(), loadRequests(), loadBlocks()]);
+  await loadThreads();
+}
+
+function pendingIds() {
+  return new Set(requests.map((request) => request.other_user_id));
+}
+
+async function searchMembers(query) {
+  const cleaned = query.trim();
   searchResults.replaceChildren();
-  const query = search.value.trim().toLowerCase();
-  if (query.length < 2) { const p = document.createElement('p'); p.className = 'review-empty'; p.textContent = 'Type at least 2 characters.'; searchResults.append(p); return; }
-  const related = new Set(friendships.filter((row) => row.status !== 'declined').map(pairOther));
-  const visible = profiles.filter((profile) => !related.has(profile.id) && [profile.display_name, profile.profile_tagline, profile.status].some((value) => String(value || '').toLowerCase().includes(query))).slice(0, 12);
-  if (!visible.length) { const p = document.createElement('p'); p.className = 'review-empty'; p.textContent = 'No available members found.'; searchResults.append(p); return; }
-  for (const profile of visible) searchResults.append(memberRow(profile, { name: 'addFriend', value: profile.id }, 'Add friend'));
+  if (cleaned.length < 2) {
+    searchStatus.textContent = 'Type at least two characters.';
+    return;
+  }
+  searchStatus.textContent = 'Searching…';
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id,display_name,avatar_url,status,profile_tagline')
+    .neq('id', user.id)
+    .ilike('display_name', `%${cleaned}%`)
+    .order('display_name')
+    .limit(12);
+
+  if (error) {
+    searchStatus.textContent = error.message;
+    return;
+  }
+
+  const friendIds = new Set(friends.map((friend) => friend.id));
+  const waitingIds = pendingIds();
+  const results = (data || []).filter((profile) => !blockedIds.has(profile.id));
+  searchStatus.textContent = results.length ? '' : 'No available members found.';
+
+  results.forEach((profile) => {
+    const { row, actions } = profileRow(profile, 'friend-search-row');
+    if (friendIds.has(profile.id)) {
+      const badge = document.createElement('small');
+      badge.textContent = 'Friend';
+      actions.append(badge);
+    } else if (waitingIds.has(profile.id)) {
+      const badge = document.createElement('small');
+      badge.textContent = 'Pending';
+      actions.append(badge);
+    } else {
+      const add = actionButton('Add friend', 'primary');
+      add.addEventListener('click', async () => {
+        add.disabled = true;
+        add.textContent = 'Sending…';
+        const { error: requestError } = await supabase.rpc('send_friend_request', {
+          p_other_user: profile.id,
+        });
+        if (requestError) {
+          searchStatus.textContent = requestError.message;
+          add.disabled = false;
+          add.textContent = 'Add friend';
+          return;
+        }
+        searchStatus.textContent = `Friend request sent to ${profile.display_name}.`;
+        await loadRequests();
+        await searchMembers(cleaned);
+      });
+      actions.append(add);
+    }
+    searchResults.append(row);
+  });
 }
+
+searchInput.addEventListener('input', () => {
+  window.clearTimeout(searchTimer);
+  searchTimer = window.setTimeout(() => void searchMembers(searchInput.value), 280);
+});
+
 async function loadThreads() {
-  const result = await supabase.from('direct_threads').select('id,user_a,user_b,created_at').order('created_at', { ascending: false }).limit(100);
-  if (result.error) throw result.error;
-  const friendIds = acceptedFriendIds();
-  threads = (result.data || []).filter((thread) => friendIds.has(otherId(thread)) && !blockedIds.has(otherId(thread)));
-  const missing = [...new Set(threads.map(otherId))].filter((id) => !profileMap.has(id));
-  if (missing.length) {
-    const found = await supabase.from('profiles').select('id,display_name,avatar_url,status,profile_tagline').in('id', missing);
-    if (found.error) throw found.error;
-    for (const profile of found.data || []) profileMap.set(profile.id, profile);
-  }
-  latest = new Map();
+  const { data, error } = await supabase
+    .from('direct_threads')
+    .select('id,user_a,user_b,created_at')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  threads = (data || []).filter((thread) => {
+    const friendId = otherUserId(thread);
+    return !blockedIds.has(friendId) && Boolean(profileById(friendId));
+  });
+
   const ids = threads.map((thread) => thread.id);
+  const latest = new Map();
   if (ids.length) {
-    const rows = await supabase.from('direct_messages').select('id,thread_id,sender_id,body,media_type,created_at').in('thread_id', ids).order('created_at', { ascending: false }).limit(500);
-    if (rows.error) throw rows.error;
-    for (const row of rows.data || []) if (!latest.has(row.thread_id)) latest.set(row.thread_id, row);
+    const { data: messages, error: messageError } = await supabase
+      .from('direct_messages')
+      .select('id,thread_id,body,message_type,media_name,created_at')
+      .in('thread_id', ids)
+      .order('created_at', { ascending: false })
+      .limit(250);
+    if (messageError) throw messageError;
+    (messages || []).forEach((item) => {
+      if (!latest.has(item.thread_id)) latest.set(item.thread_id, item);
+    });
   }
-  threads.sort((a, b) => new Date(latest.get(b.id)?.created_at || b.created_at) - new Date(latest.get(a.id)?.created_at || a.created_at));
+
+  threads = threads.map((thread) => ({ ...thread, latest: latest.get(thread.id) || null }));
+  threads.sort((a, b) => {
+    const aTime = new Date(a.latest?.created_at || a.created_at).getTime();
+    const bTime = new Date(b.latest?.created_at || b.created_at).getTime();
+    return bTime - aTime;
+  });
   renderThreads();
 }
+
+function otherUserId(thread) {
+  return thread.user_a === user.id ? thread.user_b : thread.user_a;
+}
+
 function renderThreads() {
-  threadList.replaceChildren(); threadCount.textContent = `${threads.length} ${threads.length === 1 ? 'chat' : 'chats'}`;
-  if (!threads.length) { const p = document.createElement('p'); p.className = 'review-empty'; p.textContent = 'No conversations yet. Choose a friend above.'; threadList.append(p); return; }
-  for (const thread of threads) {
-    const other = profileMap.get(otherId(thread)); const last = latest.get(thread.id); const button = document.createElement('button');
-    button.type = 'button'; button.className = 'messages-thread-row'; button.dataset.threadId = thread.id; button.classList.toggle('is-active', currentThread?.id === thread.id); button.append(avatarNode(other));
-    const copy = document.createElement('span'); const top = document.createElement('span'); const strong = document.createElement('strong'); const time = document.createElement('small'); const preview = document.createElement('p');
-    strong.textContent = other?.display_name || 'Member'; time.textContent = formatDate(last?.created_at || thread.created_at); preview.textContent = last ? `${last.sender_id === user.id ? 'You: ' : ''}${last.body || (last.media_type ? 'Video' : 'Message')}` : 'New conversation'; top.append(strong, time); copy.append(top, preview); button.append(copy); threadList.append(button);
+  threadCount.textContent = String(threads.length);
+  threadList.replaceChildren();
+  if (!threads.length) {
+    empty(threadList, 'No conversations yet. Choose a friend above.');
+    return;
+  }
+
+  threads.forEach((thread) => {
+    const friend = profileById(otherUserId(thread));
+    if (!friend) return;
+    const { row, actions, copy } = profileRow(friend, 'thread-row');
+    const note = copy.querySelector('small');
+    if (thread.latest) {
+      note.textContent = thread.latest.message_type === 'video'
+        ? `Video: ${thread.latest.media_name || 'attachment'}`
+        : (thread.latest.body || 'Message');
+    } else {
+      note.textContent = 'Conversation started';
+    }
+    const time = document.createElement('small');
+    time.textContent = formatTime(thread.latest?.created_at || thread.created_at);
+    actions.append(time);
+    row.addEventListener('click', () => void openConversation(thread, friend));
+    threadList.append(row);
+  });
+}
+
+function clearSelectedVideo() {
+  selectedVideo = null;
+  selectedVideoContentType = '';
+  videoInput.value = '';
+  if (selectedVideoPreviewUrl) URL.revokeObjectURL(selectedVideoPreviewUrl);
+  selectedVideoPreviewUrl = '';
+  videoPreviewPlayer.removeAttribute('src');
+  videoPreviewPlayer.load();
+  videoPreview.hidden = true;
+}
+
+function setComposerEnabled(enabled) {
+  const active = Boolean(enabled) && !isSending;
+  messageBody.disabled = !active;
+  videoInput.disabled = !active;
+  sendButton.disabled = !active;
+  removeVideoButton.disabled = !active;
+  if (!blockButton.hidden) blockButton.disabled = !active;
+}
+
+function resetConversation() {
+  if (currentChannel && supabase) supabase.removeChannel(currentChannel);
+  currentChannel = null;
+  messageLoadGeneration += 1;
+  renderedMessageIds.clear();
+  currentThread = null;
+  currentFriend = null;
+  setAvatar(conversationAvatar, { display_name: '?' });
+  conversationName.textContent = 'Choose a friend';
+  conversationStatus.textContent = 'Your messages will appear here.';
+  blockButton.hidden = true;
+  setComposerEnabled(false);
+  clearSelectedVideo();
+  empty(messageLog, 'Select a friend or an existing conversation.');
+  history.replaceState(null, '', 'messages.html');
+}
+
+async function startConversation(friend) {
+  if (isSending) {
+    setStatus('Finish or cancel the current upload before changing conversations.', true);
+    return;
+  }
+  if (!friend || blockedIds.has(friend.id) || !profileById(friend.id)) {
+    setStatus('That member is not available in your friends list.', true);
+    return;
+  }
+
+  setStatus('Opening conversation…');
+  const { data, error } = await supabase.rpc('start_direct_thread', { p_other_user: friend.id });
+  if (error) {
+    setStatus(error.message, true);
+    return;
+  }
+  await loadThreads();
+  let thread = threads.find((item) => item.id === data);
+  if (!thread) {
+    const ids = [user.id, friend.id].sort();
+    thread = { id: data, user_a: ids[0], user_b: ids[1], created_at: new Date().toISOString(), latest: null };
+    threads.unshift(thread);
+    renderThreads();
+  }
+  await openConversation(thread, friend);
+}
+
+function cacheSignedVideoUrl(path, url) {
+  if (!path || !url) return;
+  signedUrlCache.set(path, {
+    url,
+    expires: Date.now() + Math.max(60, SIGNED_URL_TTL_SECONDS - 60) * 1000,
+  });
+}
+
+async function primeSignedVideoUrls(items) {
+  const paths = [...new Set(
+    (items || [])
+      .filter((item) => item.message_type === 'video' && item.media_path)
+      .map((item) => item.media_path)
+      .filter((path) => {
+        const cached = signedUrlCache.get(path);
+        return !(cached && cached.expires > Date.now());
+      })
+  )];
+  if (!paths.length) return;
+
+  const { data, error } = await supabase.storage
+    .from('message-media')
+    .createSignedUrls(paths, SIGNED_URL_TTL_SECONDS);
+  if (error) throw error;
+
+  (data || []).forEach((item, index) => {
+    const path = item.path || paths[index];
+    const url = item.signedUrl || item.signedURL || '';
+    cacheSignedVideoUrl(path, url);
+  });
+}
+
+async function getSignedVideoUrl(path) {
+  const cached = signedUrlCache.get(path);
+  if (cached && cached.expires > Date.now()) return cached.url;
+  const { data, error } = await supabase.storage
+    .from('message-media')
+    .createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
+  if (error) throw error;
+  const url = data.signedUrl || data.signedURL || '';
+  if (!url) throw new Error('Private video URL was not returned.');
+  cacheSignedVideoUrl(path, url);
+  return url;
+}
+
+async function createMessageBubble(item) {
+  const bubble = document.createElement('article');
+  bubble.className = `message-bubble${item.sender_id === user.id ? ' is-mine' : ''}`;
+  bubble.dataset.messageId = String(item.id);
+
+  if (item.message_type === 'video' && item.media_path) {
+    try {
+      const video = document.createElement('video');
+      video.className = 'message-video';
+      video.controls = true;
+      video.preload = 'metadata';
+      video.playsInline = true;
+      video.src = await getSignedVideoUrl(item.media_path);
+      bubble.append(video);
+      const attachment = document.createElement('span');
+      attachment.className = 'message-attachment-name';
+      attachment.textContent = `${item.media_name || 'Video'}${item.media_size ? ` · ${formatBytes(item.media_size)}` : ''}`;
+      bubble.append(attachment);
+    } catch (_) {
+      const unavailable = document.createElement('p');
+      unavailable.textContent = 'This private video could not be loaded.';
+      bubble.append(unavailable);
+    }
+  }
+
+  if (item.body) {
+    const body = document.createElement('p');
+    body.textContent = item.body;
+    bubble.append(body);
+  }
+
+  const meta = document.createElement('small');
+  meta.className = 'message-meta';
+  meta.textContent = `${item.sender_id === user.id ? 'You' : currentFriend?.display_name || 'Friend'} · ${formatTime(item.created_at)}`;
+  bubble.append(meta);
+  return bubble;
+}
+
+async function appendNewMessage(item) {
+  if (!item || !currentThread || item.thread_id !== currentThread.id) return;
+  const id = String(item.id);
+  if (renderedMessageIds.has(id)) return;
+  renderedMessageIds.add(id);
+
+  try {
+    const bubble = await createMessageBubble(item);
+    if (!currentThread || item.thread_id !== currentThread.id) {
+      renderedMessageIds.delete(id);
+      return;
+    }
+    messageLog.querySelector('.empty-state')?.remove();
+    messageLog.append(bubble);
+    messageLog.scrollTop = messageLog.scrollHeight;
+  } catch (error) {
+    renderedMessageIds.delete(id);
+    setStatus(error.message || 'A new message could not be displayed.', true);
   }
 }
-function header(profile) {
-  profileLink.href = `profile.html?id=${encodeURIComponent(profile.id)}`; nameEl.textContent = profile.display_name || 'Member'; statusEl.textContent = profile.profile_tagline || profile.status || 'Private conversation'; avatar.replaceChildren();
-  if (profile.avatar_url) { const img = document.createElement('img'); img.src = profile.avatar_url; img.alt = ''; avatar.append(img); } else avatar.textContent = (profile.display_name || 'M').slice(0, 1).toUpperCase();
-}
-async function signedMediaUrl(path) {
-  if (!path) return '';
-  const result = await supabase.storage.from('message-media').createSignedUrl(path, 3600);
-  return result.error ? '' : result.data.signedUrl;
-}
-async function appendMessage(row) {
-  const article = document.createElement('article'); article.className = `messages-bubble${row.sender_id === user.id ? ' is-mine' : ''}`;
-  if (row.body) { const p = document.createElement('p'); p.textContent = row.body; article.append(p); }
-  if (row.media_path) {
-    const url = await signedMediaUrl(row.media_path);
-    if (url) { const video = document.createElement('video'); video.controls = true; video.playsInline = true; video.preload = 'metadata'; video.src = url; article.append(video); }
-    const label = document.createElement('span'); label.className = 'messages-media-name'; label.textContent = row.media_name || 'Video attachment'; article.append(label);
-  }
-  const small = document.createElement('small'); small.textContent = formatDate(row.created_at); article.append(small); log.append(article);
-}
+
 async function loadMessages() {
-  const result = await supabase.from('direct_messages').select('id,thread_id,sender_id,body,media_path,media_type,media_name,media_size,created_at').eq('thread_id', currentThread.id).order('created_at').limit(300);
-  if (result.error) throw result.error;
-  log.replaceChildren();
-  for (const row of result.data || []) await appendMessage(row);
-  log.scrollTop = log.scrollHeight;
-}
-async function subscribe() {
-  if (channel) { await supabase.removeChannel(channel); channel = null; }
-  channel = supabase.channel(`direct-${currentThread.id}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'direct_messages', filter: `thread_id=eq.${currentThread.id}` }, async () => { await loadMessages(); await loadThreads(); }).subscribe();
-}
-async function openThread(id) {
-  const thread = threads.find((row) => row.id === id); if (!thread) return;
-  currentThread = thread; otherProfile = profileMap.get(otherId(thread)) || { id: otherId(thread), display_name: 'Member', avatar_url: '' };
-  if (blockedIds.has(otherProfile.id)) return;
-  empty.hidden = true; active.hidden = false; header(otherProfile); renderThreads(); history.replaceState({}, '', `messages.html?thread=${encodeURIComponent(thread.id)}`); await Promise.all([loadMessages(), subscribe()]);
-}
-async function start(other) {
-  if (!acceptedFriendIds().has(other) || blockedIds.has(other)) return say('Only accepted friends can be messaged.', true);
-  say('Opening conversation…');
-  const result = await supabase.rpc('start_direct_thread', { p_other_user: other });
-  if (result.error) return say(result.error.message || 'The conversation could not be opened. Run the newest messaging SQL.', true);
-  await loadThreads(); await openThread(result.data); say('');
-}
-async function refreshAll() {
-  await loadBlocks(); await loadProfiles(); await loadFriendships(); await loadThreads(); renderSearch();
-}
-async function fromUrl() {
-  const params = new URLSearchParams(location.search); const withUser = params.get('with'); const id = params.get('thread');
-  if (withUser && withUser !== user.id) return start(withUser);
-  if (id && threads.some((thread) => thread.id === id)) await openThread(id);
-}
-function clearVideo() {
-  if (previewUrl) URL.revokeObjectURL(previewUrl); previewUrl = ''; videoInput.value = ''; videoPreview.hidden = true; videoRemove.hidden = true; videoElement.removeAttribute('src'); videoName.textContent = '';
+  if (!currentThread) return;
+  const threadId = currentThread.id;
+  const generation = ++messageLoadGeneration;
+  const { data, error } = await supabase
+    .from('direct_messages')
+    .select('id,thread_id,sender_id,body,message_type,media_path,media_name,media_size,created_at')
+    .eq('thread_id', threadId)
+    .order('created_at', { ascending: true })
+    .limit(500);
+
+  if (error) {
+    setStatus(error.message, true);
+    return;
+  }
+  if (currentThread?.id !== threadId || generation !== messageLoadGeneration) return;
+  const messages = data || [];
+  if (!messages.length) {
+    renderedMessageIds.clear();
+    empty(messageLog, 'No messages yet. Say hello or attach a video.');
+    return;
+  }
+
+  try {
+    await primeSignedVideoUrls(messages);
+  } catch (_) {
+    // Individual bubbles retry their own signed URL so one bad attachment
+    // does not prevent the rest of the conversation from loading.
+  }
+
+  const bubbles = await Promise.all(messages.map((item) => createMessageBubble(item)));
+  if (currentThread?.id !== threadId || generation !== messageLoadGeneration) return;
+
+  renderedMessageIds.clear();
+  messages.forEach((item) => renderedMessageIds.add(String(item.id)));
+  messageLog.replaceChildren(...bubbles);
+  messageLog.scrollTop = messageLog.scrollHeight;
 }
 
-if (!isSupabaseConfigured()) { warning.hidden = false; signedOut.hidden = false; }
-else {
-  const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.1/+esm');
-  supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
-  user = (await supabase.auth.getSession()).data.session?.user || null;
-  if (!user) { signedOut.hidden = false; const next = encodeURIComponent(`messages.html${location.search}`); location.replace(`signin.html?next=${next}`); }
-  else {
-    try { selfProfile = await ensureProfile(); signedOut.hidden = true; app.hidden = false; await refreshAll(); await fromUrl(); }
-    catch (error) { app.hidden = false; say(error.message || 'Messages could not load. Run the newest Supabase upgrade.', true); }
-  }
+function scheduleThreadRefresh() {
+  window.clearTimeout(threadRefreshTimer);
+  threadRefreshTimer = window.setTimeout(() => {
+    void loadThreads().catch((error) => setStatus(error.message || 'Conversation list could not refresh.', true));
+  }, 180);
 }
 
-search?.addEventListener('input', renderSearch);
-friendList?.addEventListener('click', (event) => { const button = event.target.closest('[data-open-friend]'); if (button) start(button.dataset.openFriend); });
-searchResults?.addEventListener('click', async (event) => { const button = event.target.closest('[data-add-friend]'); if (!button) return; say('Sending friend request…'); const result = await supabase.rpc('send_friend_request', { p_other_user: button.dataset.addFriend }); if (result.error) return say(result.error.message, true); search.value = ''; await loadFriendships(); renderSearch(); say('Friend request sent.'); });
-incomingRequests?.addEventListener('click', async (event) => { const button = event.target.closest('[data-friend-response]'); if (!button) return; const accept = button.dataset.friendResponse === 'accept'; const result = await supabase.rpc('respond_friend_request', { p_friendship: button.dataset.friendshipId, p_accept: accept }); if (result.error) return say(result.error.message, true); await loadFriendships(); await loadThreads(); say(accept ? 'Friend request accepted.' : 'Friend request declined.'); });
-threadList?.addEventListener('click', (event) => { const button = event.target.closest('[data-thread-id]'); if (button) openThread(button.dataset.threadId); });
-body?.addEventListener('input', () => { charCount.textContent = String(body.value.length); });
-videoInput?.addEventListener('change', () => { const file = videoInput.files?.[0]; if (!file) return clearVideo(); if (!['video/mp4', 'video/webm', 'video/quicktime'].includes(file.type)) { clearVideo(); return say('Use an MP4, WEBM, or MOV video.', true); } if (file.size > 50 * 1024 * 1024) { clearVideo(); return say('Videos must be 50 MB or smaller.', true); } if (previewUrl) URL.revokeObjectURL(previewUrl); previewUrl = URL.createObjectURL(file); videoElement.src = previewUrl; videoName.textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(1)} MB`; videoPreview.hidden = false; videoRemove.hidden = false; say(''); });
-videoRemove?.addEventListener('click', clearVideo);
-form?.addEventListener('submit', async (event) => {
-  event.preventDefault(); if (!currentThread || !user || blockedIds.has(otherProfile?.id)) return;
-  const text = body.value.trim(); const file = videoInput.files?.[0] || null; if (!text && !file) return say('Write a message or attach a video first.', true);
-  say(file ? 'Uploading video…' : 'Sending…'); let mediaPath = '';
-  if (file) {
-    const safeName = file.name.replace(/[^a-z0-9._-]/gi, '-').slice(-120) || 'video';
-    mediaPath = `${currentThread.id}/${user.id}/${crypto.randomUUID()}-${safeName}`;
-    const upload = await supabase.storage.from('message-media').upload(mediaPath, file, { cacheControl: '3600', upsert: false, contentType: file.type });
-    if (upload.error) return say(upload.error.message || 'The video could not be uploaded.', true);
+function scheduleSocialRefresh() {
+  if (!user || isSending) return;
+  window.clearTimeout(socialRefreshTimer);
+  socialRefreshTimer = window.setTimeout(async () => {
+    try {
+      const openFriendId = currentFriend?.id || '';
+      await refreshSocialLists();
+      if (openFriendId && (blockedIds.has(openFriendId) || !profileById(openFriendId))) {
+        signedUrlCache.clear();
+        resetConversation();
+        setStatus('That conversation is no longer available.', true);
+      }
+    } catch (error) {
+      setStatus(error.message || 'Friends and conversations could not refresh.', true);
+    }
+  }, 220);
+}
+
+function subscribeToThread() {
+  if (currentChannel) supabase.removeChannel(currentChannel);
+  if (!currentThread) return;
+  const threadId = currentThread.id;
+  currentChannel = supabase
+    .channel(`direct-thread-${threadId}`)
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'direct_messages', filter: `thread_id=eq.${threadId}` },
+      (payload) => {
+        if (payload.new?.thread_id === currentThread?.id) void appendNewMessage(payload.new);
+        scheduleThreadRefresh();
+      }
+    )
+    .subscribe();
+}
+
+async function openConversation(thread, friend) {
+  if (isSending && currentThread?.id !== thread.id) {
+    setStatus('Finish or cancel the current upload before changing conversations.', true);
+    return;
   }
-  const result = await supabase.from('direct_messages').insert({ thread_id: currentThread.id, sender_id: user.id, body: text, media_path: mediaPath, media_type: file?.type || '', media_name: file?.name || '', media_size: file?.size || 0 });
-  if (result.error) { if (mediaPath) await supabase.storage.from('message-media').remove([mediaPath]); return say(result.error.message || 'The message could not be sent.', true); }
-  body.value = ''; charCount.textContent = '0'; clearVideo(); say(''); await loadMessages(); await loadThreads();
+  if (blockedIds.has(friend.id) || !profileById(friend.id)) {
+    setStatus('That conversation is no longer available.', true);
+    await refreshSocialLists();
+    return;
+  }
+
+  if (currentChannel) supabase.removeChannel(currentChannel);
+  currentChannel = null;
+  messageLoadGeneration += 1;
+  renderedMessageIds.clear();
+  currentThread = thread;
+  currentFriend = friend;
+  clearSelectedVideo();
+  hideUploadProgress();
+  setAvatar(conversationAvatar, friend);
+  conversationName.textContent = friend.display_name || 'Friend';
+  conversationStatus.textContent = friend.profile_tagline || friend.status || 'Private friend conversation';
+  blockButton.hidden = false;
+  setComposerEnabled(true);
+  setStatus('');
+  history.replaceState(null, '', `messages.html?with=${encodeURIComponent(friend.id)}`);
+  empty(messageLog, 'Loading conversation…');
+  await loadMessages();
+  if (currentThread?.id !== thread.id) return;
+  subscribeToThread();
+  messageBody.focus({ preventScroll: true });
+}
+
+videoInput.addEventListener('change', () => {
+  const file = videoInput.files?.[0] || null;
+  clearSelectedVideo();
+  if (!file) return;
+
+  const contentType = videoTypeForFile(file);
+  if (!contentType) {
+    setStatus('Use an MP4, WebM, MOV, or M4V video.', true);
+    return;
+  }
+  if (!file.size) {
+    setStatus('That video file is empty.', true);
+    return;
+  }
+  if (file.size > MAX_VIDEO_SIZE) {
+    setStatus('Video attachments must be 50 MB or smaller.', true);
+    return;
+  }
+
+  selectedVideo = file;
+  selectedVideoContentType = contentType;
+  selectedVideoPreviewUrl = URL.createObjectURL(file);
+  videoPreviewPlayer.src = selectedVideoPreviewUrl;
+  videoPreviewName.textContent = file.name;
+  videoPreviewSize.textContent = formatBytes(file.size);
+  videoPreview.hidden = false;
+  setStatus('Video ready to send. You can add a caption above.');
 });
-blockButton?.addEventListener('click', async () => {
-  if (!otherProfile || !user) return;
-  if (!confirm(`Block ${otherProfile.display_name}? The friendship and conversation will be hidden.`)) return;
-  const result = await supabase.from('blocked_users').insert({ blocker_id: user.id, blocked_id: otherProfile.id });
-  if (result.error) return say(result.error.message, true);
-  currentThread = null; otherProfile = null; active.hidden = true; empty.hidden = false; await refreshAll(); history.replaceState({}, '', 'messages.html'); say('Member blocked. You can unblock them in Settings.');
+
+removeVideoButton.addEventListener('click', clearSelectedVideo);
+cancelUploadButton?.addEventListener('click', () => {
+  if (!currentUploadRequest) return;
+  cancelUploadButton.disabled = true;
+  currentUploadRequest.abort();
+});
+
+messageBody.addEventListener('input', () => {
+  messageCount.textContent = String(messageBody.value.length);
+});
+
+messageForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (isSending || !currentThread || !currentFriend) return;
+
+  const threadId = currentThread.id;
+  const friendId = currentFriend.id;
+  const body = messageBody.value.trim();
+  const video = selectedVideo;
+  const videoContentType = selectedVideoContentType;
+  if (!body && !video) {
+    setStatus('Write a message or attach a video.', true);
+    return;
+  }
+  if (blockedIds.has(friendId) || !profileById(friendId)) {
+    setStatus('This conversation is no longer available.', true);
+    await refreshSocialLists();
+    return;
+  }
+
+  isSending = true;
+  setComposerEnabled(false);
+  sendButton.textContent = video ? 'Uploading…' : 'Sending…';
+  if (cancelUploadButton) cancelUploadButton.disabled = false;
+  let uploadedPath = '';
+  let uploadCompleted = false;
+  let sent = false;
+
+  try {
+    const payload = {
+      thread_id: threadId,
+      sender_id: user.id,
+      body,
+      message_type: video ? 'video' : 'text',
+      media_path: '',
+      media_name: '',
+      media_size: 0,
+    };
+
+    if (video) {
+      setStatus(`Uploading ${video.name}…`);
+      setUploadProgress(0, 'Starting upload…');
+      uploadedPath = `${threadId}/${user.id}/${makeId()}-${safeFileName(video.name)}`;
+      await uploadVideoWithProgress(uploadedPath, video, videoContentType);
+      uploadCompleted = true;
+      payload.media_path = uploadedPath;
+      payload.media_name = video.name.slice(0, 180);
+      payload.media_size = video.size;
+    }
+
+    sendButton.textContent = 'Sending…';
+    setStatus('Sending…');
+    const { data: inserted, error } = await supabase
+      .from('direct_messages')
+      .insert(payload)
+      .select('id,thread_id,sender_id,body,message_type,media_path,media_name,media_size,created_at')
+      .single();
+    if (error) throw error;
+
+    messageBody.value = '';
+    messageCount.textContent = '0';
+    clearSelectedVideo();
+    setStatus('Sent.');
+    sent = true;
+    if (currentThread?.id === threadId) await appendNewMessage(inserted);
+    scheduleThreadRefresh();
+  } catch (error) {
+    if (uploadCompleted && uploadedPath) {
+      await supabase.storage.from('message-media').remove([uploadedPath]);
+    }
+    setStatus(
+      error.name === 'AbortError' ? 'Video upload canceled.' : (error.message || 'Message could not be sent.'),
+      true
+    );
+  } finally {
+    isSending = false;
+    currentUploadRequest = null;
+    sendButton.textContent = 'Send';
+    if (cancelUploadButton) cancelUploadButton.disabled = false;
+    if (currentThread) setComposerEnabled(true);
+    if (sent && video) window.setTimeout(hideUploadProgress, 650);
+    else hideUploadProgress();
+  }
+});
+
+blockButton.addEventListener('click', async () => {
+  if (!currentFriend) return;
+  if (isSending) {
+    setStatus('Finish or cancel the current upload before blocking this member.', true);
+    return;
+  }
+
+  const friend = currentFriend;
+  const confirmed = window.confirm(`Block ${friend.display_name}? They will disappear from friends and messages.`);
+  if (!confirmed) return;
+  blockButton.disabled = true;
+  const { error } = await supabase.rpc('block_member', { p_other_user: friend.id });
+  blockButton.disabled = false;
+  if (error) {
+    setStatus(error.message, true);
+    return;
+  }
+
+  blockedIds.add(friend.id);
+  signedUrlCache.clear();
+  resetConversation();
+  await refreshSocialLists();
+  setStatus('Member blocked. Their conversation is hidden.');
+});
+
+window.addEventListener('focus', scheduleSocialRefresh);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') scheduleSocialRefresh();
+});
+
+async function bootstrap() {
+  if (!isSupabaseConfigured() || !window.supabase?.createClient) {
+    warning.hidden = false;
+    setComposerEnabled(false);
+    return;
+  }
+
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+  });
+  const { data } = await supabase.auth.getSession();
+  if (!data.session?.user) {
+    const next = encodeURIComponent(`messages.html${window.location.search}`);
+    window.location.replace(`signin.html?next=${next}`);
+    return;
+  }
+  user = data.session.user;
+
+  await Promise.all([loadFriends(), loadRequests(), loadBlocks()]);
+  await loadThreads();
+
+  const requestedFriendId = new URLSearchParams(window.location.search).get('with');
+  if (requestedFriendId) {
+    const friend = profileById(requestedFriendId);
+    if (friend) await startConversation(friend);
+    else setStatus('That member is not in your accepted friends list.', true);
+  }
+}
+
+bootstrap().catch((error) => {
+  warning.hidden = false;
+  warning.textContent = error.message || 'Messages could not load. Run the latest Supabase migration.';
 });

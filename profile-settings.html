@@ -1,15 +1,83 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="description" content="Edit your 0PTICBOX member profile settings."/><meta name="theme-color" content="#080b13"/><title>Profile Settings | 0PTICBOX Productions</title><link href="styles.css" rel="stylesheet"/></head>
-<body><canvas aria-hidden="true" id="page-particles"></canvas><a class="skip-link" href="#profile-settings-form">Skip to profile settings</a><div class="ticker"><div class="ticker-track"><span>★ PROFILE SETTINGS ★ MAKE IT YOURS ★ 0PTICBOX NETWORK ★</span><span aria-hidden="true">★ PROFILE SETTINGS ★ MAKE IT YOURS ★ 0PTICBOX NETWORK ★</span></div></div>
-<header class="topbar" id="top"><div class="shell topbar-inner"><a class="wordmark" href="index.html"><b>0</b><span><strong>PTICBOX</strong><small>settings</small></span></a><button aria-controls="site-nav" aria-expanded="false" class="menu-toggle" type="button">Menu</button><nav aria-label="Primary navigation" class="site-nav" id="site-nav"><a href="index.html">Home</a><a href="community.html">Create post</a><a href="messages.html">Messages</a><a href="members.html">Member area</a><a aria-current="page" href="profile-settings.html">Settings</a></nav></div></header>
-<main class="shell profile-settings-page"><section class="box settings-intro"><div class="box-title split-title"><span>Profile Settings</span><small>private editing screen</small></div><div class="settings-intro-body"><div><span class="mini-label">YOUR ACCOUNT</span><h1>Profile, cursor, and privacy settings in one place.</h1><p>The cursor selector has moved here. Blocked members can also be managed below.</p></div><a class="retro-button" href="members.html">Back to Member Area</a></div></section><p class="member-warning" hidden id="settings-config-warning">Connect Supabase and apply the newest schema to use profile settings.</p><section class="box settings-signed-out" hidden id="settings-signed-out"><div class="box-title"><span>Sign in required</span></div><div class="settings-signed-out-body"><p>Sign in before editing account settings.</p><a class="retro-button primary" href="signin.html?next=profile-settings.html">Open sign-in page</a></div></section>
-<div class="profile-settings-layout" hidden id="settings-app"><aside class="box profile-settings-preview"><div class="box-title"><span>Live preview</span></div><div class="settings-preview-card" id="settings-preview-card"><div class="settings-preview-background" id="settings-preview-background"></div><div class="settings-preview-shade" id="settings-preview-shade"></div><div class="settings-preview-content"><div class="settings-preview-avatar" id="settings-preview-avatar">M</div><strong id="settings-preview-name">Member</strong><span id="settings-preview-tagline">0PTICBOX member</span><p id="settings-preview-status">Your current status appears here.</p></div></div><a class="retro-button primary settings-view-profile" id="settings-view-profile" href="profile.html">View public page</a></aside>
-<section class="box profile-settings-panel"><div class="box-title split-title"><span>Edit profile</span><small id="settings-session-label">signed in</small></div><form class="profile-settings-form" id="profile-settings-form">
-<fieldset><legend>General</legend><label for="settings-cursor-style">Website cursor</label><select id="settings-cursor-style"><option value="default">Normal</option><option value="atom">Atom</option><option value="star">Star</option><option value="heart">Heart</option><option value="smile">Smile</option><option value="rainbow">Rainbow</option></select><small class="field-note" id="settings-cursor-note">Desktop only. The choice is saved in this browser.</small></fieldset>
-<fieldset><legend>Identity</legend><label for="settings-display-name">Display name</label><input id="settings-display-name" maxlength="32" minlength="2" required/><label for="settings-tagline">Profile tagline</label><input id="settings-tagline" maxlength="120" placeholder="Producer, raver, artist, gamer, visual nerd…"/><label for="settings-status">Current status</label><input id="settings-status" maxlength="80" placeholder="What are you working on?"/><label for="settings-bio">About me</label><textarea id="settings-bio" maxlength="600" rows="5" placeholder="Music, art, games, projects, or anything else you want people to know."></textarea></fieldset>
-<fieldset><legend>Profile look</legend><div class="member-theme-grid"><div><label for="settings-accent">Accent color</label><input id="settings-accent" type="color" value="#ff6b36"/></div><div><label for="settings-dim">Background darkness</label><input id="settings-dim" type="range" min="20" max="90" value="62"/></div></div><label for="settings-avatar">Profile picture</label><input accept="image/png,image/jpeg,image/webp,image/gif" id="settings-avatar" type="file"/><small class="field-note">PNG, JPG, WEBP, or GIF. Maximum 5 MB.</small><label for="settings-background">Profile background or GIF</label><input accept="image/png,image/jpeg,image/webp,image/gif" id="settings-background" type="file"/><small class="field-note">Maximum 8 MB. Animated GIF backgrounds are supported.</small><label class="member-remove-background"><input id="settings-remove-background" type="checkbox"/>Remove my current background</label></fieldset>
-<fieldset><legend>Links</legend><label for="settings-instagram">Instagram link</label><input id="settings-instagram" inputmode="url" maxlength="2048" placeholder="https://instagram.com/…"/><label for="settings-youtube">YouTube link</label><input id="settings-youtube" inputmode="url" maxlength="2048" placeholder="https://youtube.com/…"/></fieldset>
-<fieldset><legend>Blocked users</legend><p class="field-note">Blocked members are removed from friends and hidden from messages.</p><div id="settings-blocked-users"><p class="review-empty">Loading blocked users…</p></div><p class="member-message" id="settings-blocked-message" aria-live="polite"></p></fieldset>
-<div class="profile-settings-actions"><button class="retro-button primary" type="submit">Save profile settings</button><a class="retro-button" href="members.html">Cancel</a></div><p class="member-message" id="settings-message" aria-live="polite"></p></form></section></div></main>
-<footer><div class="shell footer-inner"><p>© <span id="year"></span> 0PTICBOX Productions</p><div><a href="members.html">Member Area</a><a href="messages.html">Messages</a><a href="community.html">Create post</a></div></div></footer><script src="profile-settings-access.js?v=9" type="module"></script><script src="profile-settings.js?v=9" type="module"></script><script src="profile-settings-extras.js?v=9" type="module"></script><script src="site.js?v=9"></script></body></html>
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="Edit your 0PTICBOX Network profile, links, appearance, and site cursor." name="description"/>
+<meta content="#080b13" name="theme-color"/>
+<title>Profile Settings | 0PTICBOX Network</title>
+<link href="styles.css" rel="stylesheet"/>
+<link href="network-upgrade.css?v=10" rel="stylesheet"/>
+</head>
+<body data-auth-required="true">
+<canvas aria-hidden="true" id="page-particles"></canvas>
+<a class="skip-link" href="#settings">Skip to settings</a>
+<div class="ticker"><div class="ticker-track"><span>★ PROFILE SETTINGS ★ GENERAL ★ APPEARANCE ★ LINKS ★</span><span aria-hidden="true">★ PROFILE SETTINGS ★ GENERAL ★ APPEARANCE ★ LINKS ★</span></div></div>
+<header class="topbar" id="top"><div class="shell topbar-inner">
+<a class="wordmark" href="index.html"><b>0</b><span><strong>PTICBOX</strong><small>network</small></span></a>
+<button aria-controls="site-nav" aria-expanded="false" class="menu-toggle" type="button">Menu</button>
+<nav aria-label="Primary navigation" class="site-nav" id="site-nav"><a href="index.html">Home</a><a href="community.html">Community feed</a><a href="messages.html">Messages</a><a href="members.html">Member area</a><a class="is-active" href="profile-settings.html">Settings</a></nav>
+</div></header>
+<main class="shell settings-page" id="settings">
+<section class="box"><div class="box-title split-title"><span>Profile Settings</span><small>signed-in members only</small></div><div class="member-page-intro-body"><div><span class="mini-label">ACCOUNT PROFILE</span><h1>Control how your profile and browser experience look.</h1><p>The cursor selector now lives in General Settings instead of appearing at the bottom of every page.</p></div><a class="retro-button" href="members.html">Back to Member Area</a></div></section>
+<p class="member-warning" hidden id="settings-config-warning">Connect Supabase and apply the latest schema before editing profiles.</p>
+<div class="settings-layout">
+<aside class="box settings-preview" aria-label="Live profile preview">
+<div class="box-title"><span>Live Preview</span></div>
+<div class="settings-preview-cover" id="settings-preview-cover"></div>
+<div class="settings-preview-content">
+<div class="settings-preview-avatar" id="settings-preview-avatar">M</div>
+<h2 id="settings-preview-name">Member</h2>
+<p id="settings-preview-tagline">Your profile tagline</p>
+<p id="settings-preview-status"></p>
+</div>
+</aside>
+<section class="box">
+<div class="box-title split-title"><span>Edit Profile</span><small id="settings-account-email"></small></div>
+<form class="settings-form" id="profile-settings-form">
+<fieldset class="settings-group"><legend>General settings</legend>
+<div class="settings-grid-2">
+<div class="settings-field"><label for="settings-display-name">Display name</label><input id="settings-display-name" minlength="2" maxlength="32" required/></div>
+<div class="settings-field"><label for="settings-profile-tagline">Profile tagline</label><input id="settings-profile-tagline" maxlength="120" placeholder="A short line under your name"/></div>
+</div>
+<div class="settings-field"><label for="settings-status">Status</label><input id="settings-status" maxlength="80" placeholder="What are you doing?"/></div>
+<div class="settings-field"><label for="settings-bio">Bio</label><textarea id="settings-bio" maxlength="600" rows="5"></textarea></div>
+<div class="settings-field"><label>Website cursor</label><div class="cursor-choice-grid" id="cursor-choices" role="group" aria-label="Website cursor">
+<button class="cursor-choice" data-cursor-style="default" type="button">↖ Normal</button>
+<button class="cursor-choice" data-cursor-style="atom" type="button">◉ Atom</button>
+<button class="cursor-choice" data-cursor-style="star" type="button">★ Star</button>
+<button class="cursor-choice" data-cursor-style="heart" type="button">♥ Heart</button>
+<button class="cursor-choice" data-cursor-style="smile" type="button">☺ Smile</button>
+<button class="cursor-choice" data-cursor-style="rainbow" type="button">◒ Rainbow</button>
+</div><p class="cursor-note">Cursor effects appear on devices with a mouse or trackpad. Touchscreens keep the normal touch interface.</p></div>
+</fieldset>
+<fieldset class="settings-group"><legend>Profile look</legend>
+<div class="settings-grid-2">
+<div class="settings-field"><label for="settings-avatar-file">Avatar image</label><input id="settings-avatar-file" accept="image/png,image/jpeg,image/webp,image/gif" type="file"/><small>PNG, JPG, WebP, or GIF.</small></div>
+<div class="settings-field"><label for="settings-background-file">Background image or GIF</label><input id="settings-background-file" accept="image/png,image/jpeg,image/webp,image/gif" type="file"/><small>Stored in your profile-media folder.</small></div>
+</div>
+<div class="settings-grid-2">
+<div class="settings-field"><label for="settings-accent-color">Accent color</label><input id="settings-accent-color" type="color" value="#ff6b36"/></div>
+<div class="settings-field"><label for="settings-background-dim">Background darkness <span id="settings-dim-value">62%</span></label><input id="settings-background-dim" type="range" min="20" max="90" value="62"/></div>
+</div>
+<label><input id="settings-remove-background" type="checkbox"/> Remove the current background</label>
+</fieldset>
+<fieldset class="settings-group"><legend>Privacy</legend>
+<div class="settings-field"><label>Blocked accounts</label><div class="request-list" id="settings-blocked-list"><p class="empty-state">No blocked accounts.</p></div><small>Blocked members stay out of your friends list, requests, and conversations.</small></div>
+</fieldset>
+<fieldset class="settings-group"><legend>Links</legend>
+<div class="settings-field"><label for="settings-instagram-url">Instagram URL</label><input id="settings-instagram-url" type="url" maxlength="2048" placeholder="https://instagram.com/..."/></div>
+<div class="settings-field"><label for="settings-youtube-url">YouTube URL</label><input id="settings-youtube-url" type="url" maxlength="2048" placeholder="https://youtube.com/..."/></div>
+</fieldset>
+<div class="settings-actions"><button class="retro-button primary" type="submit">Save settings</button><a class="retro-button" id="settings-view-profile" href="profile.html">View profile</a><button class="retro-button danger" id="settings-signout" type="button">Sign out</button></div>
+<p class="settings-message" id="settings-message" aria-live="polite"></p>
+</form>
+</section>
+</div>
+</main>
+<footer><div class="shell footer-inner"><p>© <span id="year"></span> 0PTICBOX Productions</p><div><a href="members.html">Member area</a><a href="messages.html">Messages</a><a href="community.html">Create post</a></div></div></footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="profile-settings.js?v=9" type="module"></script>
+<script src="site.js?v=9"></script>
+</body>
+</html>

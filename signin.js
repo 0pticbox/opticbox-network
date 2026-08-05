@@ -1,97 +1,138 @@
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, isSupabaseConfigured } from './supabase-config.js';
+import {
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY,
+  isSupabaseConfigured,
+} from './supabase-config.js';
 
-const $ = (id) => document.getElementById(id);
-const warning = $('signin-config-warning');
-const forms = $('signin-forms');
-const sessionBox = $('signin-session');
-const sessionLabel = $('signin-session-label');
-const continueLink = $('signin-continue');
-const signOutButton = $('signin-signout');
-const signInForm = $('signin-form');
-const signUpForm = $('signup-form');
-const message = $('signin-message');
-let supabase = null;
+const signInForm = document.getElementById('signin-form');
+const signUpForm = document.getElementById('signup-form');
+const signInTab = document.getElementById('show-signin');
+const signUpTab = document.getElementById('show-signup');
+const message = document.getElementById('auth-message');
+const warning = document.getElementById('auth-config-warning');
 
-function setMessage(text, error = false) {
+function setMessage(text, isError = false) {
   message.textContent = text;
-  message.classList.toggle('is-error', error);
+  message.classList.toggle('is-error', isError);
 }
 
-function safeNext() {
-  const raw = new URLSearchParams(location.search).get('next') || 'members.html';
+function safeNextPage() {
+  const candidate = new URLSearchParams(window.location.search).get('next') || 'members.html';
   try {
-    const target = new URL(raw, location.href);
-    if (target.origin !== location.origin) return 'members.html';
-    return `${target.pathname.split('/').pop() || 'members.html'}${target.search}${target.hash}`;
-  } catch {
+    const url = new URL(candidate, window.location.href);
+    if (url.origin !== window.location.origin) return 'members.html';
+    if (url.pathname.endsWith('/signin.html')) return 'members.html';
+    return `${url.pathname.split('/').pop() || 'members.html'}${url.search}${url.hash}`;
+  } catch (_) {
     return 'members.html';
   }
 }
 
-function renderSession(session) {
-  const signedIn = Boolean(session?.user);
-  forms.hidden = signedIn;
-  sessionBox.hidden = !signedIn;
-  continueLink.href = safeNext();
-  if (signedIn) sessionLabel.textContent = `Signed in as ${session.user.email || 'member'}.`;
+function switchPanel(panel) {
+  const signIn = panel === 'signin';
+  signInForm.hidden = !signIn;
+  signUpForm.hidden = signIn;
+  signInTab.setAttribute('aria-selected', String(signIn));
+  signUpTab.setAttribute('aria-selected', String(!signIn));
+  signInTab.classList.toggle('primary', signIn);
+  signUpTab.classList.toggle('primary', !signIn);
+  setMessage('');
+  requestAnimationFrame(() => {
+    document.getElementById(signIn ? 'signin-email' : 'signup-name')?.focus();
+  });
 }
 
-if (!isSupabaseConfigured()) {
+signInTab.addEventListener('click', () => switchPanel('signin'));
+signUpTab.addEventListener('click', () => switchPanel('signup'));
+
+if (!isSupabaseConfigured() || !window.supabase?.createClient) {
   warning.hidden = false;
-  forms.querySelectorAll('input,button').forEach((element) => { element.disabled = true; });
-  setMessage('Add your Supabase project URL and publishable key before signing in.', true);
+  signInForm.querySelectorAll('input,button').forEach((element) => { element.disabled = true; });
+  signUpForm.querySelectorAll('input,button').forEach((element) => { element.disabled = true; });
 } else {
-  const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.1/+esm');
-  supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
-  });
-  const { data } = await supabase.auth.getSession();
-  renderSession(data.session);
-  supabase.auth.onAuthStateChange((_event, session) => renderSession(session));
-}
+  const supabase = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    }
+  );
 
-signInForm?.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  if (!supabase) return;
-  setMessage('Signing in…');
-  const email = $('signin-email').value.trim();
-  const password = $('signin-password').value;
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return setMessage(error.message, true);
-  signInForm.reset();
-  const confirmed = (await supabase.auth.getSession()).data.session;
-  if (!confirmed) return setMessage('The session did not finish loading. Please try once more.', true);
-  setMessage('Signed in. Opening your account…');
-  location.replace(safeNext());
-});
+  let redirecting = false;
+  async function finishSignIn(session) {
+    if (!session?.user || redirecting) return;
+    redirecting = true;
+    setMessage('Signed in. Opening your account…');
 
-signUpForm?.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  if (!supabase) return;
-  const displayName = $('signup-name').value.trim();
-  const email = $('signup-email').value.trim();
-  const password = $('signup-password').value;
-  if (displayName.length < 2) return setMessage('Display names need at least 2 characters.', true);
-  setMessage('Creating your account…');
-  const redirectTo = new URL(`signin.html?next=${encodeURIComponent(safeNext())}`, location.href).href;
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { display_name: displayName }, emailRedirectTo: redirectTo },
-  });
-  if (error) return setMessage(error.message, true);
-  signUpForm.reset();
-  if (data.session) {
-    setMessage('Account created. Opening your account…');
-    location.replace(safeNext());
-  } else {
-    setMessage('Account created. Check your email to confirm it, then return here to sign in.');
+    // Force one final read from the persisted auth store before navigating.
+    await supabase.auth.getSession();
+    await new Promise((resolve) => window.setTimeout(resolve, 90));
+    window.location.replace(safeNextPage());
   }
-});
 
-signOutButton?.addEventListener('click', async () => {
-  if (!supabase) return;
-  await supabase.auth.signOut();
-  setMessage('Signed out.');
-  renderSession(null);
-});
+  const { data: initial } = await supabase.auth.getSession();
+  if (initial.session) await finishSignIn(initial.session);
+
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' && session) void finishSignIn(session);
+  });
+
+  signInForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const submit = signInForm.querySelector('button[type="submit"]');
+    submit.disabled = true;
+    setMessage('Signing in…');
+
+    const email = document.getElementById('signin-email').value.trim();
+    const password = document.getElementById('signin-password').value;
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      submit.disabled = false;
+      setMessage(error.message, true);
+      return;
+    }
+    await finishSignIn(data.session);
+  });
+
+  signUpForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const submit = signUpForm.querySelector('button[type="submit"]');
+    submit.disabled = true;
+    setMessage('Creating your account…');
+
+    const displayName = document.getElementById('signup-name').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value;
+    const redirectUrl = new URL('signin.html', window.location.href);
+    redirectUrl.searchParams.set('next', safeNextPage());
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { display_name: displayName },
+        emailRedirectTo: redirectUrl.href,
+      },
+    });
+
+    if (error) {
+      submit.disabled = false;
+      setMessage(error.message, true);
+      return;
+    }
+    if (data.session) {
+      await finishSignIn(data.session);
+      return;
+    }
+
+    submit.disabled = false;
+    switchPanel('signin');
+    document.getElementById('signin-email').value = email;
+    setMessage('Account created. Check your email to confirm it, then return here to sign in.');
+  });
+}

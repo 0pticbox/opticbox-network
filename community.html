@@ -1,13 +1,132 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="description" content="0PTICBOX community feed — text posts, images, music, and public event plans."/><meta name="theme-color" content="#080b13"/><title>Community | 0PTICBOX Productions</title><link href="styles.css" rel="stylesheet"/></head>
-<body><canvas aria-hidden="true" id="page-particles"></canvas><a class="skip-link" href="#activity-feed">Skip to community feed</a><div class="ticker"><div class="ticker-track"><span>★ POSTS ★ IMAGES ★ NOW LISTENING ★ EVENT PLANS ★ 0PTICBOX ★</span><span aria-hidden="true">★ POSTS ★ IMAGES ★ NOW LISTENING ★ EVENT PLANS ★ 0PTICBOX ★</span></div></div>
-<header class="topbar" id="top"><div class="shell topbar-inner"><a class="wordmark" href="index.html"><b>0</b><span><strong>PTICBOX</strong><small>community</small></span></a><button aria-controls="site-nav" aria-expanded="false" class="menu-toggle" type="button">Menu</button><nav aria-label="Primary navigation" class="site-nav" id="site-nav"><a href="index.html">Home</a><a href="messages.html">Messages</a><a href="members.html">Member area</a><a href="profile-settings.html">Settings</a><a aria-current="page" href="community.html">Community</a><a class="support" href="https://cash.app/$0pticBox" rel="noopener" target="_blank">Support</a></nav></div></header>
-<main class="shell activity-page"><section class="box activity-intro"><div class="box-title split-title"><span>Community Feed</span><small>posts · images · music · events</small></div><div class="activity-intro-body"><div><span class="mini-label">SAY SOMETHING</span><h1>Post a thought. Drop an image. Share the track or plan.</h1><p>A regular text post is now the default. Switch formats only when you want music details or public event information.</p></div><a class="retro-button" href="profile-settings.html">Profile settings</a></div></section>
-<p class="member-warning" hidden id="activity-config-warning">Connect Supabase and apply the newest schema to enable community posts.</p>
-<section class="box activity-composer-box" aria-labelledby="activity-composer-title"><div class="box-title split-title"><span id="activity-composer-title">Make a post</span><small id="activity-session-label">member sign-in required</small></div><div class="activity-signed-out" id="activity-signed-out"><p>Sign in through the Member Area first. Your session carries over automatically.</p><a class="retro-button primary" href="members.html">Sign in or create account</a></div>
-<form class="activity-form" hidden id="activity-form"><div class="activity-type-picker" role="group" aria-label="Post type"><button class="activity-type-button is-active" data-post-type="post" type="button" aria-pressed="true"><span aria-hidden="true">✎</span>Regular post</button><button class="activity-type-button" data-post-type="listening" type="button" aria-pressed="false"><span aria-hidden="true">♫</span>Listening now</button><button class="activity-type-button" data-post-type="event" type="button" aria-pressed="false"><span aria-hidden="true">✦</span>Going to an event</button></div><input id="activity-post-type" type="hidden" value="post"/>
-<div class="activity-fields" data-fields="post"><label for="activity-post-title">Headline <small>optional</small></label><input id="activity-post-title" maxlength="160" placeholder="Give the post a title—or leave this blank"/><label for="activity-post-url">Link <small>optional</small></label><input id="activity-post-url" inputmode="url" maxlength="2048" placeholder="https://…"/></div>
-<div class="activity-fields" data-fields="listening" hidden><label for="activity-track-title">Track title</label><input id="activity-track-title" maxlength="120" placeholder="Song or mix title"/><label for="activity-artist-name">Artist</label><input id="activity-artist-name" maxlength="100" placeholder="Artist or DJ"/><label for="activity-media-url">Listening link <small>optional</small></label><input id="activity-media-url" inputmode="url" maxlength="2048" placeholder="YouTube, Spotify, SoundCloud, Apple Music…"/></div>
-<div class="activity-fields" data-fields="event" hidden><label for="activity-event-name">Event name</label><input id="activity-event-name" maxlength="160" placeholder="Festival, show, rave, or club night"/><div class="activity-form-grid"><div><label for="activity-event-date">Event date</label><input id="activity-event-date" type="date"/></div><div><label for="activity-event-city">City</label><input id="activity-event-city" maxlength="100" placeholder="City only"/></div></div><label for="activity-event-url">Official event link <small>optional</small></label><input id="activity-event-url" inputmode="url" maxlength="2048" placeholder="Ticket page or official event page"/><p class="activity-privacy-note">Keep private addresses, hotels, and real-time travel plans out of public posts.</p></div>
-<label for="activity-caption" id="activity-caption-label">Post text</label><textarea id="activity-caption" maxlength="2000" rows="5" placeholder="What’s on your mind?"></textarea><label for="activity-image">Image or GIF <small>optional</small></label><input accept="image/png,image/jpeg,image/webp,image/gif" id="activity-image" type="file"/><small class="field-note">PNG, JPG, WEBP, or GIF. Maximum 5 MB. YouTube listening links can create a thumbnail automatically.</small><div class="activity-form-footer"><small><span id="activity-caption-count">0</span>/2000</small><button class="retro-button primary" type="submit">Post to community</button></div><p class="member-message" id="activity-form-message" aria-live="polite"></p></form></section>
-<section class="box activity-feed-box" id="activity-feed" aria-labelledby="activity-feed-title"><div class="box-title split-title"><span id="activity-feed-title">Latest activity</span><small id="activity-post-count">0 posts</small></div><div class="activity-filter-bar" role="group" aria-label="Filter community posts"><button class="retro-button is-active" data-activity-filter="all" type="button" aria-pressed="true">Everything</button><button class="retro-button" data-activity-filter="post" type="button" aria-pressed="false">Posts</button><button class="retro-button" data-activity-filter="listening" type="button" aria-pressed="false">Listening</button><button class="retro-button" data-activity-filter="event" type="button" aria-pressed="false">Events</button></div><div class="activity-feed" id="activity-posts" aria-live="polite"><p class="review-empty">Loading community activity…</p></div></section></main>
-<footer><div class="shell footer-inner"><p>© <span id="year"></span> 0PTICBOX Productions</p><div><a href="messages.html">Messages</a><a href="members.html">Member area</a><a href="#top">Back to top</a></div></div></footer><script src="community.js?v=8" type="module"></script><script src="site.js?v=8"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="description" content="0PTICBOX community feed — text posts, images, music, events, likes, and comments."/>
+  <meta name="theme-color" content="#080b13"/>
+  <title>Community | 0PTICBOX Productions</title>
+  <link href="styles.css" rel="stylesheet"/>
+  <link href="network-upgrade.css?v=11" rel="stylesheet"/>
+</head>
+<body>
+  <canvas aria-hidden="true" id="page-particles"></canvas>
+  <a class="skip-link" href="#activity-feed">Skip to community feed</a>
+
+  <div class="ticker">
+    <div class="ticker-track">
+      <span>★ POSTS ★ IMAGES ★ MUSIC ★ EVENTS ★ LIKES ★ COMMENTS ★ 0PTICBOX ★</span>
+      <span aria-hidden="true">★ POSTS ★ IMAGES ★ MUSIC ★ EVENTS ★ LIKES ★ COMMENTS ★ 0PTICBOX ★</span>
+    </div>
+  </div>
+
+  <header class="topbar" id="top">
+    <div class="shell topbar-inner">
+      <a class="wordmark" href="index.html"><b>0</b><span><strong>PTICBOX</strong><small>community</small></span></a>
+      <button aria-controls="site-nav" aria-expanded="false" class="menu-toggle" type="button">Menu</button>
+      <nav aria-label="Primary navigation" class="site-nav" id="site-nav">
+        <a href="index.html">Home</a>
+        <a href="messages.html">Messages</a>
+        <a href="members.html">Member area</a>
+        <a href="profile-settings.html">Settings</a>
+        <a aria-current="page" href="community.html">Community</a>
+        <a class="support" href="https://cash.app/$0pticBox" rel="noopener" target="_blank">Support</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="shell activity-page">
+    <section class="box activity-intro">
+      <div class="box-title split-title"><span>Community Feed</span><small>posts · likes · comments</small></div>
+      <div class="activity-intro-body">
+        <div>
+          <span class="mini-label">SAY SOMETHING</span>
+          <h1>Post a thought. Drop an image. Share the track or plan.</h1>
+          <p>Members can now like posts and join the conversation underneath each post.</p>
+        </div>
+        <a class="retro-button" href="profile-settings.html">Profile settings</a>
+      </div>
+    </section>
+
+    <p class="member-warning" hidden id="activity-config-warning">Connect Supabase and apply the newest schema to enable community posts.</p>
+
+    <section class="box activity-composer-box" aria-labelledby="activity-composer-title">
+      <div class="box-title split-title"><span id="activity-composer-title">Make a post</span><small id="activity-session-label">member sign-in required</small></div>
+      <div class="activity-signed-out" id="activity-signed-out">
+        <p>Sign in first. Your session carries over automatically.</p>
+        <a class="retro-button primary" href="signin.html?next=community.html">Sign in or create account</a>
+      </div>
+
+      <form class="activity-form" hidden id="activity-form">
+        <div class="activity-type-picker" role="group" aria-label="Post type">
+          <button class="activity-type-button is-active" data-post-type="post" type="button" aria-pressed="true"><span aria-hidden="true">✎</span>Regular post</button>
+          <button class="activity-type-button" data-post-type="listening" type="button" aria-pressed="false"><span aria-hidden="true">♫</span>Listening now</button>
+          <button class="activity-type-button" data-post-type="event" type="button" aria-pressed="false"><span aria-hidden="true">✦</span>Going to an event</button>
+        </div>
+        <input id="activity-post-type" type="hidden" value="post"/>
+
+        <div class="activity-fields" data-fields="post">
+          <label for="activity-post-title">Headline <small>optional</small></label>
+          <input id="activity-post-title" maxlength="160" placeholder="Give the post a title—or leave this blank"/>
+          <label for="activity-post-url">Link <small>optional</small></label>
+          <input id="activity-post-url" inputmode="url" maxlength="2048" placeholder="https://…"/>
+        </div>
+
+        <div class="activity-fields" data-fields="listening" hidden>
+          <label for="activity-track-title">Track title</label>
+          <input id="activity-track-title" maxlength="120" placeholder="Song or mix title"/>
+          <label for="activity-artist-name">Artist</label>
+          <input id="activity-artist-name" maxlength="100" placeholder="Artist or DJ"/>
+          <label for="activity-media-url">Listening link <small>optional</small></label>
+          <input id="activity-media-url" inputmode="url" maxlength="2048" placeholder="YouTube, Spotify, SoundCloud, Apple Music…"/>
+        </div>
+
+        <div class="activity-fields" data-fields="event" hidden>
+          <label for="activity-event-name">Event name</label>
+          <input id="activity-event-name" maxlength="160" placeholder="Festival, show, rave, or club night"/>
+          <div class="activity-form-grid">
+            <div><label for="activity-event-date">Event date</label><input id="activity-event-date" type="date"/></div>
+            <div><label for="activity-event-city">City</label><input id="activity-event-city" maxlength="100" placeholder="City only"/></div>
+          </div>
+          <label for="activity-event-url">Official event link <small>optional</small></label>
+          <input id="activity-event-url" inputmode="url" maxlength="2048" placeholder="Ticket page or official event page"/>
+          <p class="activity-privacy-note">Keep private addresses, hotels, and real-time travel plans out of public posts.</p>
+        </div>
+
+        <label for="activity-caption" id="activity-caption-label">Post text</label>
+        <textarea id="activity-caption" maxlength="2000" rows="5" placeholder="What’s on your mind?"></textarea>
+        <label for="activity-image">Image or GIF <small>optional</small></label>
+        <input accept="image/png,image/jpeg,image/webp,image/gif" id="activity-image" type="file"/>
+        <small class="field-note">PNG, JPG, WEBP, or GIF. Maximum 5 MB. YouTube listening links can create a thumbnail automatically.</small>
+        <div class="activity-form-footer">
+          <small><span id="activity-caption-count">0</span>/2000</small>
+          <button class="retro-button primary" type="submit">Post to community</button>
+        </div>
+        <p class="member-message" id="activity-form-message" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section class="box activity-feed-box" id="activity-feed" aria-labelledby="activity-feed-title">
+      <div class="box-title split-title"><span id="activity-feed-title">Latest activity</span><small id="activity-post-count">0 posts</small></div>
+      <div class="activity-filter-bar" role="group" aria-label="Filter community posts">
+        <button class="retro-button is-active" data-activity-filter="all" type="button" aria-pressed="true">Everything</button>
+        <button class="retro-button" data-activity-filter="post" type="button" aria-pressed="false">Posts</button>
+        <button class="retro-button" data-activity-filter="listening" type="button" aria-pressed="false">Listening</button>
+        <button class="retro-button" data-activity-filter="event" type="button" aria-pressed="false">Events</button>
+      </div>
+      <p class="activity-feed-message" id="activity-feed-message" aria-live="polite"></p>
+      <div class="activity-feed" id="activity-posts" aria-live="polite"><p class="review-empty">Loading community activity…</p></div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell footer-inner">
+      <p>© <span id="year"></span> 0PTICBOX Productions</p>
+      <div><a href="messages.html">Messages</a><a href="members.html">Member area</a><a href="#top">Back to top</a></div>
+    </div>
+  </footer>
+
+  <script src="community.js?v=11" type="module"></script>
+  <script src="site.js?v=10"></script>
+</body>
+</html>
