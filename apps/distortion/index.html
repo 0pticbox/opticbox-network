@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DISTORTION — Live Video Remix Studio</title>
+  <title>DISTORTION v1.12 — Universal FX Stack</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -14,6 +14,14 @@
         <div class="subtitle">LIVE VIDEO REMIX STUDIO</div>
       </div>
       <div class="top-actions">
+        <label class="theme-picker">THEME
+          <select id="themeSelect" aria-label="Choose interface theme">
+            <option value="studio">STUDIO — DEFAULT</option>
+            <option value="acid">ACID BUNKER</option>
+            <option value="punk">PUNK DISTRICT</option>
+            <option value="corrupted">CORRUPTED SIGNAL</option>
+          </select>
+        </label>
         <button id="detachBtn" class="btn">DETACH CONTROLS</button>
         <button id="fullscreenBtn" class="btn">FULLSCREEN OUTPUT</button>
         <button id="helpBtn" class="btn accent">HELP</button>
@@ -43,6 +51,27 @@
           <div id="videoLibrary" class="video-library"></div>
         </section>
 
+        <section class="scene-bank">
+          <h2>SCENES / HOT CUES</h2>
+          <p class="micro-help">Click to select. Shift-click a saved pad to jump. Right-click clears one.</p>
+          <div class="cue-toolbar">
+            <label>SELECT SCENE
+              <select id="cueKeySelect"></select>
+            </label>
+            <label>TRIGGER MODE
+              <select id="cueModeSelect">
+                <option value="continue">CONTINUE</option>
+                <option value="hold">HOLD</option>
+                <option value="freeze">FREEZE ON RELEASE</option>
+                <option value="loop">2 SECOND LOOP</option>
+              </select>
+            </label>
+            <button id="deselectCueBtn" class="btn small">DESELECT</button>
+            <button id="clearCuesBtn" class="btn small danger">CLEAR ALL</button>
+          </div>
+          <div id="cuePads" class="cue-pads"></div>
+        </section>
+
         <section>
           <h2>LOGO LAYER</h2>
           <label class="file-label">UPLOAD LOGO
@@ -58,6 +87,8 @@
         </section>
       </aside>
 
+      <div class="panel-resizer" data-resize="left" title="Drag to resize left panel"></div>
+
       <section class="center-stage">
         <div class="output-frame" id="outputFrame">
           <canvas id="outputCanvas" width="1280" height="720"></canvas>
@@ -67,31 +98,16 @@
 
         <div class="timeline-wrap">
           <div class="timeline-head">
-            <span>HOVER SCRUB / SHIFT + CLICK TO ADD HOT CUE</span>
+            <span>HOVER SCRUB / SHIFT + CLICK TO SAVE OR REPLACE SELECTED SCENE</span>
             <label class="check-row compact"><input id="hoverPlayToggle" type="checkbox" checked /> HOVER JUMPS LIVE VIDEO</label>
           </div>
           <canvas id="timelineCanvas" width="1200" height="96"></canvas>
           <div id="hoverTime" class="hover-time hidden">00:00.000</div>
         </div>
 
-        <div class="cue-toolbar">
-          <label>ARM CUE KEY
-            <select id="cueKeySelect"></select>
-          </label>
-          <label>TRIGGER MODE
-            <select id="cueModeSelect">
-              <option value="continue">CONTINUE</option>
-              <option value="hold">HOLD</option>
-              <option value="freeze">FREEZE ON RELEASE</option>
-              <option value="loop">2 SECOND LOOP</option>
-            </select>
-          </label>
-          <button id="deselectCueBtn" class="btn small">DESELECT CUE</button>
-          <button id="clearCuesBtn" class="btn small danger">CLEAR CUES</button>
-        </div>
-
-        <div id="cuePads" class="cue-pads"></div>
       </section>
+
+      <div class="panel-resizer" data-resize="right" title="Drag to resize right panel"></div>
 
       <aside class="panel fx-panel">
         <section>
@@ -123,21 +139,42 @@
 
         <section>
           <h2>TRANSITIONS</h2>
-          <div id="transitionButtons" class="fx-grid compact-grid"></div>
-          <label>SNAP DECAY <span id="transitionValue">0.12s</span>
-            <input id="transitionDuration" type="range" min="0.05" max="0.65" step="0.01" value="0.12" />
+          <label>DEFAULT CUE TRANSITION
+            <select id="defaultTransitionSelect" aria-describedby="defaultTransitionNote"></select>
           </label>
+          <p id="defaultTransitionNote" class="transition-note">Runs automatically whenever a saved hot cue is triggered. White Flash on T is the starting default.</p>
+          <div id="transitionButtons" class="fx-grid compact-grid"></div>
+          <label>IMPACT STRENGTH <span id="transitionStrengthValue">85%</span>
+            <input id="transitionStrength" type="range" min="0.25" max="1.5" step="0.05" value="0.85" />
+          </label>
+          <label>SNAP DECAY <span id="transitionValue">0.16s</span>
+            <input id="transitionDuration" type="range" min="0.06" max="1.00" step="0.01" value="0.16" />
+          </label>
+          <div class="mapping-head">CUSTOM KEY MAP <span>DEFAULT ROW: T · Y · U · I · O · P</span></div>
+          <div id="transitionKeyMap" class="transition-key-map"></div>
+          <button id="resetTransitionKeysBtn" class="btn small full transition-reset">RESET TO T–P MAP</button>
         </section>
 
         <section>
           <h2>RECORDING</h2>
-          <label>OUTPUT FORMAT
+          <label>FRAME / ASPECT
             <select id="aspectSelect">
               <option value="16:9">16:9 YOUTUBE</option>
               <option value="9:16">9:16 TIKTOK</option>
               <option value="1:1">1:1 SQUARE</option>
             </select>
           </label>
+          <label>VIDEO FILE FORMAT
+            <select id="recordFormatSelect" aria-describedby="recordFormatNote"></select>
+          </label>
+          <label>RECORDING QUALITY
+            <select id="recordQualitySelect" aria-describedby="recordFormatNote">
+              <option value="maximum">MAXIMUM — LEAST COMPRESSION</option>
+              <option value="high">HIGH</option>
+              <option value="standard">STANDARD</option>
+            </select>
+          </label>
+          <p id="recordFormatNote" class="record-format-note">Full canvas resolution · 60 FPS · available formats depend on this browser.</p>
           <div class="transport">
             <button id="recordBtn" class="btn accent">START RECORDING</button>
             <button id="stopRecordBtn" class="btn danger" disabled>STOP</button>
@@ -148,7 +185,7 @@
 
     <footer class="statusbar">
       <span id="statusText">READY — LOAD MEDIA</span>
-      <span>SPACE: SONG PLAY/PAUSE · F1 / ?: HELP · ESC: EXIT FULLSCREEN</span>
+      <span>SPACE: SONG · Q–V: CUES · 1–9 / \: FX · T–P: TRANSITIONS · F1 / ?: HELP</span>
     </footer>
   </div>
 
@@ -168,6 +205,7 @@
         <button class="active" data-tab="quick">QUICK START</button>
         <button data-tab="cues">HOT CUES</button>
         <button data-tab="effects">EFFECTS</button>
+        <button data-tab="transitions">TRANSITIONS</button>
         <button data-tab="logo">LOGO</button>
         <button data-tab="detach">DETACH</button>
         <button data-tab="record">RECORDING</button>
@@ -181,11 +219,12 @@
             <li>Select a video from the media library.</li>
             <li>Hover across the timeline to jump instantly to that moment.</li>
             <li>Hold Shift and click the timeline to add a new hot cue at that starting point.</li>
-            <li>Press Q–V cue keys while the song keeps playing.</li>
+            <li>Press Q–V cue keys while the song keeps playing. The selected default transition fires automatically.</li>
+            <li>Use T, Y, U, I, O, and P for manual transitions.</li>
             <li>Hold the labeled distortion keys for effects, or switch effects into latch mode.</li>
             <li>Add a logo, move it directly on the video, then record the performance.</li>
           </ol>
-          <div class="help-callout">Recommended starting point: Master 45%, Reactivity 35%, Snap Decay 0.12 seconds, Logo 90% opacity.</div>
+          <div class="help-callout">Recommended starting point: Master 45%, Reactivity 35%, White Flash as the default cue transition, Snap Decay 0.12 seconds, Logo 90% opacity.</div>
         </section>
         <section data-help="cues">
           <h2>HOT CUES</h2>
@@ -196,9 +235,27 @@
         </section>
         <section data-help="effects">
           <h2>DISTORTION EFFECTS</h2>
-          <p>Keys Y U I O H J K L and 7–0 trigger the original bank. The new extreme bank uses [ ] ; ' , . / and backslash. Use HOLD for momentary hits or LATCH to keep effects active.</p>
-          <p><strong>Extreme effects:</strong> Mirror Grid, Vortex Shredder, Random Slicer, Color Crush, Infinite Tunnel, Split Zoom, Block Detonator, and Negative Strobe.</p>
-          <p>Effects can stack. Use CLEAR ALL FX for an instant clean signal. DESTROY SIGNAL generates a randomized stack.</p>
+          <p>Keys 1–9 trigger the main distortion bank. Backslash triggers the hardest negative-strobe effect. Use HOLD for momentary hits or LATCH to keep effects active.</p>
+          <div class="help-key-grid">
+            <div><kbd>1</kbd><span>Datamosh Drift</span></div><div><kbd>2</kbd><span>Mirror Shards</span></div>
+            <div><kbd>3</kbd><span>Mirror Grid</span></div><div><kbd>4</kbd><span>Color Crush</span></div>
+            <div><kbd>5</kbd><span>Split Zoom+</span></div><div><kbd>6</kbd><span>Block Detonator</span></div>
+            <div><kbd>7</kbd><span>Video Tear</span></div><div><kbd>8</kbd><span>Negative Pulse+</span></div>
+            <div><kbd>9</kbd><span>Color Surge</span></div><div><kbd>\</kbd><span>Negative Strobe</span></div>
+          </div>
+          <p>All numbered effects now use a universal pass-by-pass stack. Any combination—including Mirror Grid + Negative Pulse—mixes the same way regardless of which key was pressed first. Use CLEAR ALL FX for an instant clean signal. DESTROY SIGNAL generates a randomized stack.</p>
+        </section>
+        <section data-help="transitions">
+          <h2>TRANSITIONS</h2>
+          <p>Transitions can be fired manually or used automatically whenever a hot cue jumps to a new video moment.</p>
+          <div class="help-key-grid">
+            <div><kbd>T</kbd><span>White Flash</span></div><div><kbd>Y</kbd><span>Impact Shake</span></div>
+            <div><kbd>U</kbd><span>Zoom Punch</span></div><div><kbd>I</kbd><span>Frame Freeze</span></div>
+            <div><kbd>O</kbd><span>Spin Cut</span></div><div><kbd>P</kbd><span>Black Drop</span></div>
+          </div>
+          <p><strong>Default Cue Transition:</strong> choose the transition that fires every time a saved Q–V hot cue is triggered. White Flash is the initial default. Choose None — Hard Cut to disable automatic cue transitions.</p>
+          <p><strong>Custom mapping:</strong> click a key box, then press a replacement key. Scene keys and distortion keys cannot be overwritten. RESET TO T–P MAP restores the original row.</p>
+          <p><strong>Impact Strength</strong> controls how forcefully the transition hits. <strong>Snap Decay</strong> controls how long the hit lasts.</p>
         </section>
         <section data-help="logo">
           <h2>LOGO LAYER</h2>
@@ -211,7 +268,8 @@
         </section>
         <section data-help="record">
           <h2>RECORDING</h2>
-          <p>Select 16:9, 9:16, or 1:1 before recording. The canvas output, song audio, logo, transitions, and active effects are captured into a WebM file.</p>
+          <p>Select the frame shape, then choose any MP4 or WebM encoder supported by your browser. Unsupported choices are hidden automatically.</p>
+          <p>Maximum Quality keeps the full canvas resolution at 60 FPS and requests the highest recording bitrate. Browser recording still requires a video codec, so the result is minimally compressed rather than mathematically uncompressed.</p>
           <p>For reliable audio recording, press PLAY once before starting the recording so the browser can activate its audio engine.</p>
         </section>
         <section data-help="trouble">

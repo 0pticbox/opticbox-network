@@ -107,3 +107,754 @@ dialog::backdrop { background: rgba(0,0,0,.8); }
 }
 
 .fx-btn.snap-hit { border-color: var(--accent); transform: scale(.94); filter: brightness(1.8) contrast(1.2); transition: none; }
+
+/* v1.3 layout: performance fits the viewport, scenes live in the left rail */
+.workspace { height: calc(100vh - 112px); min-height: 620px; align-items: stretch; }
+.media-panel, .fx-panel { overflow-y: auto; overscroll-behavior: contain; }
+.center-stage { min-height: 0; }
+.output-frame { flex: 1 1 auto; min-height: 260px; max-height: calc(100vh - 250px); }
+.timeline-wrap { flex: 0 0 auto; }
+.scene-bank .micro-help { margin: -3px 0 9px; color: var(--muted); font-size: 9px; line-height: 1.35; }
+.scene-bank .cue-toolbar { grid-template-columns: 1fr 1fr; }
+.scene-bank .cue-toolbar .btn { width: 100%; }
+.scene-bank .cue-pads { grid-template-columns: repeat(4, 1fr); }
+.scene-bank .cue-pad { min-height: 54px; padding: 6px; }
+.scene-bank .cue-key { font-size: 16px; }
+.scene-bank .cue-time { font-size: 9px; }
+.scene-bank .cue-mode { font-size: 7px; line-height: 1.2; }
+@media (max-width: 1100px) {
+  .workspace { height: auto; min-height: 0; }
+  .output-frame { max-height: none; }
+}
+
+/* v1.4 adjustable workspace */
+@media (min-width: 1101px) {
+  .workspace {
+    display: flex;
+    grid-template-columns: none;
+    gap: 0;
+  }
+  .media-panel { flex: 0 0 290px; min-width: 210px; max-width: 46vw; }
+  .center-stage { flex: 1 1 auto; padding: 0 10px; min-width: 340px; }
+  .fx-panel { flex: 0 0 320px; min-width: 230px; max-width: 46vw; }
+  .panel-resizer {
+    flex: 0 0 10px;
+    position: relative;
+    cursor: col-resize;
+    touch-action: none;
+  }
+  .panel-resizer::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 4px;
+    width: 2px;
+    background: #313b43;
+  }
+  .panel-resizer:hover::after,
+  .panel-resizer.dragging::after { background: var(--accent); }
+}
+@media (max-width: 1100px) { .panel-resizer { display: none; } }
+.output-frame { resize: vertical; }
+.timeline-wrap { resize: vertical; overflow: hidden; min-height: 122px; max-height: 280px; }
+.mapping-head { margin: 10px 0 7px; color: var(--accent); font-size: 10px; letter-spacing: .09em; }
+.mapping-head span { display: block; color: var(--muted); font-size: 8px; margin-top: 3px; }
+.transition-key-map { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 6px; }
+.key-map-row { display: grid; grid-template-columns: 1fr 44px; gap: 5px; align-items: center; border: 1px solid #303940; padding: 5px; background: #0c1114; }
+.key-map-row label { margin: 0; color: var(--text); font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.key-capture { width: 44px; margin: 0 !important; text-align: center; padding: 5px 2px; background: #06090b; color: var(--accent); border: 1px solid #46515a; text-transform: uppercase; }
+.key-capture.listening { border-color: var(--warn); color: var(--warn); }
+
+
+/* v1.6 typography and three-theme system */
+:root {
+  --topbar: #0c1013;
+  --control: #151b20;
+  --control-dark: #0c1114;
+  --control-deep: #0e1317;
+  --active-bg: #0c2b21;
+  --accent-ink: #00170e;
+  --danger-soft: #ff8a9a;
+  --danger-line: #79303c;
+  --font-display: "Arial Narrow", "Bahnschrift SemiCondensed", "Trebuchet MS", sans-serif;
+  --font-ui: "Bahnschrift", "Trebuchet MS", "Segoe UI", sans-serif;
+}
+html[data-theme="magenta"] {
+  --bg: #0b0710;
+  --panel: #17101c;
+  --panel-2: #211528;
+  --line: #503554;
+  --text: #f8ebf7;
+  --muted: #b493b1;
+  --accent: #ff4fd8;
+  --danger: #ff4568;
+  --warn: #ffd166;
+  --topbar: #130b17;
+  --control: #24142a;
+  --control-dark: #160b1a;
+  --control-deep: #1b0d20;
+  --active-bg: #3d1238;
+  --accent-ink: #24001d;
+  --danger-soft: #ff9eb0;
+  --danger-line: #9d3b55;
+}
+html[data-theme="ice"] {
+  --bg: #071014;
+  --panel: #0d1920;
+  --panel-2: #13242c;
+  --line: #315463;
+  --text: #e9faff;
+  --muted: #89aebc;
+  --accent: #59d8ff;
+  --danger: #ff5d75;
+  --warn: #ffd35d;
+  --topbar: #09151a;
+  --control: #122731;
+  --control-dark: #09191f;
+  --control-deep: #0b2028;
+  --active-bg: #103747;
+  --accent-ink: #001b24;
+  --danger-soft: #ff9aaa;
+  --danger-line: #884252;
+}
+html, body { font-family: var(--font-ui); }
+.brand, h1, h2, .cue-key, .fx-btn strong, .btn, .subtitle { font-family: var(--font-display); }
+.brand { font-weight: 900; letter-spacing: .12em; font-stretch: condensed; }
+h2 { font-weight: 800; }
+.topbar, .statusbar { background: var(--topbar); }
+.btn { background: var(--control); }
+.btn.accent { color: var(--accent-ink); }
+.btn.danger { border-color: var(--danger-line); color: var(--danger-soft); }
+select, .video-item, .key-map-row { background: var(--control-dark); }
+.file-label { background: var(--control-deep); }
+.cue-pad { background: var(--panel-2); }
+.fx-btn { background: var(--control-dark); }
+.fx-btn.active { background: var(--active-bg); }
+.theme-picker {
+  width: 158px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: .12em;
+}
+.theme-picker select {
+  margin-top: 3px;
+  padding: 7px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+}
+@media (max-width: 760px) {
+  .theme-picker { width: min(100%, 220px); }
+}
+
+/* v1.7 — dramatically differentiated themes */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+.app-shell { position: relative; isolation: isolate; }
+.panel, .output-frame, .timeline-wrap, .btn, .cue-pad, .fx-btn, .file-label, select, .key-map-row {
+  transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease, transform .12s ease, clip-path .18s ease;
+}
+
+/* ACID TERMINAL — industrial CRT / military console */
+html:not([data-theme]), html[data-theme="acid"] {
+  --bg: #020704;
+  --panel: rgba(5, 18, 11, .94);
+  --panel-2: #092416;
+  --line: #1d6f46;
+  --text: #d9ffe9;
+  --muted: #6fba8d;
+  --accent: #00ff78;
+  --danger: #ff394f;
+  --warn: #ffe100;
+  --topbar: #031109;
+  --control: #061d10;
+  --control-dark: #020d07;
+  --control-deep: #04170c;
+  --active-bg: #004b26;
+  --accent-ink: #001b0b;
+}
+html:not([data-theme]) body::before,
+html[data-theme="acid"] body::before {
+  background:
+    repeating-linear-gradient(0deg, rgba(0,255,120,.035) 0 1px, transparent 1px 4px),
+    linear-gradient(90deg, transparent 49.8%, rgba(0,255,120,.06) 50%, transparent 50.2%),
+    radial-gradient(circle at 50% 0%, #0c321d 0, #020704 52%);
+  animation: acidScan 8s linear infinite;
+}
+html[data-theme="acid"] .topbar {
+  border-bottom: 3px double var(--accent);
+  box-shadow: 0 8px 0 rgba(0,255,120,.06);
+}
+html[data-theme="acid"] .brand {
+  text-shadow: 3px 0 #006d36, -1px 0 #b4ffd3;
+  transform: skewX(-5deg);
+}
+html[data-theme="acid"] .panel,
+html[data-theme="acid"] .output-frame,
+html[data-theme="acid"] .timeline-wrap {
+  border-width: 1px 1px 3px;
+  box-shadow: inset 0 0 24px rgba(0,255,120,.055), 0 0 0 1px #001f10;
+}
+html[data-theme="acid"] .panel section { background: linear-gradient(180deg, rgba(0,255,120,.025), transparent 30%); }
+html[data-theme="acid"] .btn,
+html[data-theme="acid"] .fx-btn,
+html[data-theme="acid"] .cue-pad {
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  text-shadow: 0 0 6px rgba(0,255,120,.32);
+}
+html[data-theme="acid"] .btn:hover,
+html[data-theme="acid"] .fx-btn:hover,
+html[data-theme="acid"] .cue-pad:hover { box-shadow: inset 4px 0 var(--accent), 0 0 12px rgba(0,255,120,.22); }
+html[data-theme="acid"] .fx-btn.active { box-shadow: inset 0 0 22px rgba(0,255,120,.35), 0 0 13px rgba(0,255,120,.28); }
+html[data-theme="acid"] h2::before { content: ">> "; }
+
+/* MAGENTA DAMAGE — cyber-club / broken neon machinery */
+html[data-theme="magenta"] {
+  --bg: #100015;
+  --panel: rgba(35, 4, 43, .90);
+  --panel-2: #4a0751;
+  --line: #d528bb;
+  --text: #fff2ff;
+  --muted: #e09ad7;
+  --accent: #ff27d8;
+  --danger: #ff244f;
+  --warn: #00f6ff;
+  --topbar: #26002b;
+  --control: #4b0750;
+  --control-dark: #210025;
+  --control-deep: #360038;
+  --active-bg: #7b075f;
+  --accent-ink: #290021;
+}
+html[data-theme="magenta"] body::before {
+  background:
+    linear-gradient(125deg, transparent 0 44%, rgba(255,39,216,.10) 44% 46%, transparent 46% 61%, rgba(0,246,255,.08) 61% 63%, transparent 63%),
+    radial-gradient(circle at 10% 15%, rgba(255,39,216,.35), transparent 28%),
+    radial-gradient(circle at 90% 80%, rgba(0,246,255,.22), transparent 30%),
+    repeating-linear-gradient(135deg, #100015 0 28px, #16001d 28px 56px);
+  animation: riotShift 13s ease-in-out infinite alternate;
+}
+html[data-theme="magenta"] .topbar {
+  border-bottom: 4px solid var(--accent);
+  box-shadow: 0 5px 0 #00f6ff, 0 10px 0 rgba(255,39,216,.15);
+}
+html[data-theme="magenta"] .brand {
+  font-style: italic;
+  letter-spacing: .07em;
+  text-shadow: 4px 3px #00a9b2, -3px -2px #7b004f;
+}
+html[data-theme="magenta"] .workspace { gap: 6px; }
+html[data-theme="magenta"] .panel,
+html[data-theme="magenta"] .output-frame,
+html[data-theme="magenta"] .timeline-wrap {
+  border: 2px solid var(--line);
+  box-shadow: 5px 5px 0 #00a9b2, inset 0 0 30px rgba(255,39,216,.10);
+  transform: translate(-2px,-2px);
+}
+html[data-theme="magenta"] .panel section:nth-child(even) { background: rgba(0,246,255,.035); }
+html[data-theme="magenta"] .btn,
+html[data-theme="magenta"] .fx-btn,
+html[data-theme="magenta"] .cue-pad,
+html[data-theme="magenta"] .file-label {
+  border-radius: 0 14px 0 14px;
+  border-width: 2px;
+}
+html[data-theme="magenta"] .btn:hover,
+html[data-theme="magenta"] .fx-btn:hover,
+html[data-theme="magenta"] .cue-pad:hover {
+  transform: translate(2px,-2px) rotate(-.4deg);
+  box-shadow: -4px 4px 0 #00a9b2;
+}
+html[data-theme="magenta"] .fx-btn.active {
+  background: linear-gradient(135deg, #ff27d8, #7b075f 55%, #00a9b2);
+  color: white;
+  box-shadow: 0 0 18px rgba(255,39,216,.7), inset 0 0 12px rgba(255,255,255,.18);
+}
+html[data-theme="magenta"] .cue-pad.armed { outline: 3px dashed #00f6ff; outline-offset: -5px; }
+html[data-theme="magenta"] h2 { background: var(--accent); color: #2c0025; padding: 4px 7px; transform: skewX(-6deg); }
+
+/* ICE SIGNAL — sterile broadcast lab / translucent frozen glass */
+html[data-theme="ice"] {
+  --bg: #dceef4;
+  --panel: rgba(242, 251, 255, .80);
+  --panel-2: rgba(209, 237, 247, .88);
+  --line: #5c91a5;
+  --text: #06222e;
+  --muted: #426d7d;
+  --accent: #007fa8;
+  --danger: #cf2447;
+  --warn: #bd7100;
+  --topbar: rgba(232, 248, 253, .92);
+  --control: rgba(217, 241, 249, .88);
+  --control-dark: rgba(237, 250, 254, .94);
+  --control-deep: rgba(200, 231, 241, .84);
+  --active-bg: #93d6e9;
+  --accent-ink: #f0fdff;
+  --danger-soft: #9a1734;
+  --danger-line: #c75d73;
+}
+html[data-theme="ice"] body::before {
+  background:
+    linear-gradient(rgba(255,255,255,.42), rgba(255,255,255,.08)),
+    repeating-linear-gradient(90deg, transparent 0 79px, rgba(0,127,168,.075) 80px),
+    repeating-linear-gradient(0deg, transparent 0 79px, rgba(0,127,168,.075) 80px),
+    radial-gradient(circle at 20% 10%, #ffffff 0, #dceef4 45%, #bddce8 100%);
+}
+html[data-theme="ice"] .topbar {
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid #77aabe;
+  box-shadow: 0 10px 30px rgba(4,48,67,.12);
+}
+html[data-theme="ice"] .brand { letter-spacing: .22em; font-weight: 500; text-shadow: 0 1px white; }
+html[data-theme="ice"] .subtitle { letter-spacing: .38em; }
+html[data-theme="ice"] .panel,
+html[data-theme="ice"] .output-frame,
+html[data-theme="ice"] .timeline-wrap {
+  backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid rgba(66,109,125,.55);
+  border-radius: 16px;
+  box-shadow: inset 0 1px rgba(255,255,255,.85), 0 12px 32px rgba(20,75,95,.12);
+}
+html[data-theme="ice"] .panel { overflow: hidden; }
+html[data-theme="ice"] .panel section { border-color: rgba(66,109,125,.25); }
+html[data-theme="ice"] .btn,
+html[data-theme="ice"] .fx-btn,
+html[data-theme="ice"] .cue-pad,
+html[data-theme="ice"] .file-label,
+html[data-theme="ice"] select,
+html[data-theme="ice"] .key-map-row {
+  border-radius: 10px;
+  border-color: rgba(66,109,125,.42);
+  box-shadow: inset 0 1px rgba(255,255,255,.85);
+}
+html[data-theme="ice"] .btn:hover,
+html[data-theme="ice"] .fx-btn:hover,
+html[data-theme="ice"] .cue-pad:hover {
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px white, 0 7px 16px rgba(0,127,168,.18);
+}
+html[data-theme="ice"] .fx-btn.active {
+  background: linear-gradient(180deg, #d9f8ff, #8dd3e7);
+  box-shadow: inset 0 1px white, 0 0 0 2px rgba(0,127,168,.25), 0 8px 20px rgba(0,127,168,.18);
+}
+html[data-theme="ice"] .output-frame { background: #00151d; border-radius: 20px; }
+html[data-theme="ice"] h2 { color: #00698d; letter-spacing: .22em; font-weight: 500; }
+html[data-theme="ice"] .record-badge { border-radius: 20px; }
+
+@keyframes acidScan {
+  0% { background-position: 0 0, 0 0, 0 0; }
+  100% { background-position: 0 28px, 0 0, 0 0; }
+}
+@keyframes riotShift {
+  0% { filter: hue-rotate(0deg) contrast(1); transform: scale(1); }
+  100% { filter: hue-rotate(15deg) contrast(1.08); transform: scale(1.03); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none !important; }
+}
+
+
+/* ==========================================================================\n   v1.8 — FOUR OS THEMES + IMMERSIVE ENVIRONMENTS\n   Font files are not bundled. Each theme first checks for the user's locally\n   installed font, then falls back to a hand-tuned system stack.\n   ========================================================================== */
+@font-face {
+  font-family: "Distortion Sandey";
+  src: local("Sandey Molse DEMO"), local("Sandey Molse"), local("SandeyMolseDEMO");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Distortion Pickyside";
+  src: local("PICKYSIDE GRUNGE"), local("Pickyside Grunge"), local("PICKYSIDEGRUNGE-Regular");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Distortion Punk";
+  src: local("Very very punk font"), local("Very Very Punk"), local("Veryverypunkfont");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Distortion Horror";
+  src: local("WESAYSO"), local("WESAYSOPERSONALUSE-Bold"), local("WeSaySo");
+  font-display: swap;
+}
+
+body::before,
+body::after {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.app-shell { z-index: 1; }
+.app-shell::before,
+.app-shell::after {
+  content: "";
+  position: fixed;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* MAIN / STUDIO — intentionally quiet and performance-first */
+html[data-theme="studio"] {
+  --bg: #08090c;
+  --panel: #111318;
+  --panel-2: #181b21;
+  --line: #343943;
+  --text: #f0f1f3;
+  --muted: #9298a3;
+  --accent: #e5e7eb;
+  --danger: #ff445f;
+  --warn: #ffc857;
+  --topbar: #0d0f13;
+  --control: #181b21;
+  --control-dark: #0c0e12;
+  --control-deep: #12151a;
+  --active-bg: #2b3038;
+  --accent-ink: #08090c;
+  --font-display: "Distortion Sandey", "Arial Narrow", "Bahnschrift SemiCondensed", sans-serif;
+  --font-ui: "Bahnschrift", "Segoe UI", sans-serif;
+}
+html[data-theme="studio"] body::before {
+  background: linear-gradient(180deg, #111319 0, #08090c 58%, #050609 100%);
+  animation: none;
+}
+html[data-theme="studio"] body::after,
+html[data-theme="studio"] .app-shell::before,
+html[data-theme="studio"] .app-shell::after { display: none; }
+html[data-theme="studio"] .panel,
+html[data-theme="studio"] .output-frame,
+html[data-theme="studio"] .timeline-wrap { box-shadow: none; border-radius: 2px; }
+html[data-theme="studio"] .brand { letter-spacing: .14em; text-shadow: none; transform: none; }
+html[data-theme="studio"] h2 { background: transparent; transform: none; padding: 0; }
+html[data-theme="studio"] h2::before { content: ""; }
+html[data-theme="studio"] .btn,
+html[data-theme="studio"] .fx-btn,
+html[data-theme="studio"] .cue-pad,
+html[data-theme="studio"] .file-label { border-radius: 2px; clip-path: none; transform: none; }
+
+/* ACID BUNKER — industrial terminal room */
+html[data-theme="acid"] {
+  --bg: #010503;
+  --panel: rgba(3, 17, 9, .90);
+  --panel-2: rgba(6, 35, 17, .92);
+  --line: #177143;
+  --text: #dcffe9;
+  --muted: #75bd91;
+  --accent: #00ff75;
+  --danger: #ff364d;
+  --warn: #ffe600;
+  --topbar: rgba(2, 14, 7, .96);
+  --control: rgba(4, 28, 13, .94);
+  --control-dark: rgba(1, 12, 6, .96);
+  --control-deep: rgba(3, 23, 11, .96);
+  --active-bg: #00502a;
+  --accent-ink: #001a0b;
+  --font-display: "Distortion Pickyside", Impact, "Arial Black", sans-serif;
+  --font-ui: "Bahnschrift SemiCondensed", Consolas, monospace;
+}
+html[data-theme="acid"] body::before {
+  background:
+    linear-gradient(90deg, rgba(0,0,0,.88) 0 7%, transparent 7% 93%, rgba(0,0,0,.88) 93%),
+    repeating-linear-gradient(90deg, transparent 0 88px, rgba(0,255,117,.055) 89px 91px),
+    repeating-linear-gradient(0deg, transparent 0 62px, rgba(0,255,117,.035) 63px 65px),
+    radial-gradient(ellipse at 50% 15%, rgba(0,255,117,.24), transparent 36%),
+    linear-gradient(180deg, #07170d 0, #020805 55%, #000 100%);
+  animation: bunkerPulse 6s steps(2,end) infinite;
+}
+html[data-theme="acid"] body::after {
+  content: "";
+  opacity: .36;
+  background:
+    repeating-linear-gradient(0deg, rgba(0,255,117,.12) 0 1px, transparent 1px 4px),
+    linear-gradient(105deg, transparent 0 38%, rgba(120,255,170,.08) 40%, transparent 42% 100%);
+  background-size: 100% 4px, 240% 100%;
+  mix-blend-mode: screen;
+  animation: bunkerScan 5.5s linear infinite;
+}
+html[data-theme="acid"] .app-shell::before {
+  inset: auto 5vw 0 5vw;
+  height: 32vh;
+  opacity: .42;
+  background:
+    linear-gradient(90deg, #00190c 0 8%, transparent 8% 14%, #00190c 14% 23%, transparent 23% 29%, #00190c 29% 42%, transparent 42% 58%, #00190c 58% 72%, transparent 72% 78%, #00190c 78% 91%, transparent 91%),
+    repeating-linear-gradient(0deg, #001209 0 8px, #032517 8px 10px);
+  clip-path: polygon(0 30%, 7% 30%, 7% 4%, 23% 4%, 23% 24%, 31% 24%, 31% 0, 46% 0, 46% 28%, 60% 28%, 60% 8%, 77% 8%, 77% 33%, 87% 33%, 87% 16%, 100% 16%, 100% 100%, 0 100%);
+}
+html[data-theme="acid"] .app-shell::after {
+  inset: 0;
+  opacity: .18;
+  background-image: radial-gradient(circle, #00ff75 0 1px, transparent 1.6px);
+  background-size: 61px 47px;
+  animation: bunkerDust 19s linear infinite;
+}
+html[data-theme="acid"] .panel,
+html[data-theme="acid"] .output-frame,
+html[data-theme="acid"] .timeline-wrap { backdrop-filter: blur(3px); }
+
+/* PUNK DISTRICT — abandoned neon venue / graffiti wall */
+html[data-theme="punk"] {
+  --bg: #11000f;
+  --panel: rgba(34, 3, 34, .86);
+  --panel-2: rgba(71, 6, 64, .90);
+  --line: #ff27cc;
+  --text: #fff4fb;
+  --muted: #e4a1d5;
+  --accent: #ff2dce;
+  --danger: #ff3555;
+  --warn: #00f4ff;
+  --topbar: rgba(31, 0, 31, .94);
+  --control: rgba(74, 4, 67, .93);
+  --control-dark: rgba(25, 0, 25, .95);
+  --control-deep: rgba(50, 1, 45, .95);
+  --active-bg: #8d086b;
+  --accent-ink: #2a001f;
+  --font-display: "Distortion Punk", Impact, "Arial Black", sans-serif;
+  --font-ui: "Trebuchet MS", "Segoe UI", sans-serif;
+}
+html[data-theme="punk"] body::before {
+  background:
+    radial-gradient(circle at 18% 72%, rgba(255,45,206,.42), transparent 24%),
+    radial-gradient(circle at 85% 19%, rgba(0,244,255,.27), transparent 22%),
+    linear-gradient(116deg, transparent 0 29%, rgba(255,45,206,.13) 29% 31%, transparent 31% 58%, rgba(0,244,255,.11) 58% 60%, transparent 60%),
+    repeating-linear-gradient(165deg, #150012 0 24px, #21001d 24px 28px, #0d000c 28px 52px);
+  animation: punkWall 12s ease-in-out infinite alternate;
+}
+html[data-theme="punk"] body::after {
+  content: "NO FUTURE   BREAK THE SIGNAL   DISTORT EVERYTHING   ";
+  inset: auto -8vw 5vh -8vw;
+  height: 16vh;
+  color: rgba(255,255,255,.08);
+  font: 900 clamp(28px, 5vw, 76px)/1 "Distortion Punk", Impact, sans-serif;
+  letter-spacing: .03em;
+  white-space: nowrap;
+  transform: rotate(-5deg);
+  text-shadow: 7px 5px rgba(0,244,255,.08), -5px -3px rgba(255,45,206,.1);
+  animation: punkWords 10s steps(5,end) infinite;
+}
+html[data-theme="punk"] .app-shell::before {
+  inset: -20vh -15vw auto;
+  height: 65vh;
+  opacity: .48;
+  background:
+    linear-gradient(78deg, transparent 42%, rgba(255,45,206,.58) 43% 43.7%, transparent 44.7%),
+    linear-gradient(102deg, transparent 52%, rgba(0,244,255,.44) 53% 53.5%, transparent 54.5%),
+    linear-gradient(89deg, transparent 64%, rgba(255,238,70,.22) 65% 65.4%, transparent 66.4%);
+  transform-origin: top center;
+  animation: punkLasers 7s ease-in-out infinite alternate;
+}
+html[data-theme="punk"] .app-shell::after {
+  inset: auto 0 0;
+  height: 34vh;
+  opacity: .35;
+  background:
+    radial-gradient(ellipse at 10% 100%, rgba(255,255,255,.2), transparent 35%),
+    radial-gradient(ellipse at 50% 100%, rgba(255,45,206,.25), transparent 38%),
+    radial-gradient(ellipse at 90% 100%, rgba(0,244,255,.19), transparent 34%);
+  filter: blur(18px);
+  animation: punkSmoke 8s ease-in-out infinite alternate;
+}
+html[data-theme="punk"] .topbar { box-shadow: 0 4px 0 #00b9c2, 0 8px 0 rgba(255,45,206,.2); }
+html[data-theme="punk"] .brand { text-shadow: 5px 3px #0098a0, -3px -2px #7d004e; transform: rotate(-1deg) skewX(-6deg); }
+html[data-theme="punk"] h2 { background: var(--accent); color: #24001d; padding: 4px 7px; transform: skewX(-7deg) rotate(-.4deg); }
+html[data-theme="punk"] .panel,
+html[data-theme="punk"] .output-frame,
+html[data-theme="punk"] .timeline-wrap { box-shadow: 5px 5px 0 rgba(0,185,194,.8), inset 0 0 28px rgba(255,45,206,.09); backdrop-filter: blur(4px); }
+html[data-theme="punk"] .btn,
+html[data-theme="punk"] .fx-btn,
+html[data-theme="punk"] .cue-pad,
+html[data-theme="punk"] .file-label { border-radius: 0 13px 0 13px; clip-path: none; }
+html[data-theme="punk"] .fx-btn.active { background: linear-gradient(135deg, #ff2dce, #7f075e 55%, #00aab5); }
+
+/* CORRUPTED SIGNAL — infernal broadcast station, abstract and original */
+html[data-theme="corrupted"] {
+  --bg: #090000;
+  --panel: rgba(25, 2, 1, .88);
+  --panel-2: rgba(52, 4, 1, .92);
+  --line: #8e190d;
+  --text: #ffe7cf;
+  --muted: #c48771;
+  --accent: #ff3b0a;
+  --danger: #ff001f;
+  --warn: #ffb000;
+  --topbar: rgba(22, 0, 0, .95);
+  --control: rgba(62, 4, 1, .94);
+  --control-dark: rgba(16, 0, 0, .96);
+  --control-deep: rgba(40, 2, 0, .96);
+  --active-bg: #701000;
+  --accent-ink: #210000;
+  --font-display: "Distortion Horror", Impact, "Arial Black", sans-serif;
+  --font-ui: "Arial Narrow", "Bahnschrift SemiCondensed", sans-serif;
+}
+html[data-theme="corrupted"] body::before {
+  background:
+    radial-gradient(ellipse at 50% 112%, #ff6a00 0 8%, #a51a00 16%, transparent 36%),
+    radial-gradient(ellipse at 18% 95%, rgba(255,60,0,.74), transparent 27%),
+    radial-gradient(ellipse at 84% 91%, rgba(255,125,0,.56), transparent 23%),
+    linear-gradient(175deg, transparent 0 47%, rgba(52,2,0,.72) 48% 54%, transparent 55%),
+    radial-gradient(circle at 50% 10%, #310000 0, #0b0000 52%, #020000 100%);
+  filter: contrast(1.16) saturate(1.15);
+  animation: hellBreath 5.8s ease-in-out infinite alternate;
+}
+html[data-theme="corrupted"] body::after {
+  content: "";
+  opacity: .48;
+  background:
+    repeating-linear-gradient(0deg, rgba(255,50,0,.055) 0 1px, transparent 1px 5px),
+    radial-gradient(circle at 23% 15%, #ff5b00 0 1px, transparent 1.7px),
+    radial-gradient(circle at 67% 31%, #ff9a00 0 1px, transparent 1.8px),
+    radial-gradient(circle at 82% 8%, #ff3a00 0 1px, transparent 1.5px);
+  background-size: 100% 5px, 91px 83px, 127px 101px, 73px 113px;
+  mix-blend-mode: screen;
+  animation: hellAsh 12s linear infinite;
+}
+html[data-theme="corrupted"] .app-shell::before {
+  inset: auto -4vw -6vh;
+  height: 44vh;
+  opacity: .82;
+  background:
+    linear-gradient(154deg, transparent 0 35%, #120000 36% 48%, transparent 49%),
+    linear-gradient(205deg, transparent 0 39%, #1b0000 40% 56%, transparent 57%),
+    repeating-linear-gradient(171deg, #0a0000 0 14px, #250100 15px 18px, #080000 19px 29px);
+  clip-path: polygon(0 42%, 9% 18%, 18% 35%, 28% 4%, 39% 40%, 50% 9%, 63% 37%, 73% 0, 85% 32%, 94% 12%, 100% 41%, 100% 100%, 0 100%);
+  animation: hellRidge 7s ease-in-out infinite alternate;
+}
+html[data-theme="corrupted"] .app-shell::after {
+  inset: 0;
+  opacity: .28;
+  background:
+    linear-gradient(90deg, transparent 0 18%, rgba(255,55,0,.18) 18.3% 18.7%, transparent 19% 69%, rgba(255,120,0,.14) 69.2% 69.6%, transparent 70%),
+    repeating-linear-gradient(92deg, transparent 0 120px, rgba(255,30,0,.06) 121px 123px);
+  filter: blur(.4px);
+  animation: heatHaze 3.2s steps(4,end) infinite;
+}
+html[data-theme="corrupted"] .topbar { border-bottom: 2px solid #ff3b0a; box-shadow: 0 7px 24px rgba(255,45,0,.2); }
+html[data-theme="corrupted"] .brand { letter-spacing: .08em; text-shadow: 4px 1px #6b0000, -2px 0 #ff7a1a; animation: horrorTitle 3.8s steps(2,end) infinite; }
+html[data-theme="corrupted"] h2 { color: #ff5a1a; text-shadow: 0 0 8px rgba(255,50,0,.5); }
+html[data-theme="corrupted"] h2::before { content: "// "; }
+html[data-theme="corrupted"] .panel,
+html[data-theme="corrupted"] .output-frame,
+html[data-theme="corrupted"] .timeline-wrap { border-color: rgba(190,35,12,.78); box-shadow: inset 0 0 34px rgba(100,0,0,.22), 0 0 18px rgba(255,40,0,.1); backdrop-filter: blur(3px); }
+html[data-theme="corrupted"] .btn,
+html[data-theme="corrupted"] .fx-btn,
+html[data-theme="corrupted"] .cue-pad,
+html[data-theme="corrupted"] .file-label {
+  border-radius: 1px;
+  clip-path: polygon(0 0, 96% 0, 100% 13%, 98% 100%, 4% 97%, 0 84%);
+}
+html[data-theme="corrupted"] .btn:hover,
+html[data-theme="corrupted"] .fx-btn:hover,
+html[data-theme="corrupted"] .cue-pad:hover { transform: translate(2px,-1px) skewX(-1deg); filter: brightness(1.28); }
+html[data-theme="corrupted"] .fx-btn.active { background: linear-gradient(145deg, #b71a00, #420000 63%, #ff5b00); box-shadow: inset 0 0 22px rgba(255,120,0,.25), 0 0 15px rgba(255,45,0,.28); }
+html[data-theme="corrupted"] .output-frame { box-shadow: 0 0 0 1px #2c0000, 0 0 28px rgba(255,35,0,.18); }
+
+@keyframes bunkerPulse {
+  0%, 86%, 100% { filter: brightness(1); }
+  88% { filter: brightness(.72); }
+  90% { filter: brightness(1.18); }
+  92% { filter: brightness(.9); }
+}
+@keyframes bunkerScan { to { background-position: 0 40px, -240% 0; } }
+@keyframes bunkerDust { to { background-position: 61px -94px; } }
+@keyframes punkWall { to { filter: hue-rotate(9deg) contrast(1.08); transform: scale(1.025); } }
+@keyframes punkWords {
+  0%,100% { transform: translateX(0) rotate(-5deg); }
+  48% { transform: translateX(-5vw) rotate(-4deg); }
+  52% { transform: translateX(4vw) rotate(-6deg); }
+}
+@keyframes punkLasers { to { transform: rotate(3deg) translateX(5vw); opacity: .75; } }
+@keyframes punkSmoke { to { transform: translateX(4vw) scale(1.1); opacity: .52; } }
+@keyframes hellBreath { to { filter: contrast(1.25) saturate(1.38) brightness(1.12); transform: scale(1.018); } }
+@keyframes hellAsh { to { background-position: 0 35px, 30px -166px, -50px -202px, 20px -226px; } }
+@keyframes hellRidge { to { transform: translateY(1.7vh) scaleX(1.02); filter: brightness(1.14); } }
+@keyframes heatHaze {
+  0%,100% { transform: translateX(0) skewX(0deg); }
+  33% { transform: translateX(2px) skewX(.18deg); }
+  66% { transform: translateX(-2px) skewX(-.16deg); }
+}
+@keyframes horrorTitle {
+  0%, 91%, 100% { transform: none; }
+  92% { transform: translateX(3px) skewX(-5deg); }
+  94% { transform: translateX(-4px) skewX(4deg); }
+  96% { transform: translateX(1px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme] body::before,
+  html[data-theme] body::after,
+  html[data-theme] .app-shell::before,
+  html[data-theme] .app-shell::after,
+  html[data-theme] .brand { animation: none !important; }
+}
+
+/* v1.10 recording format and maximum-quality controls */
+.record-format-note {
+  margin: -2px 0 10px;
+  padding: 7px 8px;
+  border-left: 2px solid var(--accent);
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+
+/* v1.11 default cue transition + expanded help page */
+.transition-note {
+  margin: -2px 0 9px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.4;
+}
+.transition-reset { margin-top: 8px; }
+.fx-btn.default-transition {
+  position: relative;
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.default-badge {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  padding: 2px 4px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  background: var(--control-dark);
+  font-style: normal;
+  font-size: 7px;
+  letter-spacing: .08em;
+}
+#helpDialog { width: min(1180px, 96vw); height: min(860px, 93vh); }
+.help-key-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin: 14px 0;
+}
+.help-key-grid > div {
+  display: grid;
+  grid-template-columns: 46px 1fr;
+  gap: 9px;
+  align-items: center;
+  border: 1px solid var(--line);
+  background: var(--control-dark);
+  padding: 8px;
+}
+.help-key-grid kbd {
+  display: grid;
+  place-items: center;
+  min-height: 34px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  background: #050709;
+  font: 700 14px var(--font-ui);
+}
+.help-key-grid span { color: var(--text); }
+@media (max-width: 650px) {
+  .help-key-grid { grid-template-columns: 1fr; }
+}

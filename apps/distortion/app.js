@@ -14,38 +14,89 @@
   const bctxB = bufferB.getContext('2d');
   const pixelCanvas = document.createElement('canvas');
   const pctx = pixelCanvas.getContext('2d');
+  // Dedicated ping-pong canvases let every numbered effect process the
+  // completed result of the previous effect instead of erasing it.
+  const fxStackA = document.createElement('canvas');
+  const fxStackB = document.createElement('canvas');
+  const fxctxA = fxStackA.getContext('2d');
+  const fxctxB = fxStackB.getContext('2d');
 
   const cueKeys = ['q','w','e','r','a','s','d','f','z','x','c','v'];
+  // Number row = performance effects. Scene/hot-cue keys stay on Q–V.
   const effects = [
-    { id: 'vhs', name: 'VHS TRACKING', key: 'y' },
-    { id: 'rgb', name: 'RGB SPLIT', key: 'u' },
-    { id: 'liquid', name: 'LIQUID WARP', key: 'i' },
-    { id: 'datamosh', name: 'DATAMOSH', key: 'o' },
-    { id: 'tear', name: 'SCREEN TEAR', key: 'h' },
-    { id: 'feedback', name: 'FEEDBACK', key: 'j' },
-    { id: 'kaleido', name: 'KALEIDOSCOPE', key: 'k' },
-    { id: 'lens', name: 'LENS WARP', key: 'l' },
-    { id: 'pixel', name: 'PIXEL BREAK', key: '7' },
-    { id: 'invert', name: 'SOLAR INVERT', key: '8' },
-    { id: 'echo', name: 'FRAME ECHO', key: '9' },
-    { id: 'scan', name: 'SCAN ROLL', key: '0' },
-    { id: 'mirrorgrid', name: 'MIRROR GRID', key: '[' },
-    { id: 'vortex', name: 'VORTEX SHREDDER', key: ']' },
-    { id: 'slicer', name: 'RANDOM SLICER', key: ';' },
-    { id: 'crush', name: 'COLOR CRUSH', key: "'" },
-    { id: 'tunnel', name: 'INFINITE TUNNEL', key: ',' },
-    { id: 'splitzoom', name: 'SPLIT ZOOM', key: '.' },
-    { id: 'blocks', name: 'BLOCK DETONATOR', key: '/' },
+    { id: 'datamosh', name: 'DATAMOSH DRIFT', key: '1' },
+    { id: 'mirrorshards', name: 'MIRROR SHARDS', key: '2' },
+    { id: 'mirrorgrid', name: 'MIRROR GRID', key: '3' },
+    { id: 'crush', name: 'COLOR CRUSH', key: '4' },
+    { id: 'splitzoom', name: 'SPLIT ZOOM+', key: '5' },
+    { id: 'blocks', name: 'BLOCK DETONATOR', key: '6' },
+    { id: 'videotear', name: 'VIDEO TEAR', key: '7' },
+    { id: 'invert', name: 'NEGATIVE PULSE+', key: '8' },
+    { id: 'colorsurge', name: 'COLOR SURGE', key: '9' },
     { id: 'strobe', name: 'NEGATIVE STROBE', key: '\\' }
   ];
+  const savedTransitionKeys = (() => {
+    try { return JSON.parse(localStorage.getItem('distortion-transition-keys-v2') || '{}'); }
+    catch { return {}; }
+  })();
+  const defaultTransitionKeys = { flash: 't', shake: 'y', zoom: 'u', freeze: 'i', spin: 'o', black: 'p' };
   const transitions = [
-    { id: 'flash', name: 'WHITE FLASH', key: '1' },
-    { id: 'shake', name: 'IMPACT SHAKE', key: '2' },
-    { id: 'zoom', name: 'ZOOM PUNCH', key: '3' },
-    { id: 'freeze', name: 'FRAME FREEZE', key: '4' },
-    { id: 'spin', name: 'SPIN CUT', key: '5' },
-    { id: 'black', name: 'BLACK DROP', key: '6' }
+    { id: 'flash', name: 'WHITE FLASH', key: savedTransitionKeys.flash || defaultTransitionKeys.flash },
+    { id: 'shake', name: 'IMPACT SHAKE', key: savedTransitionKeys.shake || defaultTransitionKeys.shake },
+    { id: 'zoom', name: 'ZOOM PUNCH', key: savedTransitionKeys.zoom || defaultTransitionKeys.zoom },
+    { id: 'freeze', name: 'FRAME FREEZE', key: savedTransitionKeys.freeze || defaultTransitionKeys.freeze },
+    { id: 'spin', name: 'SPIN CUT', key: savedTransitionKeys.spin || defaultTransitionKeys.spin },
+    { id: 'black', name: 'BLACK DROP', key: savedTransitionKeys.black || defaultTransitionKeys.black }
   ];
+  const savedDefaultTransition = (() => {
+    try {
+      const value = localStorage.getItem('distortion-default-transition') || 'flash';
+      return value === 'none' || transitions.some(tr => tr.id === value) ? value : 'flash';
+    } catch { return 'flash'; }
+  })();
+
+
+  // Container/codec choices are detected at runtime so unsupported formats
+  // never appear in the recording menu.
+  const recordingFormatCatalog = [
+    {
+      id: 'mp4-h264',
+      label: 'MP4 — H.264 / AAC',
+      extension: 'mp4',
+      candidates: [
+        'video/mp4;codecs=avc1.640028,mp4a.40.2',
+        'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+        'video/mp4;codecs=h264,aac',
+        'video/mp4'
+      ]
+    },
+    {
+      id: 'webm-vp9',
+      label: 'WEBM — VP9 / OPUS',
+      extension: 'webm',
+      candidates: ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp9']
+    },
+    {
+      id: 'webm-vp8',
+      label: 'WEBM — VP8 / OPUS',
+      extension: 'webm',
+      candidates: ['video/webm;codecs=vp8,opus', 'video/webm;codecs=vp8']
+    },
+    {
+      id: 'webm-default',
+      label: 'WEBM — BROWSER DEFAULT',
+      extension: 'webm',
+      candidates: ['video/webm']
+    }
+  ];
+
+  const recordingQualityProfiles = {
+    maximum: { label: 'maximum quality', videoBitsPerSecond: 80000000, audioBitsPerSecond: 320000 },
+    high: { label: 'high quality', videoBitsPerSecond: 40000000, audioBitsPerSecond: 256000 },
+    standard: { label: 'standard quality', videoBitsPerSecond: 16000000, audioBitsPerSecond: 192000 }
+  };
+
+  let supportedRecordingFormats = [];
 
   const state = {
     videos: [],
@@ -57,7 +108,9 @@
     fxMode: 'hold',
     master: 0.45,
     audioReact: 0.35,
-    transitionDuration: 0.12,
+    transitionDuration: 0.16,
+    transitionStrength: 0.85,
+    defaultTransitionId: savedDefaultTransition,
     transition: null,
     hoverWasPlaying: false,
     logo: null,
@@ -84,12 +137,113 @@
     channel: null,
     detachedWindow: null,
     lastFrameTime: performance.now(),
-    feedbackReady: false
+    feedbackReady: false,
+    moshSeed: 1,
+    moshNextAt: 0,
+    moshSlices: []
   };
 
   function setStatus(text) {
     $('statusText').textContent = text.toUpperCase();
     if (state.channel) state.channel.postMessage({ type: 'status', text });
+  }
+
+  function firstSupportedMime(candidates) {
+    if (!window.MediaRecorder || typeof MediaRecorder.isTypeSupported !== 'function') return '';
+    return candidates.find(type => MediaRecorder.isTypeSupported(type)) || '';
+  }
+
+  function setupRecordingFormatMenu() {
+    const select = $('recordFormatSelect');
+    const qualitySelect = $('recordQualitySelect');
+    if (!select || !qualitySelect) return;
+
+    select.innerHTML = '';
+    supportedRecordingFormats = recordingFormatCatalog
+      .map(format => ({ ...format, mimeType: firstSupportedMime(format.candidates) }))
+      .filter(format => format.mimeType);
+
+    if (!window.MediaRecorder) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = 'RECORDING NOT SUPPORTED';
+      select.appendChild(option);
+      select.disabled = true;
+      qualitySelect.disabled = true;
+      $('recordBtn').disabled = true;
+      $('recordFormatNote').textContent = 'This browser does not expose MediaRecorder.';
+      return;
+    }
+
+    const auto = document.createElement('option');
+    auto.value = 'auto';
+    auto.textContent = 'AUTO — BEST AVAILABLE';
+    select.appendChild(auto);
+
+    supportedRecordingFormats.forEach(format => {
+      const option = document.createElement('option');
+      option.value = format.id;
+      option.textContent = format.label;
+      select.appendChild(option);
+    });
+
+    let savedFormat = 'auto';
+    let savedQuality = 'maximum';
+    try {
+      savedFormat = localStorage.getItem('distortion-record-format') || 'auto';
+      savedQuality = localStorage.getItem('distortion-record-quality') || 'maximum';
+    } catch {}
+    select.value = [...select.options].some(option => option.value === savedFormat) ? savedFormat : 'auto';
+    qualitySelect.value = Object.hasOwn(recordingQualityProfiles, savedQuality) ? savedQuality : 'maximum';
+    updateRecordingFormatNote();
+  }
+
+  function selectedRecordingFormat() {
+    const requested = $('recordFormatSelect')?.value || 'auto';
+    if (requested !== 'auto') {
+      const exact = supportedRecordingFormats.find(format => format.id === requested);
+      if (exact) return exact;
+    }
+    return supportedRecordingFormats.find(format => format.id === 'mp4-h264')
+      || supportedRecordingFormats.find(format => format.id === 'webm-vp9')
+      || supportedRecordingFormats[0]
+      || { id: 'browser-default', label: 'BROWSER DEFAULT', extension: 'webm', mimeType: '' };
+  }
+
+  function updateRecordingFormatNote() {
+    const note = $('recordFormatNote');
+    if (!note) return;
+    const format = selectedRecordingFormat();
+    const quality = recordingQualityProfiles[$('recordQualitySelect')?.value] || recordingQualityProfiles.maximum;
+    const mbps = Math.round(quality.videoBitsPerSecond / 1000000);
+    const resolution = `${canvas.width}×${canvas.height}`;
+    note.textContent = `${format.label} · ${resolution} · 60 FPS · target ${mbps} Mbps video / ${Math.round(quality.audioBitsPerSecond / 1000)} kbps audio`;
+  }
+
+  function setRecordingControlsDisabled(disabled) {
+    ['recordFormatSelect','recordQualitySelect','aspectSelect'].forEach(id => {
+      const control = $(id);
+      if (control) control.disabled = disabled;
+    });
+  }
+
+
+  const themeNames = {
+    studio: 'STUDIO',
+    acid: 'ACID BUNKER',
+    punk: 'PUNK DISTRICT',
+    corrupted: 'CORRUPTED SIGNAL'
+  };
+
+  const legacyThemeMap = { magenta: 'punk', ice: 'studio' };
+
+  function applyTheme(theme, announce = false) {
+    const migratedTheme = legacyThemeMap[theme] || theme;
+    const safeTheme = Object.hasOwn(themeNames, migratedTheme) ? migratedTheme : 'studio';
+    document.documentElement.dataset.theme = safeTheme;
+    $('themeSelect').value = safeTheme;
+    try { localStorage.setItem('distortion-theme', safeTheme); } catch {}
+    if (announce) setStatus(`theme changed: ${themeNames[safeTheme]}`);
   }
 
   function formatTime(seconds, ms = false) {
@@ -137,7 +291,10 @@
     canvas.width = dims[0]; canvas.height = dims[1];
     bufferA.width = dims[0]; bufferA.height = dims[1];
     bufferB.width = dims[0]; bufferB.height = dims[1];
+    fxStackA.width = dims[0]; fxStackA.height = dims[1];
+    fxStackB.width = dims[0]; fxStackB.height = dims[1];
     state.feedbackReady = false;
+    if ($('recordFormatNote')) updateRecordingFormatNote();
   }
 
   function drawCover(targetCtx, media, w, h, dx = 0, dy = 0, scale = 1, rotation = 0) {
@@ -207,6 +364,341 @@
     }
   }
 
+
+  function drawMirrorShards(src, target, amount, now) {
+    const w = canvas.width, h = canvas.height;
+    const shards = 7;
+    const pulse = .05 + amount * .22 + Math.sin(now * .006) * .025;
+    target.clearRect(0, 0, w, h);
+    target.fillStyle = '#000';
+    target.fillRect(0, 0, w, h);
+
+    for (let i = 0; i < shards; i++) {
+      const left = i * w / shards;
+      const right = (i + 1) * w / shards;
+      const lean = ((i % 2 ? 1 : -1) * (22 + amount * 72));
+      target.save();
+      target.beginPath();
+      target.moveTo(left - lean, 0);
+      target.lineTo(right + lean, 0);
+      target.lineTo(right - lean, h);
+      target.lineTo(left + lean, h);
+      target.closePath();
+      target.clip();
+      target.translate((left + right) / 2, h / 2);
+      target.scale(i % 2 ? -1 : 1, i % 3 === 0 ? -1 : 1);
+      target.rotate((i - 3) * .012 * amount);
+      const zoom = 1.08 + pulse + (i % 3) * .035;
+      target.drawImage(src, -w * zoom / 2, -h * zoom / 2, w * zoom, h * zoom);
+      target.restore();
+    }
+
+    target.save();
+    target.globalCompositeOperation = 'difference';
+    target.globalAlpha = .08 + amount * .12;
+    target.fillStyle = '#fff';
+    for (let i = 1; i < shards; i++) target.fillRect(i * w / shards - 2, 0, 4, h);
+    target.restore();
+  }
+
+  function drawMirrorHall(src, target, amount, now) {
+    const w = canvas.width, h = canvas.height;
+    const centerW = w * (.42 - amount * .08);
+    const centerH = h * (.56 - amount * .08);
+    const drift = Math.sin(now * .0037) * w * .035 * amount;
+    target.clearRect(0, 0, w, h);
+    target.fillStyle = '#000';
+    target.fillRect(0, 0, w, h);
+
+    // Central signal window.
+    target.drawImage(src, 0, 0, w, h, (w - centerW) / 2 + drift, (h - centerH) / 2, centerW, centerH);
+
+    // Repeating mirrored walls, ceiling, and floor.
+    const layers = 5;
+    for (let layer = 0; layer < layers; layer++) {
+      const alpha = .58 - layer * .085;
+      const sideW = Math.max(22, (w - centerW) / 2 / layers + layer * 5);
+      const sideH = Math.max(18, (h - centerH) / 2 / layers + layer * 4);
+      const lx = layer * sideW;
+      const rx = w - (layer + 1) * sideW;
+      const ty = layer * sideH;
+      const by = h - (layer + 1) * sideH;
+      target.save();
+      target.globalAlpha = alpha;
+
+      target.save();
+      target.translate(lx + sideW, 0);
+      target.scale(-1, 1);
+      target.drawImage(src, 0, 0, w, h, 0, 0, sideW, h);
+      target.restore();
+
+      target.save();
+      target.translate(rx, 0);
+      target.scale(-1, 1);
+      target.drawImage(src, 0, 0, w, h, -sideW, 0, sideW, h);
+      target.restore();
+
+      target.save();
+      target.translate(0, ty + sideH);
+      target.scale(1, -1);
+      target.drawImage(src, 0, 0, w, h, 0, 0, w, sideH);
+      target.restore();
+
+      target.save();
+      target.translate(0, by);
+      target.scale(1, -1);
+      target.drawImage(src, 0, 0, w, h, 0, -sideH, w, sideH);
+      target.restore();
+
+      target.restore();
+    }
+
+    target.save();
+    target.globalCompositeOperation = 'screen';
+    target.globalAlpha = .08 + amount * .16;
+    const echoScale = 1 + .018 + amount * .045;
+    target.translate(w / 2, h / 2);
+    target.scale(echoScale, echoScale);
+    target.drawImage(target.canvas, -w / 2, -h / 2);
+    target.restore();
+  }
+
+  function drawVideoTear(src, target, amount, now) {
+    const w = canvas.width, h = canvas.height;
+    const phase = Math.floor(now / 68);
+
+    // Every visible block is sampled from the live video. No solid-color fills.
+    const tears = 8 + Math.floor(amount * 15);
+    for (let i = 0; i < tears; i++) {
+      const bandH = 5 + ((phase * 19 + i * 31) % Math.max(10, Math.floor(h * .11)));
+      const y = (phase * 43 + i * 101) % Math.max(1, h - bandH);
+      const shift = (((phase + i * 5) % 9) - 4) * (15 + amount * 42);
+      const stretch = 1 + ((i % 4) - 1.5) * .025 * amount;
+      target.save();
+      target.globalAlpha = .62 + (i % 3) * .12;
+      target.filter = i % 4 === 0
+        ? `invert(${.35 + amount * .45}) contrast(${1.15 + amount * .7}) saturate(${1.2 + amount * 1.5})`
+        : `contrast(${1.04 + amount * .4}) saturate(${1.05 + amount * .75})`;
+      target.drawImage(src, 0, y, w, bandH, shift, y, w * stretch, bandH + 1);
+      target.restore();
+    }
+
+    // A diagonal tear made from the video itself rather than a colored slash.
+    const slashX = ((phase * 79) % Math.max(1, Math.floor(w * 1.45))) - w * .22;
+    const slashW = 26 + amount * 70;
+    target.save();
+    target.beginPath();
+    target.translate(slashX, h / 2);
+    target.rotate(-.30);
+    target.rect(-slashW / 2, -h, slashW, h * 2);
+    target.clip();
+    target.rotate(.30);
+    target.translate(-slashX, -h / 2);
+    target.globalAlpha = .72 + amount * .24;
+    target.filter = `invert(${.18 + amount * .55}) hue-rotate(${Math.floor((now * .08) % 360)}deg) contrast(${1.15 + amount})`;
+    target.drawImage(src, -w * .045 * amount, 0, w * (1 + .09 * amount), h);
+    target.restore();
+  }
+
+  function drawColorSurge(src, target, amount, now) {
+    const w = canvas.width, h = canvas.height;
+    const hue = (now * .075) % 360;
+    const pulse = .5 + .5 * Math.sin(now * .009);
+
+    target.save();
+    target.globalAlpha = .74 + amount * .24;
+    target.filter = `hue-rotate(${hue}deg) saturate(${2.1 + amount * 5.2}) contrast(${1.15 + amount * 1.35}) brightness(${.88 + pulse * .24})`;
+    target.drawImage(src, 0, 0, w, h);
+    target.restore();
+
+    // Offset color echoes, still derived entirely from the live video.
+    const offset = (8 + amount * 34) * Math.sin(now * .013);
+    target.save();
+    target.globalCompositeOperation = 'screen';
+    target.globalAlpha = .18 + amount * .22;
+    target.filter = `sepia(1) saturate(${4 + amount * 7}) hue-rotate(${hue + 70}deg)`;
+    target.drawImage(src, offset, 0, w, h);
+    target.filter = `sepia(1) saturate(${4 + amount * 7}) hue-rotate(${hue + 215}deg)`;
+    target.drawImage(src, -offset, 0, w, h);
+    target.restore();
+
+    // Thin color bands give it a harder VJ hit without covering the picture.
+    target.save();
+    target.globalCompositeOperation = 'color';
+    target.globalAlpha = .12 + amount * .22;
+    for (let i = 0; i < 5; i++) {
+      const y = ((phaseSeed(now, i) * h) % h);
+      const bh = 5 + ((i * 17 + Math.floor(now / 90)) % 34);
+      target.filter = `hue-rotate(${hue + i * 55}deg) saturate(${3 + amount * 5})`;
+      target.drawImage(src, 0, y, w, Math.min(bh, h - y), (i % 2 ? -1 : 1) * offset * .55, y, w, Math.min(bh, h - y));
+    }
+    target.restore();
+  }
+
+  function phaseSeed(now, index) {
+    return ((Math.floor(now / 83) * 37 + index * 71) % 997) / 997;
+  }
+
+  function refreshMoshPattern(now, intensity = 1) {
+    if (now < state.moshNextAt && state.moshSlices.length) return;
+    state.moshNextAt = now + 45 + Math.random() * (170 - intensity * 70);
+    const count = Math.floor(7 + intensity * 24 + Math.random() * 12);
+    state.moshSlices = Array.from({length: count}, () => ({
+      x: Math.random(), y: Math.random(),
+      w: .04 + Math.random() * (.18 + intensity * .18),
+      h: .008 + Math.random() * (.035 + intensity * .08),
+      dx: (Math.random() - .5) * (110 + intensity * 420),
+      dy: (Math.random() - .5) * (12 + intensity * 80),
+      scale: .85 + Math.random() * (.3 + intensity * .65),
+      alpha: .35 + Math.random() * .65
+    }));
+  }
+
+  function applyRandomMosh(src, out, amount, now, intensity = 1) {
+    refreshMoshPattern(now, intensity);
+    const w=canvas.width, h=canvas.height;
+    out.clearRect(0,0,w,h);
+    out.globalAlpha = .78 - intensity * .12;
+    out.drawImage(src,0,0);
+    out.globalAlpha = 1;
+    for (const s of state.moshSlices) {
+      const sx=Math.floor(s.x*w), sy=Math.floor(s.y*h);
+      const sw=Math.max(8,Math.floor(s.w*w)), sh=Math.max(3,Math.floor(s.h*h));
+      const dw=sw*s.scale, dh=sh*(.9+Math.random()*.25);
+      out.globalAlpha=s.alpha;
+      out.drawImage(src,sx,sy,sw,sh,sx+s.dx*amount,sy+s.dy*amount,dw,dh);
+    }
+    out.globalAlpha=1;
+  }
+
+  function resetEffectContext(target) {
+    const w = canvas.width, h = canvas.height;
+    target.setTransform(1, 0, 0, 1, 0, 0);
+    target.globalAlpha = 1;
+    target.globalCompositeOperation = 'source-over';
+    target.filter = 'none';
+    target.imageSmoothingEnabled = true;
+    target.clearRect(0, 0, w, h);
+    target.fillStyle = '#000';
+    target.fillRect(0, 0, w, h);
+  }
+
+  function drawMirrorGridPass(src, target, amount) {
+    const w = canvas.width, h = canvas.height;
+    const cols = 3, rows = 3, cw = w / cols, ch = h / rows;
+    resetEffectContext(target);
+    for (let gy = 0; gy < rows; gy++) for (let gx = 0; gx < cols; gx++) {
+      target.save();
+      target.beginPath();
+      target.rect(gx * cw, gy * ch, cw, ch);
+      target.clip();
+      target.translate(gx * cw + cw / 2, gy * ch + ch / 2);
+      target.scale(gx % 2 ? -1 : 1, gy % 2 ? -1 : 1);
+      const z = 1.15 + amount * .6;
+      target.drawImage(src, -cw * z / 2, -ch * z / 2, cw * z, ch * z);
+      target.restore();
+    }
+  }
+
+  function applyNumberedEffect(id, src, target, amount, now) {
+    const w = canvas.width, h = canvas.height;
+    resetEffectContext(target);
+
+    if (id === 'datamosh') {
+      applyRandomMosh(src, target, amount, now, .88);
+      return;
+    }
+
+    if (id === 'mirrorshards') {
+      drawMirrorShards(src, target, amount, now);
+      return;
+    }
+
+    if (id === 'mirrorgrid') {
+      drawMirrorGridPass(src, target, amount);
+      return;
+    }
+
+    if (id === 'crush') {
+      target.save();
+      target.globalAlpha = .88;
+      target.filter = `contrast(${1.8 + amount * 3}) saturate(${2 + amount * 5}) brightness(${.8 + amount * .4})`;
+      target.drawImage(src, 0, 0, w, h);
+      target.restore();
+      return;
+    }
+
+    // Overlay-style effects start with the previous completed pass.
+    target.drawImage(src, 0, 0, w, h);
+
+    if (id === 'splitzoom') {
+      const pulse = .08 + amount * .2;
+      target.save(); target.beginPath(); target.rect(0, 0, w * .34, h); target.clip();
+      target.drawImage(src, -w * pulse / 2, -h * pulse / 2, w * (1 + pulse), h * (1 + pulse)); target.restore();
+      target.save(); target.beginPath(); target.rect(w * .34, 0, w * .16, h); target.clip();
+      target.drawImage(src, -w * .08, h * pulse * .35, w * (1 + pulse * .55), h * (1 - pulse * .1)); target.restore();
+      target.save(); target.beginPath(); target.rect(w / 2, 0, w / 2, h); target.clip();
+      target.drawImage(src, w * pulse / 2, h * pulse / 2, w * (1 - pulse), h * (1 - pulse)); target.restore();
+      return;
+    }
+
+    if (id === 'blocks') {
+      const size = Math.max(28, 90 - amount * 55);
+      for (let n = 0; n < 22; n++) {
+        const sx = Math.floor(Math.random() * w / size) * size;
+        const sy = Math.floor(Math.random() * h / size) * size;
+        const dx = sx + (Math.random() - .5) * 180 * amount;
+        const dy = sy + (Math.random() - .5) * 130 * amount;
+        target.drawImage(src, sx, sy, size, size, dx, dy, size, size);
+      }
+      return;
+    }
+
+    if (id === 'videotear') {
+      drawVideoTear(src, target, amount, now);
+      return;
+    }
+
+    if (id === 'invert') {
+      const pulse = .46 + .38 * Math.abs(Math.sin(now * .012));
+      target.save();
+      target.globalCompositeOperation = 'difference';
+      target.globalAlpha = Math.min(.92, pulse + amount * .24);
+      target.fillStyle = '#fff';
+      target.fillRect(0, 0, w, h);
+      target.restore();
+      target.save();
+      target.globalAlpha = .18 + amount * .28;
+      target.filter = `contrast(${1.4 + amount * 1.5}) saturate(${1.5 + amount * 2.5})`;
+      const jump = Math.sin(now * .021) * 26 * amount;
+      target.drawImage(src, jump, 0, w, h);
+      target.restore();
+      return;
+    }
+
+    if (id === 'colorsurge') {
+      drawColorSurge(src, target, amount, now);
+      return;
+    }
+
+    if (id === 'strobe') {
+      const hit = Math.floor(now / 48) % 3 !== 1;
+      if (hit) {
+        target.save();
+        target.globalCompositeOperation = 'difference';
+        target.fillStyle = '#fff';
+        target.fillRect(0, 0, w, h);
+        const bands = 4 + Math.floor(amount * 7);
+        for (let i = 0; i < bands; i++) {
+          const bh = 3 + Math.random() * 32;
+          const by = Math.random() * (h - bh);
+          target.fillRect((Math.random() - .5) * 90 * amount, by, w, bh);
+        }
+        target.restore();
+      }
+    }
+  }
+
   function renderFrame(now) {
     requestAnimationFrame(renderFrame);
     updateAudioLevel();
@@ -226,124 +718,52 @@
       if (state.transition) {
         const p = Math.min(1, (now - state.transition.started) / (state.transitionDuration * 1000));
         const s = Math.pow(1 - p, 2.4);
-        if (state.transition.id === 'shake') { shakeX = (Math.random()-.5)*32*s; shakeY = (Math.random()-.5)*22*s; }
-        if (state.transition.id === 'zoom') zoom = 1 + .28*s;
-        if (state.transition.id === 'spin') rotation = s * .18;
+        const hit = state.transitionStrength;
+        if (state.transition.id === 'shake') { shakeX = (Math.random()-.5)*110*s*hit; shakeY = (Math.random()-.5)*76*s*hit; }
+        if (state.transition.id === 'zoom') zoom = 1 + .72*s*hit;
+        if (state.transition.id === 'spin') rotation = s * .62 * hit;
         if (p >= 1) state.transition = null;
       }
       drawCover(bctxA, sourceVideo, w, h, shakeX, shakeY, zoom, rotation);
       if (state.logoAffected) drawLogo(bctxA);
     }
 
+    // Build one composited signal by feeding each active numbered effect
+    // into the next. The bank order is stable, so 3+8 and 8+3 produce the
+    // same combined result and no effect can silently wipe out an earlier one.
     let srcCanvas = bufferA;
-    let outCtx = bctxB;
-    const active = state.activeEffects;
-
-    if (active.has('liquid')) { applyLiquid(srcCanvas, outCtx, amount, now); srcCanvas = bufferB; outCtx = bctxA; }
-    if (active.has('datamosh') || active.has('tear')) { applyGlitch(srcCanvas, outCtx, amount, now); srcCanvas = outCtx.canvas; outCtx = srcCanvas === bufferA ? bctxB : bctxA; }
-    if (active.has('kaleido')) { applyKaleido(srcCanvas, outCtx, amount); srcCanvas = outCtx.canvas; outCtx = srcCanvas === bufferA ? bctxB : bctxA; }
+    let nextFxCtx = fxctxA;
+    for (const fx of effects) {
+      if (!state.activeEffects.has(fx.id)) continue;
+      applyNumberedEffect(fx.id, srcCanvas, nextFxCtx, amount, now);
+      srcCanvas = nextFxCtx.canvas;
+      nextFxCtx = nextFxCtx === fxctxA ? fxctxB : fxctxA;
+    }
 
     ctx.save();
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.filter = 'none';
     ctx.fillStyle = '#000';
-    if (!active.has('feedback') && !active.has('echo')) ctx.fillRect(0,0,w,h);
-    else {
-      ctx.globalAlpha = active.has('feedback') ? 0.86 - amount * .18 : 0.72;
-      ctx.drawImage(canvas, -w*.01*amount, -h*.01*amount, w*(1+.02*amount), h*(1+.02*amount));
-      ctx.globalAlpha = 1;
-    }
-
-    if (active.has('pixel')) {
-      const pw = Math.max(40, Math.floor(w * (0.18 - amount * .12)));
-      const ph = Math.max(24, Math.floor(h * (0.18 - amount * .12)));
-      pixelCanvas.width = pw; pixelCanvas.height = ph;
-      pctx.imageSmoothingEnabled = false;
-      pctx.drawImage(srcCanvas,0,0,pw,ph);
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(pixelCanvas,0,0,w,h);
-      ctx.imageSmoothingEnabled = true;
-    } else if (active.has('lens')) {
-      const strips = 40;
-      const sh = h / strips;
-      for (let i=0;i<strips;i++) {
-        const y = i*sh;
-        const center = Math.abs((i/(strips-1))-.5)*2;
-        const expand = (1-center*center) * 80 * amount;
-        ctx.drawImage(srcCanvas,0,y,w,sh,-expand/2,y,w+expand,sh+1);
-      }
-    } else {
-      ctx.drawImage(srcCanvas,0,0);
-    }
-
-    if (active.has('rgb')) {
-      const shift = 4 + 26 * amount;
-      ctx.globalCompositeOperation = 'screen';
-      ctx.globalAlpha = .35;
-      ctx.filter = 'hue-rotate(100deg) saturate(2)';
-      ctx.drawImage(srcCanvas, shift, 0);
-      ctx.filter = 'hue-rotate(250deg) saturate(2)';
-      ctx.drawImage(srcCanvas, -shift, 0);
-      ctx.filter = 'none';
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = 'source-over';
-    }
-
-    if (active.has('invert')) ctx.filter = 'invert(1) contrast(1.35) saturate(1.7)';
-    if (active.has('invert')) { ctx.globalAlpha=.35+.35*amount; ctx.drawImage(srcCanvas,0,0); ctx.globalAlpha=1; ctx.filter='none'; }
-
-    if (active.has('mirrorgrid')) {
-      const cols = 3, rows = 3, cw = w/cols, ch = h/rows;
-      ctx.clearRect(0,0,w,h);
-      for (let gy=0; gy<rows; gy++) for (let gx=0; gx<cols; gx++) {
-        ctx.save(); ctx.beginPath(); ctx.rect(gx*cw,gy*ch,cw,ch); ctx.clip();
-        ctx.translate(gx*cw+cw/2,gy*ch+ch/2);
-        ctx.scale(gx%2 ? -1 : 1, gy%2 ? -1 : 1);
-        const z=1.15+amount*.6; ctx.drawImage(srcCanvas,-cw*z/2,-ch*z/2,cw*z,ch*z); ctx.restore();
-      }
-    }
-    if (active.has('vortex')) {
-      ctx.globalAlpha=.45; ctx.globalCompositeOperation='screen';
-      for (let n=1;n<=5;n++){ ctx.save(); ctx.translate(w/2,h/2); ctx.rotate((now*.0015+n*.45)*amount); const z=1-n*.055*amount; ctx.scale(z,z); ctx.drawImage(srcCanvas,-w/2,-h/2); ctx.restore(); }
-      ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
-    }
-    if (active.has('slicer')) {
-      const slices=18; for(let n=0;n<slices;n++){ const sy=n*h/slices; const sh=h/slices+2; const jump=((n%3)-1)*70*amount + Math.sin(now*.01+n)*35*amount; ctx.drawImage(srcCanvas,0,sy,w,sh,jump,sy,w,sh); }
-    }
-    if (active.has('crush')) {
-      ctx.globalAlpha=.72; ctx.filter=`contrast(${1.8+amount*3}) saturate(${2+amount*5}) brightness(${.8+amount*.4})`; ctx.drawImage(srcCanvas,0,0); ctx.filter='none'; ctx.globalAlpha=1;
-    }
-    if (active.has('tunnel')) {
-      ctx.globalCompositeOperation='screen';
-      for(let n=1;n<=7;n++){ const z=1-n*.085*amount; const rot=(n%2?-1:1)*n*.025*amount; ctx.save(); ctx.globalAlpha=.14; ctx.translate(w/2,h/2); ctx.rotate(rot); ctx.scale(z,z); ctx.drawImage(srcCanvas,-w/2,-h/2); ctx.restore(); }
-      ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1;
-    }
-    if (active.has('splitzoom')) {
-      const pulse=.08+amount*.2; ctx.save(); ctx.beginPath(); ctx.rect(0,0,w/2,h); ctx.clip(); ctx.drawImage(srcCanvas,-w*pulse/2,-h*pulse/2,w*(1+pulse),h*(1+pulse)); ctx.restore();
-      ctx.save(); ctx.beginPath(); ctx.rect(w/2,0,w/2,h); ctx.clip(); ctx.drawImage(srcCanvas,w*pulse/2,h*pulse/2,w*(1-pulse),h*(1-pulse)); ctx.restore();
-    }
-    if (active.has('blocks')) {
-      const size=Math.max(28,90-amount*55); for(let n=0;n<22;n++){ const sx=Math.floor(Math.random()*w/size)*size, sy=Math.floor(Math.random()*h/size)*size; const dx=sx+(Math.random()-.5)*180*amount, dy=sy+(Math.random()-.5)*130*amount; ctx.drawImage(srcCanvas,sx,sy,size,size,dx,dy,size,size); }
-    }
-    if (active.has('strobe') && Math.floor(now/55)%2===0) { ctx.globalCompositeOperation='difference'; ctx.fillStyle='white'; ctx.fillRect(0,0,w,h); ctx.globalCompositeOperation='source-over'; }
-
-    if (active.has('vhs') || active.has('scan')) {
-      ctx.globalAlpha = .18 + amount * .18;
-      ctx.fillStyle = '#000';
-      const offset = active.has('scan') ? Math.floor((now*.2) % 18) : 0;
-      for (let y=offset;y<h;y+=6) ctx.fillRect(0,y,w,2);
-      ctx.globalAlpha = 1;
-      if (active.has('vhs') && Math.random() < .18 + amount*.3) {
-        const y = Math.random()*h, hh = 4 + Math.random()*22;
-        ctx.drawImage(canvas,0,y,w,hh,(Math.random()-.5)*70*amount,y,w,hh);
-      }
-    }
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(srcCanvas, 0, 0, w, h);
 
     if (!state.logoAffected) drawLogo(ctx);
 
     if (state.transition) {
       const p = Math.min(1, (now - state.transition.started) / (state.transitionDuration * 1000));
       const s = Math.pow(1-p, 2.4);
-      if (state.transition.id === 'flash') { ctx.fillStyle=`rgba(255,255,255,${s*.85})`; ctx.fillRect(0,0,w,h); }
-      if (state.transition.id === 'black') { ctx.fillStyle=`rgba(0,0,0,${s*.9})`; ctx.fillRect(0,0,w,h); }
+      const hit = state.transitionStrength;
+      if (state.transition.id === 'flash') {
+        ctx.fillStyle=`rgba(255,255,255,${Math.min(1,s*1.15*hit)})`; ctx.fillRect(0,0,w,h);
+        ctx.globalCompositeOperation='difference';
+        for (let n=0;n<5;n++) { const y=Math.random()*h, hh=8+Math.random()*70; ctx.drawImage(canvas,0,y,w,hh,(Math.random()-.5)*140*hit,y,w,hh); }
+        ctx.globalCompositeOperation='source-over';
+      }
+      if (state.transition.id === 'black') {
+        ctx.fillStyle=`rgba(0,0,0,${Math.min(1,s*1.2*hit)})`; ctx.fillRect(0,0,w,h);
+        if (s>.38) { ctx.fillStyle=`rgba(255,255,255,${s*.18})`; for(let n=0;n<4;n++)ctx.fillRect(0,Math.random()*h,w,2+Math.random()*12); }
+      }
     }
     ctx.restore();
   }
@@ -390,7 +810,20 @@
     cueKeys.forEach(key => {
       const b = document.createElement('button');
       b.className = 'cue-pad'; b.dataset.key = key;
-      b.addEventListener('click', () => triggerCue(key, true));
+      b.addEventListener('click', (event) => {
+        if (event.shiftKey) { triggerCue(key, true); return; }
+        state.armedCue = state.armedCue === key ? null : key;
+        $('cueKeySelect').value = state.armedCue || '';
+        updateCuePads();
+        setStatus(state.armedCue ? `cue ${key.toUpperCase()} selected — shift click timeline to replace it` : 'cue selection cleared');
+      });
+      b.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+        state.cues[key] = null;
+        if (state.armedCue === key) state.armedCue = null;
+        $('cueKeySelect').value = state.armedCue || '';
+        updateCuePads(); drawTimeline(); setStatus(`cue ${key.toUpperCase()} cleared`);
+      });
       $('cuePads').appendChild(b);
     });
     updateCuePads();
@@ -401,7 +834,7 @@
       const key = pad.dataset.key;
       const cue = state.cues[key];
       pad.classList.toggle('armed', key === state.armedCue);
-      pad.innerHTML = `<div class="cue-key">${key.toUpperCase()}</div><div class="cue-time">${cue ? formatTime(cue.time,true) : 'EMPTY'}</div><div class="cue-mode">${cue ? cue.mode.toUpperCase() : 'SHIFT + CLICK TIMELINE'}</div>`;
+      pad.innerHTML = `<div class="cue-key">${key.toUpperCase()}</div><div class="cue-time">${cue ? formatTime(cue.time,true) : 'EMPTY'}</div><div class="cue-mode">${cue ? 'SHIFT+CLICK: PLAY · RIGHT-CLICK: REMOVE' : 'SHIFT-CLICK TIMELINE: AUTO ADD'}</div>`;
     });
   }
 
@@ -417,13 +850,95 @@
       $('fxButtons').appendChild(b);
     });
     $('transitionButtons').innerHTML = '';
+    $('transitionKeyMap').innerHTML = '';
     transitions.forEach(tr => {
       const b = document.createElement('button');
-      b.className = 'fx-btn'; b.innerHTML = `<strong>${tr.name}</strong><span>${tr.key}</span>`;
+      b.className = 'fx-btn'; b.innerHTML = `<strong>${tr.name}</strong><span>${displayKey(tr.key)}</span>`;
       b.dataset.transition = tr.id;
       b.addEventListener('click', () => triggerTransition(tr.id));
       $('transitionButtons').appendChild(b);
+
+      const row = document.createElement('div');
+      row.className = 'key-map-row';
+      const label = document.createElement('label');
+      label.textContent = tr.name;
+      const input = document.createElement('input');
+      input.className = 'key-capture';
+      input.type = 'text'; input.readOnly = true; input.value = displayKey(tr.key);
+      input.setAttribute('aria-label', `Key for ${tr.name}`);
+      input.addEventListener('focus', () => { input.classList.add('listening'); input.value = '...'; });
+      input.addEventListener('blur', () => { input.classList.remove('listening'); input.value = displayKey(tr.key); });
+      input.addEventListener('keydown', e => {
+        e.preventDefault(); e.stopPropagation();
+        if (['Shift','Control','Alt','Meta'].includes(e.key)) return;
+        const next = normalizeKey(e.key);
+        const conflict = [...effects, ...transitions.filter(t => t !== tr)].find(item => item.key === next);
+        if (cueKeys.includes(next) || conflict) {
+          setStatus(`key ${displayKey(next)} is already assigned`);
+          input.value = displayKey(tr.key);
+          input.blur(); return;
+        }
+        tr.key = next;
+        saveTransitionKeys();
+        input.value = displayKey(next);
+        b.querySelector('span').textContent = displayKey(next);
+        updateDefaultTransitionUI();
+        input.blur();
+        setStatus(`${tr.name} mapped to ${displayKey(next)}`);
+      });
+      row.append(label, input);
+      $('transitionKeyMap').appendChild(row);
     });
+    updateDefaultTransitionUI();
+  }
+
+
+  function normalizeKey(key) {
+    if (key === ' ') return 'space';
+    return key.toLowerCase();
+  }
+  function displayKey(key) {
+    if (key === ' ') return 'SPACE';
+    if (key === '\\') return '\\';
+    return String(key).toUpperCase();
+  }
+  function saveTransitionKeys() {
+    try { localStorage.setItem('distortion-transition-keys-v2', JSON.stringify(Object.fromEntries(transitions.map(t => [t.id, t.key])))); }
+    catch {}
+  }
+
+  function saveDefaultTransition() {
+    try { localStorage.setItem('distortion-default-transition', state.defaultTransitionId); }
+    catch {}
+  }
+
+  function updateDefaultTransitionUI() {
+    const select = $('defaultTransitionSelect');
+    if (!select) return;
+    const selected = state.defaultTransitionId;
+    select.innerHTML = '<option value="none">NONE — HARD CUT</option>' + transitions.map(tr =>
+      `<option value="${tr.id}">${tr.name} — ${displayKey(tr.key)}</option>`
+    ).join('');
+    select.value = selected === 'none' || transitions.some(tr => tr.id === selected) ? selected : 'flash';
+    state.defaultTransitionId = select.value;
+    document.querySelectorAll('[data-transition]').forEach(button => {
+      button.classList.toggle('default-transition', button.dataset.transition === state.defaultTransitionId);
+      const existing = button.querySelector('.default-badge');
+      if (existing) existing.remove();
+      if (button.dataset.transition === state.defaultTransitionId) {
+        const badge = document.createElement('em');
+        badge.className = 'default-badge';
+        badge.textContent = 'DEFAULT';
+        button.appendChild(badge);
+      }
+    });
+  }
+
+  function resetTransitionKeyMap() {
+    transitions.forEach(tr => { tr.key = defaultTransitionKeys[tr.id]; });
+    saveTransitionKeys();
+    buildFxButtons();
+    setStatus('transition keys reset to T Y U I O P');
   }
 
   function updateFxButtons() {
@@ -464,12 +979,12 @@
   }
 
   function triggerTransition(id) {
-    state.transition = { id, started: performance.now() };
+    state.transition = { id, started: performance.now(), seed: Math.random() };
     const btn = document.querySelector(`[data-transition="${id}"]`);
     if (btn) { btn.classList.remove('snap-hit'); void btn.offsetWidth; btn.classList.add('snap-hit'); setTimeout(()=>btn.classList.remove('snap-hit'),140); }
     if (id === 'freeze') {
       state.freezeFrame = true;
-      setTimeout(() => { state.freezeFrame = false; }, state.transitionDuration*1000);
+      setTimeout(() => { state.freezeFrame = false; }, Math.max(80, state.transitionDuration*1000*.78));
     }
     setStatus(`${id} transition`);
   }
@@ -544,8 +1059,8 @@
         const timer = setInterval(() => { if (sourceVideo.currentTime >= cue.time + 2) sourceVideo.currentTime = cue.time; }, 50);
         state.loopTimers.set(key,timer);
       }
-      triggerTransition('zoom');
-      setStatus(`cue ${key.toUpperCase()} — ${formatTime(cue.time,true)}`);
+      if (state.defaultTransitionId !== 'none') triggerTransition(state.defaultTransitionId);
+      setStatus(`cue ${key.toUpperCase()} — ${formatTime(cue.time,true)}${state.defaultTransitionId === 'none' ? ' · hard cut' : ` · ${transitions.find(tr => tr.id === state.defaultTransitionId)?.name || 'transition'}`}`);
     };
     if (sourceVideo.readyState >= 1) run(); else sourceVideo.addEventListener('loadedmetadata',run,{once:true});
   }
@@ -571,34 +1086,71 @@
 
   async function startRecording() {
     try {
+      if (!window.MediaRecorder) throw new Error('MediaRecorder is not available in this browser.');
       setupAudioGraph();
       const canvasStream = canvas.captureStream(60);
       const tracks = [...canvasStream.getVideoTracks()];
       if (state.audioDest) tracks.push(...state.audioDest.stream.getAudioTracks());
       const stream = new MediaStream(tracks);
-      const candidates = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
-      const mimeType = candidates.find(m => MediaRecorder.isTypeSupported(m)) || '';
+      const format = selectedRecordingFormat();
+      const quality = recordingQualityProfiles[$('recordQualitySelect').value] || recordingQualityProfiles.maximum;
+      const options = {
+        videoBitsPerSecond: quality.videoBitsPerSecond,
+        audioBitsPerSecond: quality.audioBitsPerSecond
+      };
+      if (format.mimeType) options.mimeType = format.mimeType;
+
       state.recordedChunks = [];
-      state.recorder = new MediaRecorder(stream, mimeType ? { mimeType, videoBitsPerSecond: 12000000 } : undefined);
-      state.recorder.ondataavailable = e => { if (e.data.size) state.recordedChunks.push(e.data); };
+      state.recorder = new MediaRecorder(stream, options);
+      const actualMimeType = state.recorder.mimeType || format.mimeType || 'video/webm';
+      const extension = actualMimeType.includes('mp4') ? 'mp4' : format.extension || 'webm';
+      state.recorder.ondataavailable = event => {
+        if (event.data && event.data.size) state.recordedChunks.push(event.data);
+      };
+      state.recorder.onerror = event => {
+        console.error('MediaRecorder error', event.error || event);
+        setStatus('recording encoder error');
+      };
       state.recorder.onstop = () => {
-        const blob = new Blob(state.recordedChunks,{type:state.recorder.mimeType||'video/webm'});
-        const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`distortion-performance-${Date.now()}.webm`; a.click();
-        setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+        const blob = new Blob(state.recordedChunks, { type: actualMimeType });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `distortion-performance-${Date.now()}.${extension}`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        setStatus(`recording saved — ${extension.toUpperCase()} / ${quality.label}`);
       };
       state.recorder.start(1000);
-      state.recordStartedAt=Date.now();
-      $('recordBtn').disabled=true; $('stopRecordBtn').disabled=false; $('recordBadge').classList.remove('hidden');
-      state.recordTimer=setInterval(()=>{$('recordTimer').textContent=formatTime((Date.now()-state.recordStartedAt)/1000);},250);
-      setStatus('recording started');
-    } catch (err) { console.error(err); alert(`Recording could not start: ${err.message}`); setStatus('recording failed'); }
+      state.recordStartedAt = Date.now();
+      setRecordingControlsDisabled(true);
+      $('recordBtn').disabled = true;
+      $('stopRecordBtn').disabled = false;
+      $('recordBadge').classList.remove('hidden');
+      state.recordTimer = setInterval(() => {
+        $('recordTimer').textContent = formatTime((Date.now() - state.recordStartedAt) / 1000);
+      }, 250);
+      setStatus(`recording ${format.label} — ${quality.label}`);
+    } catch (err) {
+      console.error(err);
+      setRecordingControlsDisabled(false);
+      alert(`Recording could not start: ${err.message}`);
+      setStatus('recording failed');
+    }
   }
 
   function stopRecording() {
     if (!state.recorder || state.recorder.state === 'inactive') return;
-    state.recorder.stop(); clearInterval(state.recordTimer); state.recordTimer=null;
-    $('recordBtn').disabled=false; $('stopRecordBtn').disabled=true; $('recordBadge').classList.add('hidden');
-    setStatus('recording saved');
+    state.recorder.stop();
+    clearInterval(state.recordTimer);
+    state.recordTimer = null;
+    setRecordingControlsDisabled(false);
+    $('recordBtn').disabled = false;
+    $('stopRecordBtn').disabled = true;
+    $('recordBadge').classList.add('hidden');
+    setStatus('finalizing recording');
   }
 
   function openDetachedControls() {
@@ -627,9 +1179,10 @@
   }
 
   function resetPerformanceControls() {
-    clearEffects(); state.master=.45; state.audioReact=.35; state.transitionDuration=.12; state.fxMode='hold';
-    $('masterDistortion').value=.45; $('audioReact').value=.35; $('transitionDuration').value=.12; $('fxModeSelect').value='hold';
-    $('masterValue').textContent='45%'; $('reactValue').textContent='35%'; $('transitionValue').textContent='0.12s';
+    clearEffects(); state.master=.45; state.audioReact=.35; state.transitionDuration=.16; state.transitionStrength=.85; state.defaultTransitionId='flash'; state.fxMode='hold';
+    $('masterDistortion').value=.45; $('audioReact').value=.35; $('transitionDuration').value=.16; $('transitionStrength').value=.85; $('fxModeSelect').value='hold';
+    $('masterValue').textContent='45%'; $('reactValue').textContent='35%'; $('transitionValue').textContent='0.16s'; $('transitionStrengthValue').textContent='85%';
+    saveDefaultTransition(); updateDefaultTransitionUI();
     setStatus('performance controls reset');
   }
 
@@ -693,22 +1246,35 @@
       return;
     }
 
-    let key = state.armedCue && !state.cues[state.armedCue] ? state.armedCue : null;
-    if(!key) key = cueKeys.find(candidate => !state.cues[candidate]) || null;
+    // Shift-click automatically fills the next empty cue. If the user explicitly
+    // selected a letter first, that one is replaced once and then deselected.
+    const replacingSelectedCue = Boolean(state.armedCue);
+    let key = state.armedCue || cueKeys.find(candidate => !state.cues[candidate]) || null;
     if(!key){
-      setStatus('all hot cue slots are full — clear a cue before adding another');
+      setStatus('all scene slots are full — right-click a letter to remove it, or select one to replace it');
       return;
     }
 
     state.cues[key]={time,videoIndex:state.activeVideoIndex,mode:$('cueModeSelect').value};
-    state.armedCue=key;
-    $('cueKeySelect').value=key;
-    updateCuePads();drawTimeline();setStatus(`new cue ${key.toUpperCase()} set at ${formatTime(time,true)}`);
+    state.armedCue=null;
+    $('cueKeySelect').value='';
+    updateCuePads();
+    drawTimeline();
+    setStatus(`${replacingSelectedCue ? 'scene replaced' : 'hot cue added'}: ${key.toUpperCase()} at ${formatTime(time,true)} — shift-click again for the next letter`);
   });
 
   $('masterDistortion').addEventListener('input',e=>{state.master=Number(e.target.value);$('masterValue').textContent=`${Math.round(state.master*100)}%`;});
   $('audioReact').addEventListener('input',e=>{state.audioReact=Number(e.target.value);$('reactValue').textContent=`${Math.round(state.audioReact*100)}%`;});
   $('transitionDuration').addEventListener('input',e=>{state.transitionDuration=Number(e.target.value);$('transitionValue').textContent=`${state.transitionDuration.toFixed(2)}s`;});
+  $('transitionStrength').addEventListener('input',e=>{state.transitionStrength=Number(e.target.value);$('transitionStrengthValue').textContent=`${Math.round(state.transitionStrength*100)}%`;});
+  $('defaultTransitionSelect').addEventListener('change',e=>{
+    state.defaultTransitionId=e.target.value;
+    saveDefaultTransition();
+    updateDefaultTransitionUI();
+    const selected=transitions.find(tr=>tr.id===state.defaultTransitionId);
+    setStatus(state.defaultTransitionId==='none'?'default cue transition: hard cut':`default cue transition: ${selected.name} (${displayKey(selected.key)})`);
+  });
+  $('resetTransitionKeysBtn').addEventListener('click',resetTransitionKeyMap);
   $('fxModeSelect').addEventListener('change',e=>{state.fxMode=e.target.value;});
   $('panicBtn').addEventListener('click',clearEffects); $('randomBtn').addEventListener('click',randomizeEffects);
   $('logoOpacity').addEventListener('input',e=>state.logoOpacity=Number(e.target.value));
@@ -721,7 +1287,16 @@
   canvas.addEventListener('pointermove',e=>{if(!state.draggingLogo)return;const p=pointerToCanvas(e);state.logoX=Math.max(0,Math.min(1,(p.x-state.dragOffsetX)/canvas.width));state.logoY=Math.max(0,Math.min(1,(p.y-state.dragOffsetY)/canvas.height));});
   canvas.addEventListener('pointerup',()=>state.draggingLogo=false);
 
+  $('themeSelect').addEventListener('change', e => applyTheme(e.target.value, true));
   $('aspectSelect').addEventListener('change',e=>setCanvasAspect(e.target.value));
+  $('recordFormatSelect').addEventListener('change', e => {
+    try { localStorage.setItem('distortion-record-format', e.target.value); } catch {}
+    updateRecordingFormatNote();
+  });
+  $('recordQualitySelect').addEventListener('change', e => {
+    try { localStorage.setItem('distortion-record-quality', e.target.value); } catch {}
+    updateRecordingFormatNote();
+  });
   $('recordBtn').addEventListener('click',startRecording); $('stopRecordBtn').addEventListener('click',stopRecording);
   $('fullscreenBtn').addEventListener('click',()=>{$('outputFrame').requestFullscreen?.();});
   $('detachBtn').addEventListener('click',openDetachedControls);
@@ -732,7 +1307,7 @@
 
   document.addEventListener('keydown',e=>{
     const tag=document.activeElement?.tagName; if(['INPUT','SELECT','TEXTAREA'].includes(tag))return;
-    const key=e.key.toLowerCase();
+    const key=normalizeKey(e.key);
     if(key===' '){e.preventDefault();setupAudioGraph();if(song.paused)safePlay(song);else song.pause();return;}
     if(key==='f1'||key==='?'){e.preventDefault();$('helpDialog').showModal();return;}
     if(cueKeys.includes(key)){if(!e.repeat)triggerCue(key);return;}
@@ -740,7 +1315,7 @@
     const tr=transitions.find(t=>t.key===key);if(tr&&!e.repeat){triggerTransition(tr.id);return;}
   });
   document.addEventListener('keyup',e=>{
-    const key=e.key.toLowerCase(); if(cueKeys.includes(key))releaseCue(key);
+    const key=normalizeKey(e.key); if(cueKeys.includes(key))releaseCue(key);
     const fx=effects.find(f=>f.key===key); if(fx&&state.fxMode==='hold')deactivateEffect(fx.id);
   });
 
@@ -757,6 +1332,37 @@
     };
   }
 
+  document.querySelectorAll('.panel-resizer').forEach(handle => {
+    handle.addEventListener('pointerdown', e => {
+      if (window.innerWidth <= 1100) return;
+      e.preventDefault();
+      handle.classList.add('dragging');
+      handle.setPointerCapture(e.pointerId);
+      const side = handle.dataset.resize;
+      const panel = side === 'left' ? document.querySelector('.media-panel') : document.querySelector('.fx-panel');
+      const startX = e.clientX;
+      const startWidth = panel.getBoundingClientRect().width;
+      const move = ev => {
+        const delta = ev.clientX - startX;
+        const width = side === 'left' ? startWidth + delta : startWidth - delta;
+        panel.style.flexBasis = `${Math.max(side === 'left' ? 210 : 230, Math.min(window.innerWidth*.46, width))}px`;
+        rebuildTimeline();
+      };
+      const stop = () => {
+        handle.classList.remove('dragging');
+        handle.removeEventListener('pointermove', move);
+        handle.removeEventListener('pointerup', stop);
+        handle.removeEventListener('pointercancel', stop);
+      };
+      handle.addEventListener('pointermove', move);
+      handle.addEventListener('pointerup', stop);
+      handle.addEventListener('pointercancel', stop);
+    });
+  });
+
   window.addEventListener('resize',rebuildTimeline);
-  buildCuePads(); buildFxButtons(); setCanvasAspect('16:9'); rebuildTimeline(); requestAnimationFrame(renderFrame);
+  let initialTheme = 'studio';
+  try { initialTheme = localStorage.getItem('distortion-theme') || 'studio'; } catch {}
+  applyTheme(initialTheme);
+  buildCuePads(); buildFxButtons(); setCanvasAspect('16:9'); setupRecordingFormatMenu(); rebuildTimeline(); requestAnimationFrame(renderFrame);
 })();
