@@ -3257,3 +3257,303 @@ body.social-home {
   .messages-bubble { max-width: 94%; }
 }
 
+
+/* ========================================================================== 
+   v17 — comfortable native sizing
+   Keeps browser zoom at 100% while making the site feel about 8–10% larger.
+   ========================================================================== */
+
+/* Make forms readable on desktop and prevent tiny text on mobile Safari. */
+input,
+textarea,
+select,
+button {
+  font-size: max(16px, 1em);
+}
+
+/* Slightly larger shared controls and cards across the whole site. */
+.retro-button {
+  min-height: 46px;
+  padding: 10px 17px;
+  font-size: 12px;
+}
+
+.box-title,
+.window-bar {
+  min-height: 38px;
+  padding: 10px 13px;
+  font-size: 13px;
+}
+
+.box-body {
+  padding: 16px;
+}
+
+@media (min-width: 761px) {
+  :root {
+    --shell: min(1140px, calc(100% - 36px));
+  }
+
+  body {
+    font-size: 16px;
+    line-height: 1.58;
+  }
+
+  .topbar-inner {
+    min-height: 78px;
+    gap: 20px;
+  }
+
+  .wordmark > b {
+    width: 47px;
+    height: 47px;
+    font-size: 26px;
+  }
+
+  .wordmark strong {
+    font-size: 21px;
+  }
+
+  .wordmark small {
+    font-size: 10px;
+  }
+
+  .site-nav a {
+    padding: 10px 13px;
+    font-size: 13px;
+  }
+
+  .profile-layout {
+    grid-template-columns: 315px minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .name-line h1 {
+    font-size: clamp(21px, 3vw, 27px);
+  }
+
+  .box-body > p,
+  .status-box p,
+  .instagram-bio,
+  .meet-box p {
+    font-size: 13px;
+  }
+
+  .facts div,
+  .profile-details dd,
+  .project p,
+  .updates-box p,
+  .comment p {
+    font-size: 11px;
+  }
+
+  .facts dt,
+  .profile-details dt,
+  .updates-box time,
+  .comment small {
+    font-size: 9px;
+  }
+
+  .contact-grid a,
+  .tags span,
+  .hero-tags span,
+  .project > div a {
+    font-size: 10px;
+  }
+
+  .project h3,
+  .updates-box h3,
+  .comment strong {
+    font-size: 12px;
+  }
+
+  /* Front-page opinion hub */
+  .social-topbar-inner {
+    width: min(100%, 1290px);
+    padding: 12px 20px;
+  }
+
+  .social-brand-mark {
+    width: 42px;
+    height: 42px;
+    font-size: 22px;
+  }
+
+  .social-brand strong {
+    font-size: 18px;
+  }
+
+  .social-brand small {
+    font-size: 10px;
+  }
+
+  .social-top-actions a {
+    padding: 10px 14px;
+    font-size: 15px;
+  }
+
+  .social-layout {
+    grid-template-columns: 200px minmax(0, 670px) 330px;
+    gap: 25px;
+    width: min(100% - 30px, 1250px);
+    padding-top: 25px;
+  }
+
+  .social-left-rail,
+  .social-right-rail {
+    top: 84px;
+  }
+
+  .social-rail-nav a {
+    gap: 14px;
+    padding: 13px 14px;
+    font-size: 15px;
+  }
+
+  .social-rail-nav a span {
+    width: 28px;
+    font-size: 22px;
+  }
+
+  .social-feed-header {
+    min-height: 96px;
+    padding: 18px 22px;
+  }
+
+  .social-feed-header small {
+    font-size: 11px;
+  }
+
+  .social-feed-header h1 {
+    font-size: 29px;
+  }
+
+  .social-round-button {
+    width: 46px;
+    height: 46px;
+    font-size: 27px;
+  }
+
+  .social-feed-tabs button {
+    min-width: 98px;
+    padding: 14px 13px;
+    font-size: 14px;
+  }
+
+  .social-compose-card {
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    gap: 14px;
+    padding: 19px 21px;
+  }
+
+  .social-compose-avatar,
+  .thread-avatar {
+    width: 47px;
+    height: 47px;
+    flex-basis: 47px;
+  }
+
+  .social-compose-card strong {
+    font-size: 16px;
+  }
+
+  .social-compose-card p {
+    font-size: 14px;
+  }
+
+  .social-post-button {
+    padding: 9px 17px;
+    font-size: 14px;
+  }
+
+  .thread-body {
+    padding: 19px 21px 17px;
+  }
+
+  .thread-identity strong {
+    font-size: 15px;
+  }
+
+  .thread-identity small {
+    font-size: 12px;
+  }
+
+  .social-side-card > h2,
+  .social-side-heading {
+    padding: 18px 18px 10px;
+  }
+
+  .social-side-card h2 {
+    font-size: 18px;
+  }
+
+  .social-side-heading a,
+  .social-creator-card a {
+    font-size: 14px;
+  }
+
+  .social-member-list,
+  .social-topic-list {
+    padding-inline: 12px;
+  }
+
+  .social-member-row {
+    gap: 12px;
+    padding: 10px;
+  }
+
+  .social-member-row .thread-avatar {
+    width: 42px;
+    height: 42px;
+    flex-basis: 42px;
+  }
+
+  .social-member-row strong {
+    font-size: 14px;
+  }
+
+  .social-member-row small,
+  .social-topic-list span {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 760px) {
+  body {
+    font-size: 16px;
+    line-height: 1.58;
+  }
+
+  .topbar-inner {
+    min-height: 66px;
+  }
+
+  .menu-toggle,
+  .site-nav a {
+    font-size: 13px;
+  }
+
+  .social-feed-header {
+    min-height: 92px;
+    padding: 17px 18px;
+  }
+
+  .social-feed-header h1 {
+    font-size: 28px;
+  }
+
+  .social-compose-card,
+  .thread-body {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .social-feed-tabs button {
+    min-width: 96px;
+    font-size: 14px;
+  }
+
+  .social-mobile-nav a small {
+    font-size: 11px;
+  }
+}
