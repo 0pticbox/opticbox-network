@@ -64,11 +64,13 @@ textarea, option, label, html body *::before, html body *::after {
             <div class="button-grid">
               <button id="micBtn" type="button">MIC</button>
               <button id="desktopBtn" type="button">DESKTOP</button>
-              <label class="file-button" for="audioFile">AUDIO FILE</label>
-              <input id="audioFile" type="file" accept="audio/*">
+              <label class="file-button ios-file-button">AUDIO FILE / IPHONE FILES
+                <input id="audioFile" type="file" accept=".wav,.wave,.mp3,.m4a,.aac,.aif,.aiff,.caf,.flac,.ogg,.opus,audio/*" aria-label="Choose an audio file from this device or the iPhone Files app">
+              </label>
               <button id="stopInputBtn" type="button">DISCONNECT</button>
             </div>
             <audio id="audioElement" controls preload="metadata"></audio>
+            <p class="small iphone-files-note">iPhone/iPad: tap AUDIO FILE / IPHONE FILES, choose Browse, then pick the file in Files or iCloud Drive. WAV, MP3, M4A, AAC, AIFF, CAF, FLAC, OGG and OPUS files are allowed by the picker; playback still depends on the browser codec.</p>
           </fieldset>
 
           <fieldset><legend>DISPLAY</legend>
@@ -137,13 +139,13 @@ textarea, option, label, html body *::before, html body *::after {
           </fieldset>
 
           <fieldset><legend>SVG LINE ART</legend>
-            <label class="file-button" for="svgFile">LOAD SVG</label><input id="svgFile" type="file" accept="image/svg+xml,.svg">
+            <label class="file-button ios-file-button">LOAD SVG / FILES<input id="svgFile" type="file" accept=".svg,image/svg+xml" aria-label="Choose an SVG file"></label>
             <button id="playSvgBtn" type="button" disabled>PLAY SVG</button>
             <p id="svgStatus" class="small">Use simple stroked paths. Filled artwork and disconnected paths may create travel lines.</p>
           </fieldset>
 
           <fieldset><legend>PNG DETAIL OUTLINE</legend>
-            <label class="file-button" for="pngFile">PASTE / LOAD IMAGE</label><input id="pngFile" type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp">
+            <label class="file-button ios-file-button">PASTE / LOAD IMAGE<input id="pngFile" type="file" accept=".png,.jpg,.jpeg,.webp,.heic,.heif,image/*" aria-label="Choose an image from this device or the iPhone Files app"></label>
             <canvas id="pngPreview" width="520" height="300" aria-label="Detailed image outline preview"></canvas>
             <label>IMAGE DETAIL <output id="pngDetailOut">224</output><input id="pngDetail" type="range" min="96" max="480" step="8" value="224"></label>
             <label>EDGE THINNING <output id="pngLineSpacingOut">1</output><input id="pngLineSpacing" type="range" min="1" max="6" step="1" value="1"></label>

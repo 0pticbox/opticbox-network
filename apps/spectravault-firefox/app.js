@@ -351,23 +351,32 @@
     }
   }
 
+  let audioFileObjectUrl = '';
   async function loadAudioFile(file) {
     if (!file) return;
     try {
       bridgeMode = false;
       disconnectCurrentAudio();
-      await ensureAudioGraph();
-      const url = URL.createObjectURL(file);
-      audioPlayer.src = url;
+      try { await ensureAudioGraph(); } catch (_) {}
+      if (audioFileObjectUrl) URL.revokeObjectURL(audioFileObjectUrl);
+      audioFileObjectUrl = URL.createObjectURL(file);
+      audioPlayer.src = audioFileObjectUrl;
       audioPlayer.hidden = false;
-      if (!mediaElementSource) mediaElementSource = audioContext.createMediaElementSource(audioPlayer);
-      connectSource(mediaElementSource, true);
-      await audioPlayer.play();
-      setStatus(`PLAYING ${file.name}`);
+      audioPlayer.load();
+      if (audioContext) {
+        if (!mediaElementSource) mediaElementSource = audioContext.createMediaElementSource(audioPlayer);
+        connectSource(mediaElementSource, true);
+      }
+      try {
+        await audioPlayer.play();
+        setStatus(`PLAYING ${file.name}`);
+      } catch (playError) {
+        setStatus(`FILE LOADED · TAP PLAY · ${file.name}`);
+      }
     } catch (error) {
       console.error(error);
       setStatus('FILE ERROR');
-      alert('The selected audio file could not be played.');
+      alert('The selected file was received, but this browser could not decode it. Try WAV, MP3, M4A, AAC, AIFF or another browser-supported audio format.');
     }
   }
 
@@ -1637,6 +1646,7 @@
   });
   document.getElementById('returnToVisualsBtn').addEventListener('click', () => showTab('visuals'));
 
+  audioPlayer.addEventListener('play', () => ensureAudioGraph().catch(() => {}));
   document.getElementById('micBtn').addEventListener('click', startMic);
   document.getElementById('desktopBtn').addEventListener('click', startDesktopAudio);
   document.getElementById('bridgeBtn')?.addEventListener('click', useBridge);

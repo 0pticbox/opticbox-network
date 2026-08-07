@@ -51,10 +51,11 @@ textarea, option, label, html body *::before, html body *::after {
       <aside class="panel media-panel">
         <section>
           <h2>MEDIA</h2>
-          <label class="file-label">UPLOAD SONG
-            <input id="audioInput" type="file" accept="audio/*" />
+          <label class="file-label">UPLOAD SONG / IPHONE FILES
+            <input id="audioInput" type="file" accept=".wav,.wave,.mp3,.m4a,.aac,.aif,.aiff,.caf,.flac,.ogg,.opus,audio/*" aria-label="Choose an audio file from this device or the iPhone Files app" />
           </label>
           <div id="audioName" class="status-line">NO SONG LOADED</div>
+          <p class="micro-help">iPhone/iPad: tap UPLOAD SONG / IPHONE FILES → Browse → choose from Files or iCloud Drive.</p>
           <div class="transport">
             <button id="audioPlayBtn" class="btn small">PLAY / PAUSE</button>
             <button id="audioStopBtn" class="btn small">STOP</button>
@@ -65,7 +66,7 @@ textarea, option, label, html body *::before, html body *::after {
 
         <section>
           <label class="file-label">UPLOAD VIDEOS
-            <input id="videoInput" type="file" accept="video/*" multiple />
+            <input id="videoInput" type="file" accept=".mp4,.mov,.m4v,.webm,video/*" multiple aria-label="Choose videos from this device or the iPhone Files app" />
           </label>
           <div id="videoLibrary" class="video-library"></div>
         </section>
@@ -94,7 +95,7 @@ textarea, option, label, html body *::before, html body *::after {
         <section>
           <h2>LOGO LAYER</h2>
           <label class="file-label">UPLOAD LOGO
-            <input id="logoInput" type="file" accept="image/png,image/webp,image/jpeg" />
+            <input id="logoInput" type="file" accept=".png,.jpg,.jpeg,.webp,.heic,.heif,image/*" aria-label="Choose a logo image from this device or the iPhone Files app" />
           </label>
           <div class="control-grid two">
             <label>OPACITY<input id="logoOpacity" type="range" min="0" max="1" step="0.01" value="0.9" /></label>

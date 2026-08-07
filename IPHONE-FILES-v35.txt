@@ -1,0 +1,8 @@
+OPTICBOX NETWORK v35 — iPhone / iPad Files compatibility
+
+Updated local file pickers in 0PTICSCOPE, SPECTRAVAULT, DISTORTION and DJ VISUAL STUDIO.
+The visible upload buttons now contain the native file input itself instead of hiding it with display:none/off-screen positioning.
+Audio pickers explicitly include WAV/WAVE, MP3, M4A, AAC, AIFF, CAF, FLAC, OGG and OPUS extensions plus audio/* so iOS Files/iCloud Drive can expose files even when MIME metadata is missing.
+Video and image pickers also include common iPhone Files extensions.
+0PTICSCOPE and SPECTRAVAULT no longer report an upload failure only because iOS blocked autoplay; the file remains loaded and the user can tap Play once.
+No Supabase change is required.

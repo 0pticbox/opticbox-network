@@ -71,8 +71,8 @@ textarea, option, label, html body *::before, html body *::after {
             <button id="micBtn">AUDIO INPUT</button>
             <button id="desktopBtn">SCREEN AUDIO (SEPARATE FALLBACK)</button>
             <label class="file-button">
-              AUDIO FILE
-              <input id="audioFileInput" type="file" accept="audio/*" />
+              AUDIO FILE / IPHONE FILES
+              <input id="audioFileInput" type="file" accept=".wav,.wave,.mp3,.m4a,.aac,.aif,.aiff,.caf,.flac,.ogg,.opus,audio/*" aria-label="Choose an audio file from this device or the iPhone Files app" />
             </label>
             <button id="stopAudioBtn" class="danger">STOP AUDIO</button>
           </div>
@@ -90,7 +90,8 @@ textarea, option, label, html body *::before, html body *::after {
               <button id="refreshAudioDevices" type="button">REFRESH</button>
             </div>
           </div>
-          <audio id="audioPlayer" controls hidden></audio>
+          <audio id="audioPlayer" controls preload="metadata" hidden></audio>
+          <p class="microcopy iphone-files-note">iPhone/iPad: tap AUDIO FILE / IPHONE FILES → Browse → Files/iCloud Drive. If Safari loads the song but does not autoplay it, tap Play on the audio control once.</p>
           <div class="meter"><div id="audioMeterFill"></div></div>
         </section>
 
@@ -137,7 +138,7 @@ textarea, option, label, html body *::before, html body *::after {
           <div class="button-grid two">
             <label class="file-button">
               ADD PNG / JPG
-              <input id="logoInput" type="file" accept="image/png,image/jpeg,image/webp" />
+              <input id="logoInput" type="file" accept=".png,.jpg,.jpeg,.webp,.heic,.heif,image/*" aria-label="Choose a logo image from this device or the iPhone Files app" />
             </label>
             <button id="removeLogoBtn">REMOVE</button>
           </div>

@@ -238,8 +238,17 @@ h1 {
   border-color: var(--pink);
 }
 
-.file-picker input {
-  display: none;
+.file-picker { position: relative; overflow: hidden; }
+
+.file-picker input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: .001;
+  cursor: pointer;
+  z-index: 3;
+  font-size: 100px;
 }
 
 .control-grid {
@@ -1061,12 +1070,12 @@ textarea, option, label, html body *::before, html body *::after {
       </div>
 
       <label class="file-picker" for="video-input">
-        <span>Choose a local video</span>
+        <span>Choose a local video / iPhone Files</span>
 
         <input
           id="video-input"
           type="file"
-          accept="video/*"
+          accept=".mp4,.mov,.m4v,.webm,video/*"
         >
       </label>
 
@@ -1141,12 +1150,12 @@ textarea, option, label, html body *::before, html body *::after {
       </label>
 
       <label class="file-picker" for="png-input">
-        <span>Choose PNG or image</span>
+        <span>Choose PNG or image / iPhone Files</span>
 
         <input
           id="png-input"
           type="file"
-          accept="image/png,image/webp,image/jpeg"
+          accept=".png,.jpg,.jpeg,.webp,.heic,.heif,image/*"
         >
       </label>
 

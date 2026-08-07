@@ -54,7 +54,22 @@ async function connectDesktop(){
   setupAnalysis(sourceNode,2);
   currentInput="DESKTOP AUDIO";ui.inputReadout.textContent=currentInput;status("INPUT ACTIVE");
 }
-async function connectFile(file){bridgeMode=false;disconnectInput();await ensureAudio();ui.audioElement.src=URL.createObjectURL(file);if(!mediaElementSource)mediaElementSource=audioContext.createMediaElementSource(ui.audioElement);sourceNode=mediaElementSource;setupAnalysis(sourceNode,2,true);currentInput="AUDIO FILE";ui.inputReadout.textContent=currentInput;status("FILE ACTIVE");await ui.audioElement.play()}
+let audioFileObjectUrl="";
+async function connectFile(file){
+  if(!file)return;
+  bridgeMode=false;disconnectInput();
+  try{await ensureAudio()}catch(_){}
+  if(audioFileObjectUrl)URL.revokeObjectURL(audioFileObjectUrl);
+  audioFileObjectUrl=URL.createObjectURL(file);
+  ui.audioElement.src=audioFileObjectUrl;ui.audioElement.load();
+  if(audioContext){
+    if(!mediaElementSource)mediaElementSource=audioContext.createMediaElementSource(ui.audioElement);
+    sourceNode=mediaElementSource;setupAnalysis(sourceNode,2,true);
+  }
+  currentInput="AUDIO FILE";ui.inputReadout.textContent=currentInput;
+  try{await ui.audioElement.play();status(`FILE ACTIVE · ${file.name}`)}
+  catch(err){status(`FILE LOADED · TAP PLAY · ${file.name}`)}
+}
 function readAudio(){
   if(bridgeMode){
     const bridge=window.OpticsAudioBridge;
@@ -331,6 +346,7 @@ function saveRecord(){clearInterval(recordTimer);const blob=new Blob(recordChunk
 function range(id,key,out,fmt){const i=$(id),o=$(out),u=()=>{state[key]=+i.value;o.value=fmt(state[key])};i.addEventListener("input",u);u()}
 range("gain","gain","gainOut",v=>v.toFixed(2)+"×");range("focus","focus","focusOut",v=>v.toFixed(2));range("intensity","intensity","intensityOut",v=>v.toFixed(2));range("persistence","persistence","persistenceOut",v=>v.toFixed(2));range("sweep","sweep","sweepOut",v=>v.toFixed(2));range("triggerLevel","triggerLevel","triggerOut",v=>v.toFixed(2));range("xGain","xGain","xGainOut",v=>v.toFixed(2)+"×");range("yGain","yGain","yGainOut",v=>v.toFixed(2)+"×");range("rotation","rotation","rotationOut",v=>Math.round(v)+"°");range("zSpinSpeed","zSpinSpeed","zSpinSpeedOut",v=>v.toFixed(2)+"×");range("xyPhase","xyPhase","xyPhaseOut",v=>Math.round(v)+"°");range("particleAmount","particleAmount","particleAmountOut",v=>Math.round(v));range("particleDecay","particleDecay","particleDecayOut",v=>v.toFixed(3));range("particleDrift","particleDrift","particleDriftOut",v=>v.toFixed(1));range("traceRate","traceRate","traceRateOut",v=>Math.round(v)+" Hz");range("pointCount","pointCount","pointCountOut",v=>Math.round(v));range("smooth","smooth","smoothOut",v=>Math.round(v));range("artLevel","artLevel","artLevelOut",v=>{if(artGain&&audioContext)artGain.gain.setTargetAtTime(v,audioContext.currentTime,.01);return Math.round(v*100)+"%"});range("edgeThreshold","edgeThreshold","edgeThresholdOut",v=>Math.round(v));range("pngDetail","pngDetail","pngDetailOut",v=>Math.round(v));range("pngLineSpacing","pngLineSpacing","pngLineSpacingOut",v=>Math.round(v));range("pngEtchStrength","pngEtchStrength","pngEtchStrengthOut",v=>v.toFixed(2));range("pngVectorPoints","pngVectorPoints","pngVectorPointsOut",v=>Math.round(v));range("spinSpeed","spinSpeed","spinSpeedOut",v=>v.toFixed(2)+"×");range("spinDepth","spinDepth","spinDepthOut",v=>v.toFixed(2));
 document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===b));document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===`page-${b.dataset.page}`))}));document.querySelectorAll(".mode-button").forEach(b=>b.addEventListener("click",()=>switchMode(b.dataset.mode)));
+ui.audioElement.addEventListener("play",()=>ensureAudio().catch(()=>{}));
 $("micBtn").onclick=()=>connectMic().catch(e=>alert(e.message));$("desktopBtn").onclick=()=>connectDesktop().catch(e=>alert(e.message));$("bridgeBtn")?.addEventListener("click",useBridge);$("stopInputBtn").onclick=()=>{bridgeMode=false;disconnectInput()};$("audioFile").onchange=e=>e.target.files[0]&&connectFile(e.target.files[0]).catch(x=>alert(x.message));$("refreshAudioDevices")?.addEventListener("click",()=>refreshFirefoxAudioDevices(true));navigator.mediaDevices?.addEventListener?.("devicechange",()=>refreshFirefoxAudioDevices(false));refreshFirefoxAudioDevices(false);updateBridgeUi();$("phosphorSelect").onchange=e=>{state.phosphor=e.target.value;tctx.clearRect(0,0,trail.width,trail.height)};$("gridToggle").onchange=e=>state.grid=e.target.checked;$("triggerToggle").onchange=e=>state.trigger=e.target.checked;$("invertY").onchange=e=>state.invertY=e.target.checked;$("particlesToggle").onchange=e=>state.particles=e.target.checked;$("zSpinToggle").onchange=e=>{state.zSpin=e.target.checked;if(!state.zSpin)zSpinAngle=0};$("resetXYBtn").onclick=()=>{[["xGain",1],["yGain",1],["rotation",0],["xyPhase",-180],["zSpinSpeed",.08]].forEach(([id,v])=>{$(id).value=v;$(id).dispatchEvent(new Event("input"))});$("invertY").checked=false;state.invertY=false;$("zSpinToggle").checked=false;state.zSpin=false;zSpinAngle=0;$("xyAutoGain").checked=true;state.xyAutoGain=true};
 const recommendedSettings={gain:.60,focus:3,intensity:1.20,persistence:.85,particleAmount:6,particleDecay:.955,particleDrift:.8,sweep:1,triggerLevel:0,xGain:1.20,yGain:1.35,rotation:0,xyPhase:-180,zSpinSpeed:.05};
 $("applyRecommendedBtn").onclick=()=>{

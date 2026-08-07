@@ -36,7 +36,7 @@ select { background: #0c1114; color: var(--text); border: 1px solid #3b454d; pad
 input[type="range"] { accent-color: var(--accent); }
 .file-label { display: block; padding: 11px; border: 1px dashed #56636d; color: var(--text); text-align: center; cursor: pointer; background: #0e1317; }
 .file-label:hover { border-color: var(--accent); }
-.file-label input { display: none; }
+.file-label{position:relative;overflow:hidden}.file-label input[type="file"]{position:absolute;inset:0;width:100%;height:100%;opacity:.001;cursor:pointer;z-index:3;font-size:100px}
 .status-line { color: var(--muted); font-size: 11px; margin: 8px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .transport-readout { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
 .control-grid.two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

@@ -171,7 +171,8 @@ select optgroup {
 }
 
 input[type="range"] { width: 100%; accent-color: var(--accent); }
-input[type="file"] { display: none; }
+input[type="file"] { position:absolute; inset:0; width:100%; height:100%; opacity:.001; cursor:pointer; z-index:3; font-size:100px; }
+.file-button { position:relative; overflow:hidden; }
 
 button, .file-button {
   min-height: 36px;

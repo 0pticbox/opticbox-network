@@ -1,4 +1,4 @@
-0PTICBOX NETWORK v34 — 0PS3 REMOVED
+0PTICBOX NETWORK v35 — 0PS3 REMOVED
 
 Upload the CONTENTS of this folder to the root of the GitHub repository and replace matching files.
 
@@ -6,3 +6,5 @@ Upload the CONTENTS of this folder to the root of the GitHub repository and repl
 0PTICSCOPE and SPECTRAVAULT keep the Firefox + 0PTIC'S AUDIO BRIDGE workflow.
 
 No Supabase migration is required for this removal. Existing historical 0PS3 review rows are left in the database but are no longer shown by the site.
+
+V35: local media/file upload controls were rebuilt for iPhone/iPad Safari and Files/iCloud Drive.

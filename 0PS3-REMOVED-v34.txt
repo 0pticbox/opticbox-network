@@ -1,0 +1,14 @@
+0PS3 RETIRED — v34
+
+Removed from:
+- FREE TOOLS
+- Chrome/browser app files
+- Firefox app files
+- Download ZIPs
+- Review product selector
+- Public feed review rendering
+- Member profile review rendering
+- Admin review rendering
+- Fresh-install Supabase schema product list
+
+Historical 0PS3 review rows in an existing Supabase database are preserved but hidden.
