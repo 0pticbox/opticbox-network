@@ -3567,3 +3567,80 @@ html,body,body *,button,input,select,textarea,option{font-family:var(--font-alsi
 .settings-preview-cover{background-color:#060810}
 .settings-form select{width:100%;box-sizing:border-box;border:1px solid #5a6d92;background:#05070d;color:#f4f7ff;padding:12px;font:inherit}
 @media(max-width:760px){.member-network-profile{grid-template-columns:1fr}.member-profile-avatar{max-width:230px}.member-about-panel{padding:15px}}
+
+
+/* OPTICBOX V20 EXACT ALSINA FONT FIX */
+@font-face {
+  font-family: "Alsina Ultrajada";
+  src: url("https://db.onlinewebfonts.com/t/38635a91a1d7b6ab9e66cfdebf6f5a13.woff2") format("woff2"),
+       url("https://db.onlinewebfonts.com/t/38635a91a1d7b6ab9e66cfdebf6f5a13.woff") format("woff");
+  font-style: normal;
+  font-display: swap;
+}
+
+:root{--font-alsina:"Alsina Ultrajada",Impact,"Arial Narrow",sans-serif}
+html body,html body *,html body [class],html body [id],button,input,select,textarea,option,label{font-family:var(--font-alsina)!important}
+.personal-profile-card>.personal-profile-banner{display:none!important;min-height:0!important;height:0!important;padding:0!important;margin:0!important;border:0!important;background:none!important}
+.personal-profile-card>.personal-profile-header{padding-top:26px!important}
+.personal-profile-card .personal-profile-avatar{margin-top:0!important}
+
+/* 0PTICBOX V21 — animated header wordmark */
+.wordmark{
+  flex:0 0 auto;
+  width:auto;
+  min-width:0;
+  min-height:0;
+  padding:0;
+  overflow:visible;
+  line-height:0;
+}
+.wordmark-logo-gif{
+  display:block;
+  width:auto;
+  height:76px;
+  max-width:min(150px,34vw);
+  object-fit:contain;
+  image-rendering:auto;
+  filter:drop-shadow(3px 4px 0 rgba(0,0,0,.5));
+}
+.wordmark>b,
+.wordmark>span{
+  display:none !important;
+}
+@media(max-width:760px){
+  .wordmark-logo-gif{height:62px;max-width:112px}
+}
+@media(max-width:420px){
+  .wordmark-logo-gif{height:54px;max-width:92px}
+}
+
+
+/* 0PTICBOX V22 — animated logo in the Opinion Hub header too */
+.social-brand.social-brand-gif{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  min-width:0;
+  padding:0;
+  line-height:0;
+  overflow:visible;
+}
+.social-brand-logo-gif{
+  display:block;
+  width:auto;
+  height:76px;
+  max-width:min(150px,34vw);
+  object-fit:contain;
+  image-rendering:auto;
+  filter:drop-shadow(3px 4px 0 rgba(0,0,0,.5));
+}
+.social-brand-gif .social-brand-mark,
+.social-brand-gif > span:not(.social-brand-mark){
+  display:none !important;
+}
+@media(max-width:760px){
+  .social-brand-logo-gif{height:62px;max-width:112px}
+}
+@media(max-width:420px){
+  .social-brand-logo-gif{height:54px;max-width:92px}
+}
