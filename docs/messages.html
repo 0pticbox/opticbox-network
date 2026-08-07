@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="Private 0PTICBOX Network messages with friends and video attachments." name="description"/>
+<meta content="#080b13" name="theme-color"/>
+<title>Messages | 0PTICBOX Network</title>
+<link href="styles.css" rel="stylesheet"/>
+<link href="network-upgrade.css?v=10" rel="stylesheet"/>
+
+<link rel="preconnect" href="https://fonts.cdnfonts.com"/>
+<link rel="stylesheet" href="https://fonts.cdnfonts.com/css/alsina"/>
+<style id="alsina-global-font">:where(html,body,body *,button,input,select,textarea,option){font-family:"Alsina","Alsina Ultrajada",Impact,"Arial Narrow",sans-serif!important}</style>
+</head>
+<body data-auth-required="true">
+<canvas aria-hidden="true" id="page-particles"></canvas>
+<a class="skip-link" href="#messages-app">Skip to messages</a>
+<div class="ticker"><div class="ticker-track"><span>★ PRIVATE MESSAGES ★ FRIENDS ★ VIDEO SHARING ★</span><span aria-hidden="true">★ PRIVATE MESSAGES ★ FRIENDS ★ VIDEO SHARING ★</span></div></div>
+<header class="topbar" id="top"><div class="shell topbar-inner">
+<a class="wordmark" href="index.html"><b>0</b><span><strong>PTICBOX</strong><small>messages</small></span></a>
+<button aria-controls="site-nav" aria-expanded="false" class="menu-toggle" type="button">Menu</button>
+<nav aria-label="Primary navigation" class="site-nav" id="site-nav"><a href="index.html">Home</a><a href="community.html">Create post</a><a class="is-active" href="messages.html">Messages</a><a href="members.html">Member area</a><a href="profile-settings.html">Settings</a></nav>
+</div></header>
+<main class="shell messages-page" id="messages-app">
+<section class="box"><div class="box-title messages-titlebar"><span>Private Messages</span><small>friends only · private video storage</small></div><div class="member-page-intro-body"><div><span class="mini-label">DIRECT MESSAGES</span><h1>Choose a friend and start talking.</h1><p>General member lookup no longer starts a conversation. Add someone as a friend first, then they appear automatically in this inbox.</p></div><a class="retro-button" href="members.html">Account</a></div></section>
+<p class="member-warning" hidden id="messages-config-warning">Connect Supabase and run the newest messaging migration to use this page.</p>
+<div class="messages-layout">
+<aside class="messages-sidebar" aria-label="Friends and conversations">
+<section class="messages-sidebar-section"><h2>Friends <span id="friend-count">0</span></h2><div class="friend-list" id="friend-list"><p class="empty-state">Loading friends…</p></div></section>
+<section class="messages-sidebar-section" id="request-section"><h3>Friend requests</h3><div class="request-list" id="request-list"><p class="empty-state">No pending requests.</p></div></section>
+<section class="messages-sidebar-section"><details><summary>Add a friend</summary><div class="friend-search"><label class="sr-only" for="friend-search-input">Search members to add as friends</label><input id="friend-search-input" maxlength="32" placeholder="Search display names…"/><p class="friend-search-status" id="friend-search-status"></p><div class="friend-search-results" id="friend-search-results"></div></div></details></section>
+<section class="messages-sidebar-section"><h3>Conversations <span id="thread-count">0</span></h3><div class="thread-list" id="thread-list"><p class="empty-state">No conversations yet.</p></div></section>
+</aside>
+<section class="conversation-panel" aria-label="Current conversation">
+<header class="conversation-header"><span class="friend-avatar" id="conversation-avatar">?</span><div class="conversation-header-copy"><strong id="conversation-name">Choose a friend</strong><small id="conversation-status">Your messages will appear here.</small></div><button class="retro-button danger" id="block-button" type="button" hidden>Block</button></header>
+<div class="message-log" id="message-log" aria-live="polite"><p class="empty-state">Select a friend or an existing conversation.</p></div>
+<form class="message-compose" id="message-form">
+<div class="video-preview" id="video-preview" hidden><video id="video-preview-player" controls muted playsinline></video><div class="video-preview-copy"><strong id="video-preview-name">Video</strong><small id="video-preview-size"></small></div><button class="retro-button" id="remove-video" type="button">Remove video</button></div>
+<div class="message-compose-row"><div><label for="message-body">Message</label><textarea id="message-body" maxlength="1000" placeholder="Write a private message…" disabled></textarea></div><button class="retro-button primary" id="send-message" type="submit" disabled>Send</button></div>
+<div class="message-compose-footer"><div class="message-file-tools"><label class="retro-button" for="message-video">Attach video</label><input id="message-video" type="file" accept="video/*,.mp4,.m4v,.mov,.webm" hidden disabled/><small>MP4, WebM, MOV, or M4V · 50 MB max</small></div><small><span id="message-count">0</span>/1000</small></div>
+<div class="message-upload-progress" id="message-upload-progress" hidden><div class="message-upload-progress-copy"><strong>Video upload</strong><small id="message-upload-progress-text">Starting upload…</small></div><progress id="message-upload-progress-bar" max="100" value="0">0%</progress><button class="retro-button danger" id="cancel-upload" type="button">Cancel upload</button></div>
+<p class="message-status" id="message-status" aria-live="polite"></p>
+</form>
+</section>
+</div>
+</main>
+<footer><div class="shell footer-inner"><p>© <span id="year"></span> 0PTICBOX Productions</p><div><a href="members.html">Member area</a><a href="profile-settings.html">Settings</a><a href="community.html">Create post</a></div></div></footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="messages.js?v=10" type="module"></script>
+<script src="site.js?v=19"></script>
+</body>
+</html>

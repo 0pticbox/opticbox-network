@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 640">
+      <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#101219"/><stop offset="1" stop-color="#252a35"/></linearGradient>
+        <linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#3aa8ff"/><stop offset="1" stop-color="#ffffff" stop-opacity=".75"/></linearGradient>
+        <filter id="glow"><feGaussianBlur stdDeviation="12" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#bg)"/>
+      <path d="M0 0 H900 V640 H0Z" fill="none" stroke="#fff" stroke-opacity=".05" stroke-width="2"/>
+      <g opacity=".08" stroke="#fff"><path d="M0 160.0 H900"/><path d="M0 320.0 H900"/><path d="M0 480.0 H900"/><path d="M225.0 0 V640"/><path d="M450.0 0 V640"/><path d="M675.0 0 V640"/></g>
+      <g filter="url(#glow)">
+        <g opacity=".95">
+          <rect x="95" y="130" width="660" height="370" rx="24" fill="#0c0e13" stroke="#ffffff" stroke-opacity=".13"/>
+          <g stroke="url(#a)" stroke-width="9" stroke-linecap="round">
+            <path d="M185 195 V430"/><path d="M310 195 V430"/><path d="M435 195 V430"/><path d="M560 195 V430"/><path d="M685 195 V430"/>
+          </g>
+          <g fill="#fff">
+            <circle cx="185" cy="280" r="18"/><circle cx="310" cy="365" r="18"/><circle cx="435" cy="240" r="18"/><circle cx="560" cy="335" r="18"/><circle cx="685" cy="265" r="18"/>
+          </g>
+        </g></g>
+      <text x="70" y="90" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="42" font-weight="800" letter-spacing="-1">DJ VISUAL STUDIO</text>
+      <text x="70" y="132" fill="#b7bdc9" font-family="Arial,Helvetica,sans-serif" font-size="18" font-weight="600" letter-spacing="2">PERFORMANCE WORKSPACE</text>
+      <rect x="804" y="40" width="48" height="48" rx="10" fill="#3aa8ff"/><text x="828" y="74" text-anchor="middle" fill="#121318" font-family="Arial" font-size="25" font-weight="900">0</text>
+    </svg>

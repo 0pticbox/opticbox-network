@@ -1,0 +1,3965 @@
+"use strict";
+
+const stage = document.querySelector("#visual-stage");
+const canvas = document.querySelector("#visual-canvas");
+const context = canvas.getContext("2d", {
+  alpha: false,
+});
+
+const sceneCanvas = document.createElement("canvas");
+const sceneContext = sceneCanvas.getContext("2d", {
+  alpha: false,
+});
+
+const feedbackCanvas = document.createElement("canvas");
+const feedbackContext = feedbackCanvas.getContext("2d", {
+  alpha: false,
+});
+
+// Draw the uploaded image on a transparent buffer first.
+// The chosen blend mode is then applied once to the completed layer.
+const imageLayerCanvas = document.createElement("canvas");
+const imageLayerContext = imageLayerCanvas.getContext("2d", {
+  alpha: true,
+});
+
+const bpmInput = document.querySelector("#bpm-input");
+const tapButton = document.querySelector("#tap-button");
+const syncInput = document.querySelector("#beat-sync");
+
+const pngInput = document.querySelector("#png-input");
+const pngMode = document.querySelector("#png-mode");
+const pngBlend = document.querySelector("#png-blend");
+const pngSize = document.querySelector("#png-size");
+const pngSpeed = document.querySelector("#png-speed");
+const pngOpacity = document.querySelector("#png-opacity");
+const pngVisible = document.querySelector("#png-visible");
+const pngSizeOutput =
+  document.querySelector("#png-size-output");
+const pngSpeedOutput =
+  document.querySelector("#png-speed-output");
+const pngOpacityOutput =
+  document.querySelector("#png-opacity-output");
+const removePngButton =
+  document.querySelector("#remove-png-button");
+
+const backgroundVideo =
+  document.querySelector("#background-video");
+const videoInput =
+  document.querySelector("#video-input");
+const cameraVideoButton =
+  document.querySelector("#camera-video-button");
+const screenVideoButton =
+  document.querySelector("#screen-video-button");
+const stopVideoButton =
+  document.querySelector("#stop-video-button");
+const videoFit =
+  document.querySelector("#video-fit");
+const videoMirror =
+  document.querySelector("#video-mirror");
+const videoOpacity =
+  document.querySelector("#video-opacity");
+const videoVisualOpacity =
+  document.querySelector("#video-visual-opacity");
+const videoOpacityOutput =
+  document.querySelector("#video-opacity-output");
+const videoVisualOpacityOutput =
+  document.querySelector("#video-visual-opacity-output");
+
+const variationSelect =
+  document.querySelector("#variation-select");
+const nextVariationButton =
+  document.querySelector("#next-variation-button");
+const fxPower = document.querySelector("#fx-power");
+const fxPowerOutput =
+  document.querySelector("#fx-power-output");
+
+const outputPreset =
+  document.querySelector("#output-preset");
+const recordAudio =
+  document.querySelector("#record-audio");
+const recordButton =
+  document.querySelector("#record-button");
+const stopRecordButton =
+  document.querySelector("#stop-record-button");
+const recordingTimer =
+  document.querySelector("#recording-timer");
+
+const fullscreenButton =
+  document.querySelector("#fullscreen-button");
+const clearButton =
+  document.querySelector("#clear-button");
+const statusText =
+  document.querySelector("#status-text");
+const beatIndicator =
+  document.querySelector("#beat-indicator");
+const effectButtons =
+  [...document.querySelectorAll(".effect-key")];
+
+
+const controlPanel =
+  document.querySelector("#control-panel");
+const controlIsland =
+  document.querySelector("#control-island");
+const menuDragHandle =
+  document.querySelector("#menu-drag-handle");
+const collapseMenuButton =
+  document.querySelector("#collapse-menu-button");
+const detachMenuButton =
+  document.querySelector("#detach-menu-button");
+const dockMenuButton =
+  document.querySelector("#dock-menu-button");
+const islandStatus =
+  document.querySelector("#island-status");
+
+const controlPanelHome = {
+  parent: controlPanel.parentNode,
+  nextSibling: controlPanel.nextSibling,
+};
+
+const detachableMenu = {
+  window: null,
+  mode: null,
+  restoring: false,
+  dragStartY: 0,
+  dragDistance: 0,
+  pointerId: null,
+};
+
+const OUTPUT_PRESETS = {
+  youtube: {
+    width: 1280,
+    height: 720,
+    label: "Landscape 16:9",
+  },
+  vertical: {
+    width: 720,
+    height: 1280,
+    label: "Vertical 9:16",
+  },
+  square: {
+    width: 1080,
+    height: 1080,
+    label: "Square 1:1",
+  },
+};
+
+const VARIATIONS = [
+  {
+    name: "Neon Grid",
+    hueOffset: 0,
+    saturation: 100,
+    backgroundLight: 8,
+    gridStyle: "grid",
+    tunnelSides: 10,
+    kaleidoSlices: 12,
+  },
+  {
+    name: "Prism Rush",
+    hueOffset: 55,
+    saturation: 100,
+    backgroundLight: 12,
+    gridStyle: "rays",
+    tunnelSides: 7,
+    kaleidoSlices: 16,
+  },
+  {
+    name: "Acid Reactor",
+    hueOffset: 115,
+    saturation: 100,
+    backgroundLight: 10,
+    gridStyle: "cells",
+    tunnelSides: 6,
+    kaleidoSlices: 10,
+  },
+  {
+    name: "Midnight Chrome",
+    hueOffset: 205,
+    saturation: 25,
+    backgroundLight: 7,
+    gridStyle: "scan",
+    tunnelSides: 4,
+    kaleidoSlices: 8,
+  },
+  {
+    name: "Solar Flare",
+    hueOffset: 305,
+    saturation: 100,
+    backgroundLight: 11,
+    gridStyle: "sun",
+    tunnelSides: 12,
+    kaleidoSlices: 14,
+  },
+  {
+    name: "Ice Circuit",
+    hueOffset: 175,
+    saturation: 80,
+    backgroundLight: 13,
+    gridStyle: "grid",
+    tunnelSides: 8,
+    kaleidoSlices: 18,
+  },
+];
+
+const state = {
+  bpm: 120,
+  startTime: performance.now(),
+  lastBeatIndex: -1,
+  lastFrameTime: performance.now(),
+  hue: 195,
+  variationIndex: 0,
+  fxPower: 1,
+
+  backgroundPulse: 0,
+  dropFlash: 0,
+  shake: 0,
+  tunnel: 0,
+  tunnelVariation: 0,
+  kaleidoscope: 0,
+  kaleidoscopeSpin: 0,
+  kaleidoVariation: 0,
+
+  rgbSplit: 0,
+  waveWarp: 0,
+  pixelGlitch: 0,
+  mirrorSlice: 0,
+  feedbackEcho: 0,
+  prismBloom: 0,
+  scanlineDrift: 0,
+  negativePulse: 0,
+  zoomEcho: 0,
+
+  latchedEffects: new Set(),
+  particles: [],
+  rings: [],
+  pending: [],
+  tapTimes: [],
+
+  png: {
+    image: null,
+    visible: false,
+    angle: 0,
+    speed: 1.2,
+    sizePercent: 34,
+    opacity: 0.95,
+    mode: "spin",
+    blend: "source-over",
+    burst: 0,
+  },
+
+  video: {
+    active: false,
+    stream: null,
+    objectUrl: null,
+    sourceType: null,
+    opacity: 1,
+    visualOpacity: 0.35,
+    fit: "cover",
+    mirror: false,
+  },
+
+  recording: {
+    recorder: null,
+    chunks: [],
+    stream: null,
+    audioStream: null,
+    startedAt: 0,
+    mimeType: "",
+  },
+};
+
+const keyNames = {
+  KeyA: "Color Pulse",
+  KeyS: "Particle Burst",
+  KeyD: "Light Rings",
+  KeyF: "Screen Shake",
+  KeyG: "3D Tunnel Variation",
+  KeyH: "Kaleidoscope Variation",
+  KeyJ: "Logo Spin Burst",
+  KeyQ: "RGB Split",
+  KeyW: "Wave Warp",
+  KeyE: "Pixel Glitch",
+  KeyR: "Mirror Slice",
+  KeyT: "Feedback Echo",
+  KeyY: "Prism Bloom",
+  KeyU: "Scanline Drift",
+  KeyI: "Negative Pulse",
+  KeyO: "Zoom Echo",
+  KeyV: "Visual Variation",
+  Space: "Beat Drop Stack",
+};
+
+const ACCEPTED_EFFECT_CODES = new Set(
+  Object.keys(keyNames),
+);
+
+const LATCHABLE_EFFECT_CODES = new Set([
+  "KeyA",
+  "KeyS",
+  "KeyD",
+  "KeyF",
+  "KeyG",
+  "KeyH",
+  "KeyJ",
+  "KeyQ",
+  "KeyW",
+  "KeyE",
+  "KeyR",
+  "KeyT",
+  "KeyY",
+  "KeyU",
+  "KeyI",
+  "KeyO",
+  "Space",
+]);
+
+const LATCH_HOLD_MS = 520;
+const activeEffectPresses = new Map();
+
+
+function copyStylesIntoWindow(targetWindow) {
+  const targetDocument = targetWindow.document;
+
+  for (const styleSheet of document.styleSheets) {
+    try {
+      const rules = [...styleSheet.cssRules]
+        .map((rule) => rule.cssText)
+        .join("\n");
+
+      const style = targetDocument.createElement("style");
+      style.textContent = rules;
+      targetDocument.head.appendChild(style);
+    } catch (error) {
+      if (!styleSheet.href) {
+        continue;
+      }
+
+      const link = targetDocument.createElement("link");
+      link.rel = "stylesheet";
+      link.href = styleSheet.href;
+      targetDocument.head.appendChild(link);
+    }
+  }
+}
+
+function prepareDetachedDocument(targetWindow) {
+  const targetDocument = targetWindow.document;
+
+  targetDocument.documentElement.classList.add(
+    "detached-controls-document",
+  );
+
+  targetDocument.title = "DJ Visual Studio Controls";
+
+  let viewport = targetDocument.querySelector(
+    'meta[name="viewport"]',
+  );
+
+  if (!viewport) {
+    viewport = targetDocument.createElement("meta");
+    viewport.name = "viewport";
+    targetDocument.head.appendChild(viewport);
+  }
+
+  viewport.content =
+    "width=device-width, initial-scale=1.0";
+
+  copyStylesIntoWindow(targetWindow);
+}
+
+function movePanelToWindow(targetWindow, mode) {
+  prepareDetachedDocument(targetWindow);
+
+  targetWindow.document.body.replaceChildren(
+    controlPanel,
+  );
+
+  detachableMenu.window = targetWindow;
+  detachableMenu.mode = mode;
+
+  document.body.classList.remove("menu-collapsed");
+  document.body.classList.add("menu-detached");
+
+  dockMenuButton.hidden = false;
+  islandStatus.textContent =
+    mode === "pip"
+      ? "ALWAYS-ON-TOP CONTROL ISLAND"
+      : "DETACHED CONTROL WINDOW";
+
+  const restore = () => {
+    restoreControlPanel();
+  };
+
+  targetWindow.addEventListener(
+    "pagehide",
+    restore,
+    { once: true },
+  );
+
+  targetWindow.addEventListener(
+    "beforeunload",
+    restore,
+    { once: true },
+  );
+
+  window.setTimeout(() => {
+    try {
+      targetWindow.focus();
+    } catch (error) {
+      // The browser may choose not to focus it.
+    }
+  }, 50);
+}
+
+async function openDocumentPipControls() {
+  const pipWindow =
+    await window.documentPictureInPicture.requestWindow({
+      width: 380,
+      height: 720,
+      disallowReturnToOpener: false,
+      preferInitialWindowPlacement: true,
+    });
+
+  movePanelToWindow(pipWindow, "pip");
+}
+
+function openPopupControls() {
+  const width = 410;
+  const height = Math.min(
+    820,
+    Math.max(560, window.screen.availHeight - 90),
+  );
+
+  const left =
+    Math.round(
+      window.screenX +
+      Math.max(0, window.outerWidth - width - 30),
+    );
+
+  const top =
+    Math.round(
+      window.screenY + 45,
+    );
+
+  const popup = window.open(
+    "",
+    "djVisualControls",
+    [
+      "popup=yes",
+      `width=${width}`,
+      `height=${height}`,
+      `left=${left}`,
+      `top=${top}`,
+      "resizable=yes",
+      "scrollbars=yes",
+    ].join(","),
+  );
+
+  if (!popup) {
+    throw new Error(
+      "The browser blocked the control window. Allow popups and try again.",
+    );
+  }
+
+  popup.document.open();
+  popup.document.write(
+    "<!DOCTYPE html><html><head></head><body></body></html>",
+  );
+  popup.document.close();
+
+  movePanelToWindow(popup, "popup");
+}
+
+async function detachControlPanel() {
+  if (detachableMenu.window) {
+    try {
+      detachableMenu.window.focus();
+    } catch (error) {
+      // Nothing else is required.
+    }
+
+    setStatus("The control menu is already detached");
+    return;
+  }
+
+  try {
+    if ("documentPictureInPicture" in window) {
+      await openDocumentPipControls();
+
+      setStatus(
+        "Control island detached. Drag its window to another monitor.",
+      );
+
+      return;
+    }
+
+    openPopupControls();
+
+    setStatus(
+      "Control window opened. Drag it to another monitor.",
+    );
+  } catch (error) {
+    setStatus(error.message);
+  }
+}
+
+function restoreControlPanel() {
+  if (detachableMenu.restoring) {
+    return;
+  }
+
+  detachableMenu.restoring = true;
+
+  const detachedWindow = detachableMenu.window;
+
+  if (controlPanelHome.nextSibling) {
+    controlPanelHome.parent.insertBefore(
+      controlPanel,
+      controlPanelHome.nextSibling,
+    );
+  } else {
+    controlPanelHome.parent.appendChild(controlPanel);
+  }
+
+  document.body.classList.remove("menu-detached");
+  dockMenuButton.hidden = true;
+  islandStatus.textContent =
+    "DRAG DOWN TO DETACH";
+
+  detachableMenu.window = null;
+  detachableMenu.mode = null;
+
+  if (
+    detachedWindow &&
+    !detachedWindow.closed
+  ) {
+    try {
+      detachedWindow.close();
+    } catch (error) {
+      // Some PiP implementations close themselves.
+    }
+  }
+
+  detachableMenu.restoring = false;
+  setStatus("Control menu returned to the main window");
+}
+
+function toggleMenuCollapsed() {
+  if (detachableMenu.window) {
+    return;
+  }
+
+  const collapsed =
+    document.body.classList.toggle(
+      "menu-collapsed",
+    );
+
+  collapseMenuButton.textContent =
+    collapsed ? "▣" : "▤";
+
+  collapseMenuButton.title =
+    collapsed
+      ? "Expand the menu"
+      : "Collapse the menu";
+
+  islandStatus.textContent =
+    collapsed
+      ? "CLICK ▣ TO EXPAND"
+      : "DRAG DOWN TO DETACH";
+
+  setStatus(
+    collapsed
+      ? "Control menu collapsed"
+      : "Control menu expanded",
+  );
+}
+
+function updateMenuPull(distance) {
+  const limited = clamp(distance, 0, 130);
+  const progress = clamp(limited / 105, 0, 1);
+
+  document.documentElement.style.setProperty(
+    "--menu-pull",
+    `${limited}px`,
+  );
+
+  document.documentElement.style.setProperty(
+    "--detach-progress",
+    `${Math.round(progress * 100)}%`,
+  );
+
+  islandStatus.textContent =
+    progress >= 1
+      ? "RELEASE TO DETACH"
+      : "KEEP PULLING";
+}
+
+function resetMenuPull() {
+  document.documentElement.style.setProperty(
+    "--menu-pull",
+    "0px",
+  );
+
+  document.documentElement.style.setProperty(
+    "--detach-progress",
+    "0%",
+  );
+
+  document.body.classList.remove(
+    "is-pulling-menu",
+  );
+
+  if (!detachableMenu.window) {
+    islandStatus.textContent =
+      document.body.classList.contains(
+        "menu-collapsed",
+      )
+        ? "CLICK ▣ TO EXPAND"
+        : "DRAG DOWN TO DETACH";
+  }
+}
+
+function beginMenuPull(event) {
+  if (
+    detachableMenu.window ||
+    document.body.classList.contains(
+      "menu-collapsed",
+    )
+  ) {
+    return;
+  }
+
+  detachableMenu.pointerId = event.pointerId;
+  detachableMenu.dragStartY = event.clientY;
+  detachableMenu.dragDistance = 0;
+
+  menuDragHandle.setPointerCapture(
+    event.pointerId,
+  );
+
+  document.body.classList.add(
+    "is-pulling-menu",
+  );
+}
+
+function moveMenuPull(event) {
+  if (
+    event.pointerId !==
+    detachableMenu.pointerId
+  ) {
+    return;
+  }
+
+  detachableMenu.dragDistance =
+    Math.max(
+      0,
+      event.clientY -
+      detachableMenu.dragStartY,
+    );
+
+  updateMenuPull(
+    detachableMenu.dragDistance,
+  );
+}
+
+async function finishMenuPull(event) {
+  if (
+    event.pointerId !==
+    detachableMenu.pointerId
+  ) {
+    return;
+  }
+
+  const shouldDetach =
+    detachableMenu.dragDistance >= 105;
+
+  try {
+    menuDragHandle.releasePointerCapture(
+      event.pointerId,
+    );
+  } catch (error) {
+    // The pointer may already be released.
+  }
+
+  detachableMenu.pointerId = null;
+  resetMenuPull();
+
+  if (shouldDetach) {
+    await detachControlPanel();
+  }
+}
+
+
+function clamp(value, minimum, maximum) {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
+function setStatus(message) {
+  statusText.textContent = message;
+}
+
+function currentVariation() {
+  return VARIATIONS[state.variationIndex];
+}
+
+function currentHue(extra = 0) {
+  return (
+    state.hue +
+    currentVariation().hueOffset +
+    extra
+  ) % 360;
+}
+
+function configureOutput() {
+  const preset = OUTPUT_PRESETS[outputPreset.value];
+  const dimensions = [
+    canvas,
+    sceneCanvas,
+    feedbackCanvas,
+    imageLayerCanvas,
+  ];
+
+  for (const target of dimensions) {
+    target.width = preset.width;
+    target.height = preset.height;
+  }
+
+  feedbackContext.fillStyle = "#010208";
+  feedbackContext.fillRect(
+    0,
+    0,
+    feedbackCanvas.width,
+    feedbackCanvas.height,
+  );
+
+  setStatus(
+    `${preset.label} output set to ` +
+    `${preset.width}×${preset.height}`,
+  );
+}
+
+function getBeatDuration() {
+  return 60000 / state.bpm;
+}
+
+function getBeatPhase(now) {
+  return (
+    (now - state.startTime) % getBeatDuration()
+  ) / getBeatDuration();
+}
+
+function getNextBeatTime(now) {
+  const duration = getBeatDuration();
+  const elapsed = now - state.startTime;
+  const beatNumber =
+    Math.floor(elapsed / duration) + 1;
+
+  return state.startTime + beatNumber * duration;
+}
+
+function flashButton(code) {
+  const button = effectButtons.find(
+    (item) => item.dataset.code === code,
+  );
+
+  if (!button) {
+    return;
+  }
+
+  button.classList.add("is-active");
+
+  window.setTimeout(() => {
+    if (!state.latchedEffects.has(code)) {
+      button.classList.remove("is-active");
+    }
+  }, 130);
+}
+
+function scheduleEffect(code) {
+  const now = performance.now();
+
+  if (syncInput.checked) {
+    state.pending.push({
+      code,
+      time: getNextBeatTime(now),
+    });
+
+    setStatus(
+      `${keyNames[code]} queued for the next beat`,
+    );
+
+    return;
+  }
+
+  triggerEffect(code);
+}
+
+function triggerEffect(code) {
+  flashButton(code);
+
+  switch (code) {
+    case "KeyA":
+      state.hue = (state.hue + 47) % 360;
+      state.backgroundPulse = 1.2;
+      break;
+
+    case "KeyS":
+      createParticleBurst(
+        Math.round(80 * state.fxPower),
+      );
+      break;
+
+    case "KeyD":
+      createRingBurst(
+        Math.round(5 * state.fxPower),
+      );
+      break;
+
+    case "KeyF":
+      state.shake = Math.max(
+        state.shake,
+        20 * state.fxPower,
+      );
+      break;
+
+    case "KeyG":
+      state.tunnelVariation =
+        (state.tunnelVariation + 1) % 4;
+
+      state.tunnel = Math.max(
+        state.tunnel,
+        2.5 * state.fxPower,
+      );
+      break;
+
+    case "KeyH":
+      state.kaleidoVariation =
+        (state.kaleidoVariation + 1) % 4;
+
+      state.kaleidoscope = Math.max(
+        state.kaleidoscope,
+        3.4 * state.fxPower,
+      );
+
+      state.kaleidoscopeSpin += Math.PI / 8;
+      break;
+
+    case "KeyJ":
+      triggerPngBurst();
+      break;
+
+    case "KeyQ":
+      state.rgbSplit = Math.max(
+        state.rgbSplit,
+        1.15 * state.fxPower,
+      );
+      break;
+
+    case "KeyW":
+      state.waveWarp = Math.max(
+        state.waveWarp,
+        1.45 * state.fxPower,
+      );
+      break;
+
+    case "KeyE":
+      state.pixelGlitch = Math.max(
+        state.pixelGlitch,
+        1.2 * state.fxPower,
+      );
+      break;
+
+    case "KeyR":
+      state.mirrorSlice = Math.max(
+        state.mirrorSlice,
+        1.55 * state.fxPower,
+      );
+      break;
+
+    case "KeyT":
+      state.feedbackEcho = Math.max(
+        state.feedbackEcho,
+        2.4 * state.fxPower,
+      );
+      break;
+
+    case "KeyY":
+      state.prismBloom = Math.max(
+        state.prismBloom,
+        1.4 * state.fxPower,
+      );
+      break;
+
+    case "KeyU":
+      state.scanlineDrift = Math.max(
+        state.scanlineDrift,
+        1.35 * state.fxPower,
+      );
+      break;
+
+    case "KeyI":
+      state.negativePulse = Math.max(
+        state.negativePulse,
+        1.2 * state.fxPower,
+      );
+      break;
+
+    case "KeyO":
+      state.zoomEcho = Math.max(
+        state.zoomEcho,
+        1.5 * state.fxPower,
+      );
+      break;
+
+    case "KeyV":
+      nextVariation();
+      return;
+
+    case "Space":
+      state.dropFlash = 1;
+      state.backgroundPulse = 1.3;
+      state.shake = Math.max(
+        state.shake,
+        28 * state.fxPower,
+      );
+
+      state.tunnel = Math.max(
+        state.tunnel,
+        1.5 * state.fxPower,
+      );
+
+      state.kaleidoscope = Math.max(
+        state.kaleidoscope,
+        1.25 * state.fxPower,
+      );
+
+      state.rgbSplit = Math.max(
+        state.rgbSplit,
+        0.45 * state.fxPower,
+      );
+
+      state.png.burst = Math.max(
+        state.png.burst,
+        0.75,
+      );
+
+      createParticleBurst(
+        Math.round(145 * state.fxPower),
+      );
+
+      createRingBurst(
+        Math.round(9 * state.fxPower),
+      );
+      break;
+
+    default:
+      return;
+  }
+
+  setStatus(`${keyNames[code]} triggered`);
+}
+
+function createParticleBurst(amount = 80) {
+  const width = sceneCanvas.width;
+  const height = sceneCanvas.height;
+  const centerX = width / 2;
+  const centerY = height / 2;
+
+  for (let index = 0; index < amount; index += 1) {
+    const angle = Math.random() * Math.PI * 2;
+    const sizeScale =
+      Math.min(width, height) / 720;
+
+    const speed =
+      (90 + Math.random() * 470) * sizeScale;
+
+    state.particles.push({
+      x: centerX,
+      y: centerY,
+      velocityX: Math.cos(angle) * speed,
+      velocityY: Math.sin(angle) * speed,
+      life: 0.65 + Math.random() * 1.3,
+      maximumLife: 1.95,
+      size:
+        (2.5 + Math.random() * 11) * sizeScale,
+      hue: currentHue(Math.random() * 120),
+    });
+  }
+}
+
+function createRingBurst(amount = 5) {
+  const width = sceneCanvas.width;
+  const height = sceneCanvas.height;
+  const scale = Math.min(width, height) / 720;
+
+  for (let index = 0; index < amount; index += 1) {
+    state.rings.push({
+      x: width / 2,
+      y: height / 2,
+      radius: (12 + index * 20) * scale,
+      speed: (190 + index * 60) * scale,
+      life: 0.9 + index * 0.1,
+      hue: currentHue(index * 25),
+    });
+  }
+}
+
+function triggerPngBurst() {
+  if (!state.png.image) {
+    setStatus("Choose a PNG or image first");
+    return;
+  }
+
+  if (!state.png.visible) {
+    setStatus("Image layer is hidden — enable Show image layer");
+    return;
+  }
+
+  state.png.burst = Math.max(state.png.burst, 1.3);
+  state.png.angle += Math.PI / 2;
+  state.backgroundPulse = 0.6;
+
+  setStatus("Logo Spin Burst triggered");
+}
+
+function updateBpm() {
+  const parsed = Number(bpmInput.value);
+
+  if (!Number.isFinite(parsed)) {
+    bpmInput.value = String(state.bpm);
+    return;
+  }
+
+  state.bpm = clamp(
+    Math.round(parsed),
+    40,
+    240,
+  );
+
+  bpmInput.value = String(state.bpm);
+  state.startTime = performance.now();
+  state.lastBeatIndex = -1;
+
+  setStatus(`Tempo set to ${state.bpm} BPM`);
+}
+
+function registerTap() {
+  const now = performance.now();
+
+  state.tapTimes.push(now);
+  state.tapTimes = state.tapTimes.filter(
+    (time) => now - time <= 3000,
+  );
+
+  if (state.tapTimes.length < 2) {
+    setStatus("Tap again to calculate BPM");
+    return;
+  }
+
+  let totalInterval = 0;
+
+  for (
+    let index = 1;
+    index < state.tapTimes.length;
+    index += 1
+  ) {
+    totalInterval +=
+      state.tapTimes[index] -
+      state.tapTimes[index - 1];
+  }
+
+  const averageInterval =
+    totalInterval /
+    (state.tapTimes.length - 1);
+
+  state.bpm = clamp(
+    Math.round(60000 / averageInterval),
+    40,
+    240,
+  );
+
+  bpmInput.value = String(state.bpm);
+  state.startTime = now;
+  state.lastBeatIndex = -1;
+
+  setStatus(`Tapped tempo: ${state.bpm} BPM`);
+}
+
+function nextVariation() {
+  state.variationIndex =
+    (state.variationIndex + 1) %
+    VARIATIONS.length;
+
+  variationSelect.value =
+    String(state.variationIndex);
+
+  state.hue = (state.hue + 31) % 360;
+  state.backgroundPulse = 0.65;
+
+  setStatus(
+    `Variation: ${currentVariation().name}`,
+  );
+}
+
+function loadPngFile(file) {
+  if (!file || !file.type.startsWith("image/")) {
+    setStatus("Please choose a PNG, JPEG, or WebP image");
+    return;
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  const image = new Image();
+
+  image.onload = () => {
+    state.png.image = image;
+    state.png.visible = true;
+    pngVisible.checked = true;
+    state.png.burst = 0.8;
+    URL.revokeObjectURL(objectUrl);
+
+    setStatus(`${file.name} loaded`);
+    stage.focus();
+  };
+
+  image.onerror = () => {
+    URL.revokeObjectURL(objectUrl);
+    setStatus("The image could not be loaded");
+  };
+
+  image.src = objectUrl;
+}
+
+function loadSamplePng() {
+  const image = new Image();
+
+  image.onload = () => {
+    state.png.image = image;
+    state.png.visible = true;
+    pngVisible.checked = true;
+  };
+
+  image.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAoAAAAKACAYAAAAMzckjAABgHklEQVR4nO3deZhc1X3n/08hGUpAGQiLoY2J7bIVL0Te90UGYSOZ1QgjhJnkl4XJJJMwmQTHnjhxknESZxKSJ7ZnJpMhngQsJEBICIIWG4lYgGM220HGYAsKCIvYhJEoQCWQ1L8/WiVVt+re2u4953vOeb+ex48T31L36e57v+dzv+cuEgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACgU8X3AABgWMdvGt/kewx3j1XGfI8BAAZFAARghoVAVzYCIwALCIAAnEgh3BWFkAigbARAAIUh5JWPcAigCARAAEMh7NlBKAQwKAIggFwEvXARDAFkIQACmITAFy8CIYA2AiCQMMIeCIVAmgiAQEIIfOiFQAikgQAIRIzAh1ERCIE4EQCByBD6UBbCIBAPAiAQOAIffCEQAuEiAAIBIvTBGsIgEBYCIBAIQh9CQRgE7CMAAoYR+hA6wiBgEwEQMIbQh1gRBgE7CICAAYQ+pIYwCPhFAAQ8IfQBEwiDgHsEQMAhQl+xLAQH/qbFsvA3BVJAAAQcICT0J4XJn32hPynsC4BPBECgJEz0+7I2qY9vnLOpMnOdqTGx3+zL2n4DxGC67wEAsWECZ8IeRdbvLuX9qv2zs18BxaEDCBQkxQk65Al5fOOcPX8va13AQbDfARgGHUBgBClNvky6NnX7u8S+X3b+fOyXwHAIgMAQYp9gmVTDllIoZHkYGA5LwMAAYp1EU5s8O5d/20JeBh4G+zKQNjqAQB9imyyZJDF1H4hlH6cjCPSHAAhkiGVClJgM0VtsgZDrBIF8LAEDU4Q+8bUx6XXXbfm3LbVl4H5xTADxoQMI7BbDJMcEhzJ07lchHycsDwN7EQCRvJAnNCYyuBbDUjFBEGAJGAkLceKSmLRGkbf828Yy8PA4poBw0AFEkkKbqJigEIJQl4qP3zS+iWMMqSEAIikhTUoSwQ/hau+7oRxzLAsjNSwBIwmhTEISE1BZ+ln+bWMZuBwch4AddAARtVAmHCYbpCCkJWI6gogdARBRsj65tDG5IFWhLBETBBErloARHesTChOJe4Ms/7axDOwexy7gDh1ARIPJAwib9a4g3UDEhACI4FmdLCQmCmAY1q8VJAgiBiwBI1gWJ4Y2JgY7hln+bWMZ2A6Od6BY+/keADAMq5PB3WOVMSYDoHiWjy2r9QjIwxIwgmK10FqdmIDYWL1OkGVhhIYlYATDWsGXKPbWjbL828YysG3UBWA4dABhnrUCT3EH7LB4wwjdQISAAAizrBTzNoo5YJu15WGCICxjCRgmWSngEsU7VEUs/0osAYeMOgJkIwDCFAo2ilJUAJQIgaGjrgD74jEwMIMiDaAMlo5nS3UOaaMDCBOsFEVLEwWGV2T3T6IDGBNqDTCBAAivKMYY1bK54xum/m9nffWkI4r+PssvXLt56v82f01lVtHfB25Qe5A67gKGNxYKMMXXpm6hzqJBxklYtMXKHcPHbxrfRB2CD3QA4ZzvgisR/CwoK+SV0f2TuncAi0I49I+6hNQQAOEURTY9rrt5ZQVAqdwQ2A3B0C3qE1LCEjCc8V1cKazlCmXZNiRZv1OCYTksLAuzJAxX6ACidAS/OFkMfGV2/yT3HcB+EQjLQe1CzAiAKBUFNA4Ww143gwbA5Reu3TzMvxlsVH4QCotBDUOsWAJGaXwWTormaEIJfMg29W9IIByO72VhloRRFgIgCkfwC1PooS/WTl5ROv++hMHB+QyC7e9JfUORWAJGoQh/4Qg98E01SgBMPTwSCAdDnUMM6ACiML6KIgWxf7GFPhSD7uBgfHcDqXkoAgEQI+Ns2LYUQl/qHbwiEQb7d/dYZYwlYYSKJWCMhK6fTSmEvk5FBEBCZD7CYD5qIUJDBxBDo+DZklrog1t0BvP57AZSEzEMOoAYio9CR5HbF6Fv8M5dZea6rvvR+MY5A+3TqXUAsxAG90V9RAgIgBgYxc2vVEJfv8Fi0OCWFQCL/lqd+JulhzoJ6wiA6BsFza8YQ0QRgSGEAJiHv2vcqJuwigCIvlDE/IkhIJQVCIoObD4CYBb+7vGgfsIiAiB6oni5F/Lk73LSLyOwWQqBU7FfhIs6CmsIgMjlumilXrBCm+B9T+qpBcBu2GfCQk2FFQRAZKJQuRPKJG5p8i4rqIUWAKdiX7KP2goLCIDoigJVvhAmasuTdJlBLfQQ2In9zCZqLHwjAGIfLgtTikXJ8oQc0kRMABwO+58t1Fv4QgDEHpyRlsvqxBvipFt2QIs5AHZin7SB2gsfCICQRAEqk8VJNvQJ1kVASyUEtrGf+kUNhmsEQLAEURJrE2pMkykBsFzsu/5Qj+EKATBxFJviWZo8Y5w4XQWzlANgJ/Zn96jLcIEAmDCKTLGsTJSxT5IugxkhcDL2cXeozyjbfr4HAD8oLsWyMDHOX1OZlcLECH+s7GMWjreyuaybPt5SAv/oACbI1cFO8CufhcnYJdcdOTqAvXEMlI+ajTIQABNDISkGk54fPgIZIbA/HBPlonajaATAhFBARudzkot9gusHATAMHCfloIajSATARFA4RudrUot5QhuEryBGABwex0zxqOUoCgEwARSM0TCJ2eAziBECR8MxVCxqOopAAIwchWJ4PiatWCesIhAA48BxVQxqO0ZFAIwYBWJ4riepGCeoIvkOYL6/f4w4xkZHjccoCICRclEYYiwKTEo2WQhgFsYQI4650VHvMQweBB0hisFwXE5EVh6oC/jm+ljw/biaMrioxzwsOj50ACND+Buc6+Dn6nvFwkrnzco4YsfxODzqPwZBAIwIB//gXE02sU00LlkKXpbGEjuOzeEwD6BfLAFHgoN+MMvmjm9gggHscnXcuKwFLrAcjH7RAYwA4W8wBL9wWOu4WRtPKjhmB8e8gF4IgBEo+0CP5SBnEgmPxcA1yJgIgMXiGB4McwPyEAADxwHeHxcTRyyThiWhB0CJEFgGjuf+MUcgC9cABowDuz9MFmEiaCGLi+MtlusCy67jXA8YLjqAgSL89UbwC5vlAMgysB0c5/1hzsBUdAAD5PJAHnQStqLsSYEHOaNfoR5DoXBxLIbYDZy639EJxFQEwMC4PourzFw3Nr5xzqaQJjEX4a/Mrw/b3T/YRAic0K7X3Y4JQiA6Tfc9APTPdwu/PSlbnWwJfkDa2sdoWbWg/XUt1oJ+T5ruHquMlTmXHL9pfBPLwWGgAxgIn+FvauCz2BEk/MGlQU+CrB0vsUupG9itHvfaP+kEQqIDCA1fDKx0BMssxgQ/91j+RRFcdAN91odRTyrK7gTCPu4CDkCZB+kg4a9XwXE9EdP1i1MoATCUcSKuWlF0HbYyv8A9AqBxlg7Ofic8FxMdXb94hRSsQhorwq4bZdZfS/MM3OEaQMOsHZT9FpayrxEMuYgjH4EKZSrz+C6rLg1ST4c9HsoMaSwz28U1gEbFcNCUcY1gWUWW4AekocxrA4u8LjCmG4e4M9gmloAN8v24l16GLUyjBkHCX/xG6QCOz17t7M7Myvp5e/YZupbhslhTfNVXyf7cg2IRAA2ytvQ71ahnpsMUKouFGsUaeL+64KLNJQ1lMJdcfMQgHycA2mKltvioq91Yn39QHAKgMaEcfEUsT/RTsKwUZ5QvlQCoCy7a3NlBhA2+ao2rWjqIUOYhjIYAaEhIB12R16dkFS/CX7y6LtcOEaSKGs/IChg7odA/lzXHRQ0dRUjzEYZDADQixIOt6IuUO4sY4S8efV2bF3L4k0obP6HQvbJrT5l1s2ghzkvoH3cBRy6kg6xdGJdfuLbwyZ3g547LmzFiN/V3SSAsX1l3CYd4Vy9vC4kbHUADyjrAXIS/MotaUUGQ8FeuQgJf6B1AycvPQCAsVxEh8KyvnjTYfjEAVzcUhTxHIRsdQM84u8rWLpyjBEHCXzkK7fLFEP486fw7EAaLN39NZdawIbDM4BcLng/oFx1Aj2K5vsLV0sagQZDwV6zSlnZjCYCGfg7CYLEGCYGugp/rxwnFMl9hLwKgR7G01V1f29IrCBL8iuPkej5DwWlkBn8WwmBx8oKg646fj+dJxjJnYQIB0JPYDiQfFzh3C4KEv9E5vYmj4MDkIuzk/n4MBsBOhMHRTQ2BPpZ6fT5MPLa5K2UEQA9iPIB83uHWDoKEv+F5u3M3srdohPQwa8Lg8JbNHd/g8xo/38dBjHNYigiAjsV8HYXvxxz4Looh8v7IlsgCoBRWCJQIgoOizsU9j6WEu4AjwUGztzBbKJCWeQ99bRGGv2FU1s+b5fNvwp3E/fEd/Czh+YBxoAPoUAptc0tFMtbAMCyfIaNbsBh0Xwnl71nUz2Xt75Uqalq2FOa0mBEAHUnlQLFULNusFU2XfIWIfgJErAFQKudns/y3jBG1rD+pzG0xYgkYharMXDdmrXCmuDTsIywMEhRiDn9l6fz9uvz7tr9XKkHQWv1q4xhA0QiADnCG1NvyC9duLvuuuhSCoMtgkEogsGjq797F3z32IOjygfYxvSWkrOsBeUtI+VgCLlmq4W+YYtp+nEusT9Ivk6vgV9Tkn0IH0NfPGNq+4JvrNxkNU99C2P9TnetCRgewRBwQw3EVBGPoCLqY7Iue6FMIfz65WioOvSNo9RWWoaITGB46gCVKOQAO+6DUbsWSjuC+yg5+ZU7qqQRAaz9nyPtMkVwFv8rMdWNFvDUkpAfdpzznhWg/3wOIVcoHwiAvTu9l/prKrMrMdWMuQsD4xjmbrF4A3jY+e/WGMifyyvp5s0KZyK0bdJ8te98r+29b9r45KlfHd2e9KjK0FVlXy1LW/MQzB8tBB7AEhL+9yjjjdXkG7+L79KusydVl4LPWFSub9Z83hn2qFwv1osgVETqBKArXAAYihB2/6M5f1rZ2oS27sFu5RjCFSRp+tPeBovcxC9cHWgh+bfPXVGaNq5jxLJs7vsF6CORNIWGgA1iwlM98sgJg2Xe9WSr0RYox+FnviJUhpJ85hn3OYj0Y5akI3VgPgFLac2Eo6AAGIIQd3uf1KTF2BIueiC10+0IKQqkq6w7i8dmrN5S9D1oMfmWhC4gi0AEsUBk7eyzhz+Wzr0KeCGIMfm2pBsDQf27r+6T1473o7l8n6yFQSndeDAEdwIKkeqZj8c60EDuC1idZDG/Q1yOOb5yzyVIILPo6waKuD7Qe/FwIoRNYBp4NWAw6gAVJ8Sxn0PDn6wn41ieKIsOf1eAXehdsVDH9/L73V+vHc6cyu3+drIfAFOfHENABLECKO7fFzl8Wqx1B3xMpMIwiO4KDdANDCn6uWe8ElnE9IF3A0dEBHFGKdzqNEv4svAfTwkSSWviLqQM2rBh/By72YwvH6zBcdf86WQ6BKc6V1tEBNIgdulw+O4KpBT8pzuCDCWV2A0MNfuiOu4LtoQM4ApZ+h2OhC9jJ2evfLriokJfChxL82giAE1L4PRRygnPJxcG/+9tH96/NchdQSnPetIp3AaNvIV33NwhX7xrWJRcfMcrkxnt6w2bt3cBlGGkfHfH46Jez431ARQW3WOs0ikcHcEipncUUVVTaRW6Yyc1V0bbYEQw1+KXQ9RpESr+PvruBEXT8Oo1a24qutRalNn9axTWARqSw81ouSJ1cXSO4Z+LLCYKhBj+g5/WBkQW/osxfU5kVexeP6wFtoAM4hNTOXoooRt3Cn+UuYCdfHcEYwl9KHa9+DfI7ieX3MSkERhz8iqxpZdVdK1KbRy0iAA4otZ22zOWIUAJgG3clDobw112qv5cUjh9rAVAiBCIbN4EgU9kFaJhC7fPCeFcXj49vnLMpxBsAgG5c7c++b+4o+oSWm0JQNgLgADhbGZzls89hEQSB3lIJfmWKsX52KmP+49rC/rEEPICidyzL4c/l9SehLQVPlcLS1qBSXebsV8y/H5fXzFq5TrbsGsb1gIOxPLdawl3AfUrprCL2YlOUPRe2X6CJmzdKvrh90HcNAy75uFlqkHcJh6yIO4Otvy+4SLwnuD8sAXtidef0cb1IaNcCShmPtrjgos1Fve0j93uzNAxDnO2POcdXka9YHFRIKxhWrwe0Oh/GjgDYh5S6f0WI/Syz52STeBCMeXmzKDG8FcRC8Js0Ho8h0IXY62rRmLd74xrAPqRyfYLvpd8QzqSHmmQifu5ZNwTA/oT6e7L4ppxOLpeDfdQs33W6TKnMtVbQAewhlR0y5qJSlKE7DBdctJm7hhG6UO7qpRPYWypLwXQB8xEAc7DzuGX5WsBRJpV2RyKFx8eE2tXyIZRlYF/Bb5ROnosQGMKKBZjH8xAAHaL7F6ZhJ5PK+nmzuk1iKQRBhM9Cxy/rGOpHzJ1AuoAoAgEwQypnDdbCn7Uu4Cjhr+dnCIIwyELw2+ezxkKghe5fzCGwaKnM54MiADoS61kNnb99DTpZxRIEWf4dnKVlYIvBb9K/MxYCLYi1/sY6X1pDAOwilbMFq2d/FrqArsLfpH8bSRBEWKwHv0lfw0AItND9K5LVeaBoqczrgyAAOmDxbMba0q8lPsLfpK9DEIQDIQW/SV/PQAi0JNalYIvzZmwIgFNwltCfssOfry6g7/A36WsGFARZ/h2e62XgUIPfpK/tKQRa7f7FejJeNOb3yQiAJbN4FmPxbM+CYSaHUe5S7Pt7BBQEYVcMwW/S9xny2Iu1Ezgqi/OCxfkzJgTADik89DmkpV+XXcBhw98w32tYBEEMI7bgt8/3dRQCrXb/2lgK7g9dwL0IgBhIjEsNIYS/Sd/bWBBk+Xd0ZSwDxx78Jo2BTqCkOOszykMALEms3T/Xyu4Chhb+OlkLgrAhpeDXqcwQaL37VySL84TF+TQGBMDdaAv3FtvZZcjhrxNBEFK6wa8TncD46nQZmO8nVHwPwIoidwiLZyujntX5LipFn4HHEv66cRXSKjPXjbH8W6xhfp8u/94uvk8Rijy+Q+3+hV7zu4l9nnaNDqDiPxuw2NL3KebwJ7ntCJb9PZAv9Y5fFjqBo4t93oh93u8HAbBgMZ5VWDgTLOpawNjDXycXE3f7e4QWEELm6nce+t+1iBAYavdPslG3ixbj/OpT8kvAsT/6JaZlgFGLcUrhr5syukW5y+xTvp+VidG6QX5vrv+mIRrluA85ALbFNAdI8c/ZLtEBRDBG6QKmHv6kEl7J1eNr0R0cXr+/u6L/njH+rYbtBMYQ/oA8SQfA2M8kYjvzcym28NfJx0TPxNg/H3+b2P8+MR/PvYxax61dC8iDoYuTdABEeHy9IzhGo0z8sQeGkIzyN+TvmOGSi48Y9J/wu0RoCIAFofsXj9S6BQSBtKT6907tuO5EFxDdJHsTSMzLvymEv6G6ehdctLnXR1KeJNp6/W5TDA8h4O/Wn57XA0fc/Ytpboh5DneFDmABUtxxYkT4m5BqhyhW/D0n4ziPA/Pu6JLsAMZ85hDTGV4vRXYBmRSydf6eCRK28bfqX9dOYMTdv7aY5oiY53IX6ACOKLUdJkaEv3x0kMLC36s/HPfhY/4dTXIdwJjPGGI6s+vXqF1AJgEgbXs6gQl0/9pimitintPLRgdwBCntKAAAWMM8PDwCYCRiOqMbxFBn4LvP9On+Aaisnzcrpe6fFN9jYTCcpAJgyk/8zhNq+BsF4Q9AylKs+/1IKSckFQCLZKntnPzZWB/P95uKt4MAkIa/jniY94vHxNK8Y2k+DkkyATClVD+I0M8CUy/CAPwJvf6EXv/LkkpeSCYAFsnS2YalszCv6AICGFBZbxRKhaX5x9K8HAoCYMJCP/sL/ewbQPhCr0OhzwMYXhIBMNZ2rqWzL9e6Fl26gAD6VGT3L/QQOIpY56FYc0OnJAJgkWJpM3PWBwCQ4pkPYpmfXSEAIji5Z9t0AQH0UMa1fyl3ARGm6ANgkW1cS2cXo7TdQz7bo8gCsCrk+jTKvGBpGbjIeTr2ZeDoAyASRBcQQAbu/AUmEAADRPcPAGwKuU7F0gVEf6IOgLEu/6K3Yd7TSRcQiNswx3hl5roxXh0ZFpaB+xN1AIxRqmdZIZ9VA0hLqvUq1fkpVATAhIS6/DtoMW2frdMFBNA2bPdvz/89YBcw1BAY6jyBwUUbAFn+TRNLNQDKQn0JB8vAvUUbAGOU4s0fo55F0wUEMGr3b+jvm2AXkGXgcBAAe6D7Fw7OzgGUjToTDubvfFEGwBjbtXT/8uUVZbqAQLrK6P4NEgLpAsYhxlwRZQBE+EItmgAwFfUMFhEAc1hpH8d4NlWkfs7G6QIC6Snz2j+WgvNZmbeszOMWRRcAY2zTjiLE5V/OlgHEJsS6FuL8UabY8kV0ARBpGeQsnC4gkA4Xd/7SBUTICIAZrLSNU7v5I8SzZADoR4j1LYabQazM59ZEFQBja88i3zBn33QBgfi5fO4fXcC0xJQzogqACFtRj30BAJdSeCwM4kMANCy15V9X6AIC8fL11o+YxbAMjH0RALvgegH36P4BCBldQNuY1/cVTQCMaV1+VHT/eqMLCMSH7l95mFf2iiVvRBMAY5NS25zuH4AY0AXsLqX5LCQEwCloE6eDLiAQD7p/6IX5fbIoAmAs7dgihNamp/sHICYxdwFDm1/KFEPumO57ANgX7XJ3KjPXjQ3aORjfOGdTv52DWrX+Rkm/JmmepJ+VdNDgoyzUU5J+LOmfJf1ds9V4wfN4nKhV62+T9DuS3inpjZIO8DiccUlPSvqRpMslXd5sNV7K+we1av1dkn5b0kcljclv7d6lif3oNkn/p9lqrPE4Fkl0/0KwbO74BgKkLVF0AItCe9iuELt/tWr9dyT9UNLvSnqL/Ic/STpKEyHiryQ9WKvWT/A8nlLVqvVptWr9Ekk/kPQLko6X3/AnSRVJR0uaI+n/Sbq9Vq2/udsHa9X6K2rV+n+XdKuk8yUdJ/8n7vtpYvxnSFpdq9b/sVatH+J5TKaEWK9SwTy/FwEwIqGdXVlZ/ijjWsBatf7fJP21/IeNPEdKWlWr1j/ueyBlqFXrFUlXSvpVTYQuq94m6cZatf66Ltv+n6Q/lP/Ql+f/k3RDrVqf5uObh979s1IH+xXaPINswQfAGNbhO7H8G75atf4OSX/mexx9qkr6eq1ar/oeSAnOlzTf9yD6dLSkr3f+D7Vq/UxN/AwheI+kz/seBGyLbX4LPX8EHwARJms3fxTcBfxD2e44TfUaSb/lexBFqlXr0yV9yfc4BnRCrVr/iLSne/k1z+MZ1Bdr1fqRLr+h5e5fzDeDIA4EwN1Cvy6AtrwNu4NHiEuqF/geQMFO1sRNN6GZt/u/3yXpWJ8DGcL+2jt+RCz0+Sb0+b4oBEBDYmuPF8HlxdQFdQFfLengYkbk1Btr1fp7fQ+iQKEsnU71c7v/u+51FMN7g6tvZLn7t+f7cTPIPpjn7LB8YXFPoa+/pyrV5Y4ZB85Q46FbdXDN383As95ygh568JGszedLut3hcEpRq9YPlnR61va/+usv6td+4xccjmiyr33l6/rC57+ctbl96UAt6wO/+Evn6Gv/+88LH1e//u5//pM+99k/zdr8Spdjicn47NUbCIzhOX7T+KZQO4p0ACMQejs+i49iWEAX8FFJzW6f2/biNq24ZvWwQyvEgnPPyN28ewk7dGdJOrDbhunTp+msT5/ieDiTLV60PG/zPa7GEbIQun97vm+koS7WeSclBEBxPYBLsXf/mq3GTknrs7b3mPxLd865mY0xaeIZgZ9wNJQyZS7/nnjSR3TkkYe7HMskd911j35090/yPnKjq7HAntjroyXM+wRAM7guwo4CuoCLsj73nVvu0MP//uhQ4yrCG2e+Xu98V+6Je6jXzkmSatX60ZJOzNq+ID8Al67HCcBjkr7tZiThCqn7h+6Y72wgAAYu1jZ84Msm10ra2m3D+Pi4lixe4XY0U5y7MHcZ+Izd19CFaqGkrg8kPvCgGTrlVH83aO/YsVNXX/nPeR9Z1Gw1drkaD9wJvJ5linX+SUWwAZAbQMIT0vLGKF3AZqvRknRV1ud8LwPPP+dUTZ+e+dKGAzVxDV2oMjuYp59xsg48aIbLsUxywzfX6+mnn8n7yKWuxhKqFLp/IdVJTAg1jwQbAIti4ToA2uGTRXK2nDmZP/jAw7r1u99zOZZJjjzycJ0w58N5HwlyGbhWrb9J0juztve4AaZ0PYL/Hc1W415XY4F7kdS1wliY9yzM/z4lHwCBLCN2Ab8j6f6sz/nuAvZYBj6xVq0f42osBcoMrkcddYQ+duIHXY5lkmef3aLVq9blfYTuXw8pdP8AlwiAAQvp+otElzW+kbVh+bJVarW2uxzLJKee9nEddHDXJ6VIE9fQLXQ4nJHtfnXaeVnbzz7nNE2blrnsXbplS1fqpZdeztr8kqQrHA4HxoVUL0OahzBZkAEw1PV29GZtmWTEO4IvkzTe7TPPbW1q5fVrRxnaSGYcOEOnnZ77xJfPuBpLQT4k6XVZGxcsNH3378pmq5F7cWDqYun+WatvKE6IuSTIABgTC9dBoBzNVuMhSTdlbfe/DHxm3uZ31qr1NzsaShEyA+sbZ75e73jnz7scyyT3bXxAd95xV95HWP5Fkpj//Eo6AKZ+AagrIS1ndDNiFzBzcr9x7S164omnhh7XqGaf8AG96lVH5n0kiJtBatX6KyR9Omv7gvzrHUvXI+hvlrTK0VCCFEv3b1Ch181QpJwDkg6AIYvxuotYlkcqM9eNdUxAV0t6sdvndu7cqauuuM7dwKaYNm2azj7n1LyPnLf72jrrPikp8/Ue5yzwt/y7a9cuXbnk2ryPLG62GpkXB2Kf4yl4sdS5TjHORykgAAJ96GcC6jZRNVuNpqRrsv6N92Xg887M2/xaSbnPizEis1P5vve/U6993WtcjmWSm9bfqkcffTzvI5e5Gkvo+g2CMYVFoEwEQJQqhWWMPiamzGXge360UXfddU8Jo+rP297+Vv3cm+p5HzG9DFyr1l8pKbONaXz590fNVsPfAyEDFVtHME8K9RP+BBcAQ7zTJgsXwO4VwrLI1ElngIlonaTMFwD77gIuyL8Z5NO1an1/R0MZxtmSqt02vOIV03XW2ac4Hs5eLzz/oq679pt5H+HmjxF0O/5CCYYh1DtXYpoHQ8snwQXAooR84SfXW/g1aAdi9/tdF2VtX3rFdXr55R2FjG0Y5yw4TZVK5qV+h0nyl6J6y+xQnvSJj+pnfuZQh0OZbMU1q/XiC9uyNu+UdLnD4UQrpY6gZSHPSyHngVEkGwBRvliWL8Y3ztnU/s8IXyaz27N580+19luZT4sp3XE/e6w+8MF3533E5DJwrVp/taTZWdt7dDZLt+TyzEs/JWlts9UIqlsQgoKOVVNiqaOwhwAIdJE3kQwzuTRbjR9LuiNru+9l4HPOzb1T9pRatX6oo6EM4jxl1LCDawdp3idPdDycvR55+DHdfNNteR9h+bdAWcdpbGEQKBIB0JOYrnsYlZXrYRxMGJmT/upV6/Tss1tK+ra9fWr+PO2//yuyNh+gnOfseZTZmTzjzLmaMaPrpYFOLFm8QuPjXV8CI0nPSVrhbjSwGAat1D0LmA/9CCoAhnaBJexzPDEs0cR7X/fx0ksv6+qrVjoYQneHHXaoPnHyx/I+YmoZuFatHy8pcwL1ffdvj+Xfq5qtRubFgSiXxTCIeISUU4IKgAjnQlvL1634mgCarcZPJV2ftd33MvCC83JD00dq1fpxrsbSh8xAeswxR+mjs9/vciyT3Hbr99W4/6G8j7D8a0QoYdByPe0UyvyECUkGwFTv+LHI1TJI0YV+hK+T+eDf7915lzb+pDHklx3d3Hkn6pBDXpm1uaKJa+682/12koVZ288+5zTtt5+/0taj+/dAs9W4xdVYUlDkMe06DLIMbEeKuSDJAIg0GD27XyXp6ayNPcJDqQ44YH+dedbcvI9YWQaeLSmzG7kg/+0mpdq+/SUtW5q7lM+bPwJgtHYAhSIAIirWC/fu974uydp+xeIV2rVrl8MRTdbj0SlvrVXrb3czklyfydrwpje/QbNmvdnlWCZZef1abd36XNbmcUnfcDgcFMB6TQGGRQD0IPY7nlxfr+KrQI/w/TKvAXvssSe0/tvfHfLLju5DH36Pjj32mLyPeO0C1qr1AzTx9o+ufD/7r8d1nDc3W40HXI0lBT6OeV9hMJTrAIcV+7xoEQEwILFdYDvK9S8hn5U3W43vS7o7a7vPZeBKpaJzzs29GWRhrVr3WTdOlXRotw2VSkXnLDjN7Wg6PPXUZt249ua8j7D8G5GialBs1wHGNk/FLJgAGNKt1SiHldDXfvXUiK+fygwD1674pl54/sURvvRoejxCZUySvycs5yz/fvBD79Zrjnu1y7FMctUV12nHjp1Zm7dJWupwOEko6FgcmZXaBBtCySvTfQ/AtRTv9AmZlYJawgSzSNKXJU2bumHbi9u04prV+sx/mF/wt+zPm9/yRs2a9WZt2HBv1kfOl7TW4ZAkSbvfRvLJrO09Opel67H8e02z1ci8OBCj6zxGfdaNzu/tO5hiMHePVcZCCW9FSC4Awr6IQ98ezVbj8Vq1foOkrrfdLl603FsAlCbupM0JgGfVqvVf9/Aw43M08VaSfey//yv0qfnzHA9nrw0b7tXdP/xx3kd49p9DhEGgt2CWgBGGYS9UtrKE4nhJKXMZ+Jabb9cjDz/mYAjd9XiWXk2Sj3Zb5vLvyXNP0KGHHuJyLJMs/kZu92+TPHRMMSGmZeLYbwSBWwRAx7jTaUJl/bxZiYa+Tiskbe22YXx8XEsWr3A6mE7HHHOUZn/sA3kfcXo38O63kHwka/s5C093OJrJduzYqaVXXpf3kUXNVsPfs32wh9UwGNuNIMNifnSLABiIaO6suuTiI3TJxUckHPr22L2EmnljgPdXw+XfDHJyrVo/wtVYNNH9q3Tb8MpDapo7z999KWu/tV5PP/1M3kdY/jXIQg2Q9oZBXXKxy+OpVNHMV5HjGkCUz0hh813oM1wq6Ve7bXig8e+67dbv633vf6fjIU04/YyT9V8v/KK2bWt12zxd0gJJ/8vRcDKXfz911jwdcMD+joaxrx5B/c5mq3GPq7FgOFauGZxUKy+4aLO3cSAJBECUg9DXl2arcUutWm9IqnfbvnjRcm8B8ODaQTrl1JN09dLrsz5yvhwEwN1vH3lr1nafd/9u2bJVq1fdmPcRun+BIQwiFQRAFGaiWF7sexjmQ18X35D0x902LL96lf7HxX+oarXrza+lW7DwjLwA+P5atV5vthqNkoeReb3hq199tD704feU/O2zLVu6Utu3v5S1+WVJVzgcDgpmMQyOX7B6A9cMoghBXANY1HN5eAZg8biRoxCXaeI9sfvYuvU5rVq5zvFw9prz8Y/q8MMPy/tIqTeD7H7ryLlZ288594y8u5VL12P5d2Wz1aBzEwkzNWb3NdS+a26sisoJITxPkA4gBmal8HgvxAVpthoP1qr1myV9tNv2xYuW66z5mc8/LtX06dM0/9On6P/+n0VZH/mMpD8pcQgnSMp8vcc55/q7+/f++x7UHbf/W95HWP6NlJXOIM8ZxCgIgA6FfIs7oa90lyojAK674WY9+eTTetWrjnQ8pAkLFp6ZFwDfWKvW39dsNW4r6dtndhiP//k36a3H/1xJ37a3Ht2/ZyStdDQUeEQYLNayueMbuIvYDQJgAHwdDIQ+p5ZK+p+SZkzdsHPnTi298p/1mxf+svtRSXrPe9+u173+OD34wMNZHzlfUuEBsFatVyWdlbW9x2NqSjU+Pq4rllyb95ElzVbjZVfjgQ2Ewb3mr6nMCrnpkYIgrgGEO1zT50ez1WhKuiZru+9nAp678My8zQtq1XoZJ5OnS3pltw377befzj7ntBK+ZX9uWn+rHn0k9xBh+TdxVmqYlZoOe+gAgk6fHZdKOq/bhrt/+GNt2HCvZs16s+MhTTjn3NP15T/7atbmIyWdrOKXPDOXfz/8kffq1a8+uuBv178egfyeZqtxp6uxwD6LnUGJmps6AmCiCH0mrZX0mDJuelj8jeWa9VdfcDui3epveK3e/Z636c477sr6yPkqMADWqvXDJc3N2u5z+ffFF7bp2hVr8j5C9w+ZrITBqd+fWpweAmBCfBebNgpNd81WY1etWl8k6XPdti+98jr96Zc/r+nTpzke2YRzF56ZFwBPr1Xrtd1L2UU4R9Irum2oVg/QGWdmZsPSrbhmtV58YVvW5l2SMu+YAToRBuET1wBGzsz1HxdctFkXXLSZwtJTZvfo6aef0dpvrXc5lknO+vQpeeHzQEmfKvDbZS7/zp13gl55SK3AbzWYJZdnXqopSWubrYaJEy2EZc/1ggbe+mFm3kCp6ABGyMxBa6CQhabZatxbq9bvlPTubtsXL1quuZ880fGoJhxxxM9ozsc/qm+u/pesj5yviYdaj6RWrb9O0gezti/IvyGlVI8+skk3rb817yMs/2J0nbXT82s16QzGiwAYCUJfVC5VRgBcvepGbdmyVYceeojjIU1YsPCMvAB4Yq1aP6bZajw+4rf5TNaGww47VB8/efaIX354Sxav0Ph415e2SNJzyrmTGxgKYRAlIQAGzEroq8xcNzY+ezXPeyrOEkl/LWn/qRu2b39JV191vX71P2ZmpFKdcupJOrh2kJ5vvtBt8zRJCyX9zYjfJvOH+9T8edp//66XBjrRY/l3abPVyLw4EBgZYRAFMn8NIO8BnszKtRlWnnEVo2ar8YykVVnbe4SQUs2YUdXpZ5yc95GR3g1cq9bfLelNWdt93v17x+3/pvvvezDvIyMvfwP9slSDrcxLRUnlfcDmA2AsRnkiupWDy1LBSUDmtWR33P5vum/jAy7HMkmPEPaOWrX+lhG+fGaAfM1xr9b7P/CuEb70aHo8++9BSTc7GgowiaXaXMR8xRtE3GAJ2KizvnqS1/Z+m4WCkqiVkjZL6rofLLn8Gn3xT37X7Yh2m/2xD+joo4/SE088lfWR8yX9/qBft1atT5O0IGv7gnNPV6VSGfTLFmL79pe0bGnuYw4va7YamRcHAq5Mrdk+Gwed89jyC9dyfbgxBEBDQg19XP9XvGar8XKtWl8i6be6bb9i8Qr9wR/9V+23n/sm/n777adPLzhNX/vK17M+cl6tWv/CEIHoJEmZr/c451x/y7+rVq7Tli1b8z7C8i+cGp+9ekNl/bye74m38qxBwqA9BEDPQg19Q32PPooVJrlUGQHw0Ucf103rb9XHTsh8WkqpFpx3Zl4A/FlJH5F004BfNnP5921vf6ve9OY3DPjlitNj+ffmZqvhb00eUamsnzerrJNqwiA6EQA9SCn0YXjNVuN7tWr9R5Le2m37ksuv8RYAZ816s978ljfq3nvuy/rI+RogANaq9QMlnZm13efNH08//YzW3ZD7o9D9Q3AIgyAAOkLow5Auk/Q/um24dsUa/c3f/okOOvhAx0OasGDhGfrjP7w4a/PZtWr9t5qtxvY+v9yZkg7utmG//fbT/E+fOsQIi3HVFddpx46dWZu3SbrK4XCAwlkMg5rpaxTp4C7gEnH3LgqwSFLX9PHiC9t07Yo1joez1zkLcm/KOEzSJwf4cpnLv7NP+KCOOeaoQYZWqB7LvyuarcZzrsYClM3KfGFl/owZHcCCWdlZfR+8KEaz1dhUq9bXSur68L3Fi5brvPPPcjyqCce+Zkwf/NC79Z1b7sj6yPnq480YtWr9SEkfz9p+rsfl3x9uuFc/3HBv3kd49RuiZaUzyEOny0EALAChDyW7TBkB8OabbtOjj2zSsa/x86dfsPDMvAB4Sq1aP7TZamzp8WXOVUYtmjGjqtNO/8QIIxxNj4duPy5praOhAF4RBuPDEvCQrLSnrbTrUaprNPGe2X2Mj49ryeIVbkfT4VPz5+mAA/Z5Y13bAZI+3ceXyVz+bb96zocdO3bqqiuuy/vIomarkXlxIBArK/OOlXk4VATAAVjZ2awcfHBj9/tll2Zt73GNWqkOOeSVOnnuCXkfyX01XK1af4Ok92Zt93n377obbtJTT+XelMjyL5JnZT6yMj+HhCXgHqzsTL4PLnh3qaRf6bahcf9Duv22H+i973uH4yFNWHDeGbru2m9mbf5IrVo/rtlqPJyxPTMgHn74YTrxpI+MPL5h9QjW32u2Gj9yNRYgBCwTh4UA2IWV0Lf8wrWb56+p8PBkSNItkh6Q9PpuG5dcfo23AHjy3BN06KGHZL0poyLpM5K+nPHPP5P1ded/+hS94hV+StTWrc9p1cp1eR/h2X9AjnbwWjZ3fIPPx6ARBrMRAHezFPp8jwH2NFuN8Vq1/g1Jf9Rt+9VXXa+/+Ks/yLserzT77/8KfWr+PP3j16/I+sj56hIAa9X6+yVlvt5jwcIzCxnfMJYtXant21/K2vyypCUOhwMErXNeIwzakXQAJPQhMJdJ+qImumqTtDtWnzprnvtRaeJavZwA+JZatf6OZqvxgyn/e2b377Wve43e8963FzW8gfVY/l3VbDWedjUWICaEQTuSC4BWQp9E8MNgmq3GA7Vq/RZNvGd3H4sXLfcWAD/wwXfrNce9Wo88/FjWR86XtCcA1qr16ZIWZH34XI/dv/Y1lTm4+QMoQHsO9P2mrFTDYHIB0MpFqhLvQMRQLlVGAGzftXrUUe5raaVS0YJzT9fFf/l3WR9ZWKvWP9tsNXbt/v9PlnRk1ofPOff0oofYtx7dv2ckrXQ0FCBavkNfp5RCX6fkAmAnwiACtFTS1yTNmLphx46dWnrlP+s//9YvuR+VJq7ZywmAx0iaI+mG3f9/5vLvO981S2944+sKHl1/+niu4hXNViPz4kAA2Qh9tiQdADtZDYO8EBudmq3Gc7VqfYWkhd22L1603FsA/Lk31fW2t79Vd/1b5tNRPiPphlq1frCkzAf8+Xz1W/vNKjlY/gUGQOiziwDYhaUwmOq1Cch1qTICYPvdtT8/682OhzTh3PPOzAuAZ9Wq9V+XdJakA7t9YNq0aTrr06eUNbyeeiz/3ttsNTLfewdggu95sxPzZjYCYA+EQRi0VtImSV33gcWLluvLf/kFtyPabf6nT9Ef/Le/0M6dXd+QVtNE5y9z+feEOR/ycg2jJL34wjZdu2JN3kfo/gEZfM+PnZgf+0MAHABhEBY0W42dtWr9ckmf7bb9qiuu05f+/POaPn2a45FJRx99lGaf8AHduPaWrI/8tqR3Z230ufx73bXf1AvPv5i1eZekRQ6HA5jnex5sYw4cDgFwSIRBeHapMgLg008/o3U33KST5+W+o7c05y48My8Avi9rw4EHzdCpp32inEH1ocfy77pmq5H5jBsgFb7nuzbmutERAAswdUfkHYgoW7PV+FGtWv+epHd127540XJvAfC00z+hGQfO0LYXtw3070497RM68KB9bm524tFHH9dN62/N+wjLv0iSlcAnMacVjQBYAivdQcJg9C5VRgBctXKdtmzZqkMPPcTxkKSDDj5Qp572cS298rqB/p3P5d8rFq/Qrl27sjY3JV3jcDiAV4S+NOznewCxq8xcN1aZuW7M97P9xjfO2dT+j89xoFBLNPFe2n1s3/6Sli3197ziQcPckUcero+d+KGSRtPbkstz893SZquReXEgEANLc8TyC9dubs+dvscSMzqADvEORBSp2WpsrlXrq5TxTL0ll1+jX7ngPMejmnDCnA/riCN+Rps3/7Svz5+94DQvN61I0p133KX7Nj6Q95HLXI0FcMlC2Gvz3SRJEQHQE8IgCnKpMgLg7bf9QPff96CXt2pMnz5N8885VX//v/vLTgvsvvrtIUk3uRkJUD5CH9oIgAakEgbHZ6/eUFk/b1bRXzdxKzXxftrDu21ccvk1+sM//h23I9rt3IVn9BUA3/DG1+md7/KzW2zf/pKuvur6vI9c1mw1xl2NBxifvXpD4V+T0IcuCIDGWAyDUn4grKyfN6uMooXemq3GS7VqfYmk3+y2fcniFfqDP/qvqlQqjkcmvevdb1P9Da9V4/6Hcj+3wOPNH6tX3agtW7bmfYTlX5jU62Sa0IdeCICGtQ+a+Wsqs3wfzCwVm3aZMgLgo49s0s033aaPzn6/4yFNWLDwDP35l76S+5lzFvhb/l1yee7y73earUbD1ViAUfmeJzpVZq4bWzZ3nMaAYdwF7Mj8NZWR1rjad0RZCF+W7haDtPv9tPdkbe9xjVupFpyb39177/veode9/jhHo5ns6aef0Q3fXJ/3EZ79B/Ms1eOi5qlR50v0x3wAvHusUkjgOX7TuPeDoygWw6AuudjbcjUk5SxVXrtijV58YbCHMhflda8/Tu993zsyty9YeKa7wUyx9MrrtGNH13cWS1JL0lUOhwP075KLj4gt9FlSVF4oKr+UhSXgwFl56LQkTQqBF1zENR9uLZL05+pyUvfC8y/q2hVrtPAzn3I/Kk2EvNtv+8E+//v06dN01tmf9DCiCYu/kdsZXdFsNXIvDgScMnKSHVPQSx0BMCKEwXQ1W43HatX6WkldX6a7eNFybwHwrLM/qc9/9kt6+eUdk/73kz4xW4cffpiXMd39wx9rw4Z78z7C8i/8I/ShRATASJkNgzM9jiN+lykjAN60/lY9+ujjOvbYYxwPSTr88MN00ic+qtUrb5z0v/u8+7fHmz+ekHSDo6EAe0zU6ot9D0MSoS8FBMAEWAqD3E1cqms08d7a2tQN4+PjumLxCl30e7/uflSaWAbuDIAH1w7SJ0+Z42UsO3fu1FVX5L6neFGz1ci8OBAoku+a3ImanBYCYGIIg/Fqthov1qr1pZJ+udv2xYuWewuA8z55omqvPFjN556XJJ1+xsmaMaPqZSzrbrhZTz75dN5HWP5FqXzX3k7U3nQRABNGGIzSpcoIgPff96DuuP3f9J73vt3tiCTNmFHVGWfO1aLLrpbkd/m3x2Nxvt9sNe52NRakw3eN7USNhUQAxG5TC4LPYkUYHMnNkh6U1PUFwEsuv8ZLAJQmQt+iy67W0Ucf5e3B1M9tbWrVynV5H+HNHygMoQ+WEQDRlZXuIGFwMM1WY7xWrX9D0he7bb/6quv15b/8gg44YH/HI5M+8tH3aWzsVTrr7FM0bdo0599fkpZdvVKt1vaszTskLXY4HESI0IdQEAADsGzu+AafT0YnDAbnMmUEwC1btmr1qht15qfmOh6StN9+++nTC07X2QtOc/6923os/65qthq5FwcC3RD69sVr4OwjADo0f01lVugHBWHQvmar0ahV67dI+nC37YsXLfcSACXpP1/4Szr66KO8fO8HGv+u2279ft5HuPkDfSP0lYPXwLlDAMTQCIOmXaaMALj2W+v19NPP6MgjD3c8JHkLf1LP7t9PJV3vaCgIFKEPMQkiAN49Vhkr4t18x28a32T93XyhqsxcNzY+e/VEd9Pj0+sJg3tcJemrkvZ51sqOHTu19Mrr9Bu/+UvuR+XJ+Pi4lixekfeRK5qtxkuOhoOAWAp97bcqVdbPo0tWklTeAywFEgARhsr6ebPGZ6/eMOnVb0bCoJRWIGy2Gltr1foKSed22774G8uTCoC33Hy7Hnn4sbyPsPyLPcyEvi6v0ST8oSgEQJTLSBiUkuwOXqqMALhhw726+4c/1vE//ybHQ/Kjx/Lvj5utxu2uxgKbLIc+oAwEQLhDGHTtBkmPS+r6AuDFi5brz//H77sdkQfbXtymFdeszvsI3b8EmQl8mnIJDeAIATAQvh8FUzQrN5BM/f4xhcFmq7GzVq1fLumibtuvuuI6fenPP+ftmXyuXHftt/TC8y9mbd4laZHD4cAj37WmU0y1ZqrQn3aRCgKgYzE8CqYI47NXb2hfy0IYLNWlygiATz21WetuuFmfmPsxtyNyrMfy743NVuNRV2OBe75rSqesmkL3b0JMTY4QEABRqD03ggz77wmDhWq2GnfXqvXvS3pnt+2LFy2POgA+9tgTWv/t7+Z9hOXfCPmuHZ2KrB3cAIIiEQBhFmGwMJcqIwCuvH6ttm59Tocc8krHQ3LjisUrtGvXrqzNz0vKbQ8iHL5rRKcAawQSlFwA5FmAYSIMjmSxpIslvWLqhu3bX9Lyq1fpl36l683CwVty+TV5m69uthqZFwfCPt+1oFMgtQA5inoGYCj28z2AfhHa0FaZuW6s/R/fYwlBs9XYLCnzNtge18gF63t33qWNP2nkfYTlX4yEWoRuQskrwQRAxHdnVREXPvsswIEV/cywc9ut31fj/occDsWNHsH23yWtdzQUlMTXcV9kzYntBpDY5qmYEQA9iP1OJ18XKncW5sDCmQvXa+J9t131WCoNzksvvayrr1qZ95HLmq3GuKvxIGwW6krsN4DEPi9aRABEtCwUbSt2v+d2Sdb2JYtXaHw8njy0etU6PfvslryPXOZoKAgU9QOxS+4mEKSp6JtIAp0ULpP0n7tteOThx3TLzbfrIx99n+MhlaNHR/Nfm63G/a7GgnJVZq4bS/iYBoaWZAcwtTt9LPNx/UuqZ/a733d7b9b2WG4G2bz5p7rhm7mX93HzByT5rwWxXf8XshRzQZIBMGShXGAbyvUqvicADzKXPldcs1ovvrDN5VhKsfSK6/TyyzuyNrckXeVwODAmxGM+lHoayvyECUEFwFBurUaYQpwYhrBIE++/3ccLz7+o6679puPhFK9HJ/PaZquxxdFQYEQixzYMCCmnBBUAY8IdT3tZXAbJmzBCnkR2v/f2xqztod8NfM+PNuquu+7J+wg3f0Qo6zi1HPos1j1fmA/94CYQoAdLbyEpyKWSTuq2Yf23v6tHH31cxx57jOMhFaNH9+8JSeG3OJHJatgDLKIDiNKEct3KoMY3ztkUeBBcLqnZbcOuXbt05ZJrHQ+nGDt37tRVV1yX95HLm63GTlfjGdG0zA3TMjc58fKOzOsrJellV+Noi+B4zBVrHYV/yQbAkO/44UJbP6ZOMqFOPLvff3t11vZQ7wa+ce0teuKJp/I+EtLdv9XMDdXMTU5s29bK3exqHN2OvxCPx1iEPC+FnAdGEVwADOkCy1647mGvkK+HCTQIZoah+zY+oDvvuMvlWArRI7j+oNlq/NDVWApQy9pQrR7gchz7aOUHwBfL/v6BHm+ThFzvihbTPBhaPgkuACIssSxf9DPhBDYx3STpoayNSy4Pqwv43NamVl6/Nu8jod38kXkR5pFHHe5yHPvYtm177uayvm+/x1dAx2BPsdRP2EQABAoWQhDc/R7cb2Rtv/qqlXrpJeeXcw1t+bJVarUyg8kOSYsdDqcIr83a8KpXHeFwGPvati034xUeAEM4noAQEQADFfL1FlmsLosMM/kEcjdiZlfs2We3aPWqdS7HMpIey7+rm61G7sWBBh2fteG4nz3W5Tj28eKLuRmv8CXgYY4ly4HRap0bRYzzUQqSDoCpXvjpGssYNu1+H+53sraHcjPIgw88rFu/+728j4R084dq1fqxko7rtq1Sqegtb5npeESTPfnE03mbn3M1jthRN91IOQckHQAtiOkC2BhF3P1ry+wC3vDN9dq8+acuxzKUHg+vflbS9Y6GUpR5WRte+7rX6ODaQS7Hso9HH308b/MjZXzP2LqAmMD851eQATC0O23QvxiXR4y7UhPvx93Hjh07tTT/uXrejY+Pa8ni3AB4RbPVyL1rwaD/mLVh9sc+4HIcXT322BN5mx92NY4QUd/iFWIuCTIAYkJI112EuJyRQPdPzVZjq6TMJz9bXwb+zi136N8fejTvI6Et/75P0ruztp8w58MOR7OvZ5/dom3Z1wBua7Yaz5T1vVPqAoZUL0OahzAZARBAZki666579KO7f+JyLAPpEVB/0mw1bnM1llHVqvVXSPpfWdsPrh2kufNOcDiifT36iPvlXwDlSD4AWrgAlOsgJrOwTJJC96/DtzTxntyurHYBt724TSuuWZ33kdCe/fdlSe/K2jj/7FM0Y4bft4D8+N778jaXvvwbchfQQl2zxMK8Z2H+92m67wEM6+6xyljqf7zQVNbPm0URtKfZauysVeuXS/rdbtu/9pWv62tf+brjUY1sl3Kec2hJrVqfLulrkv5T1memTZum3/6dzEsDnfn+93JfpmK3VRyQkJZ/MSHE6/8kOoDBi/X6C59BMbHuX1tQ18r14V+arYbpJclatV6pVeufknSncsKfJJ13/lmqv+G1TsaV5wffvztv850uxhBiFzDWE99Y559UBNsBjM38NZVZHEzwpdlq/LBWrX9Xkv/bTIvxf30PoK1WrVckHSDplZKOlfRmSe+XdKpy3vjRdsQRP6M//fLnyhxiX3bt2qW77vpR3kfucDUWhM3C8i8IgJImrgMItYUbGuvLwIl2/9o+p4l3BIfuTklLXX2zWrV+siY6eO+T9CoVuLIybdo0/cM//o0OO+zQor7k0Db+5AG98Hzmiz5ekHSvq7FUZq4bG/RYHd84Z5P1Y5XlX3e4hIwl4CjE2jm0HBRj1Gw1bpb0Fd/jGNGzkv7j7ncdl6pWrb+yVq1/XdIaSWdKOkYF19S//Osv6sST/D76pW3d2pvzNn+/2WrscjWWkMRax2Kdd1ISdACkaxcmq2e5iXf/JEnNVuO3JX1J0k7PQxnGv0v6WLPV+EHZ36hWrU/TxN3Tv1zG1582bZr+9mtf0gW/9pkyvvxQVl2/Nm+z88fthHgtYB6rdRH5Qs4hQQfA2HBdxL5iPXu2rNlqfFHSmyT9vaS7JGWu+xnwuKR/0cQS7Mxmq+Fqf/k9TSz5Fm5s7FW6fs0i/fKvLizjyw9ly5at+u6/5t7jscrVWEJC/doX85wdXAO4W+jXAS6bO76BA2t4dP8ma7Ya96vHnampqlXrR0j6o6K/7owZVf2n3/hFffZzv+H9fb9TfXP1t7VjR2ZT+FlJuevDZYn1WkDrQl/+5fq/CXQA4cUgyx2cRcOYuZq4q7cQbz3+5/THX7pI995/i/7kTz9rLvxJ0rKrV+ZtXtlsNXa4GksoBqlbLP/Ch+A7gLE9EJrHwbhH9w8Dqg/y4Uqlomr1AFWrVR151OE69jXH6I0zX693vvPn9cEPvUc/+9pjyxpnIR568BF9a8238z5ynaOhdEUXMByxrVKFvGooRRAAsVdoy8DWHwkDZKhlbfizv/hv+q3/8isux1K6v/+7y7RrV+YNvi1N3AWNIYXW/aNBEQ+WgDvE1EmMTVlBke4fkO3FF7Zp0WXL8j6yuNlqNF2NJ4u1O4I5sbWLeX4vAqBBIXXxAMTrn/7xCm3d+lzeR77qaiwIG/OaPVEEwNDX4YsUWnve580gdP+AbM8+u0V/8Wf/M+8jNzVbjbtcjacXK13AmG/+CG1+KVMMuSOKAFgk2sMAIP3Zf/9bbdmyNe8jdP8QFOb3yQiARqXULvfRBaT7B2S795779P/+YUneRx6QtMLNaPrnuwsYc/dvFCnNZyGJJgDG0I4tCm16AMPasWOnfus3fj/vwc+S9HvNViPE1wViSMwre8WSN6IJgEWiTeyeyy4g3T8g25988WLdflvu65TXN1uN3FuDffLVBaT7Zxvz+r4IgIaN0jbnbA3AoL65+l/01b/9h7yP7JL0XxwNB0aMMp+w/GsXARBmuOgC0v0DunvwgYf1a7/6WY2Pj+d97B8s3fmbxXUXkO4fQhRVAIxlXR794WGrQDEeefgxnTL3fP30p1vyPvaQpM87GVBAqENpiSlnRBUAi2TleoHUloHLPDum+wfsa9OmJ3XK3PP16CO5h8fLkhY0W41nHQ1rZL7vCO4mxO5fDMu/VuZzawiACBpn38DwHn1kk06b9x/00IOP9ProZ5utxu0uxhQS6g9CFl0AjKk9WwS6gBPo/gGT3XzTbfroB8/UfRsf6PXRa5qtxldcjKlolrqAqXX/YhRbvoguABbJStvYShvdKs7CgcH8n/91qc445Re0efNPe330dkm/6GBIwaHu5LMyb1mZxy0iAMKkIs+W6f4BE5544in9wnm/qd+76Eu9HvQsST+QdHKz1Wg6GFppLHQBQ+z+IX5RBsDY2rRSejeDSH5eEQfEaNeuXbrk7y/Xu99+slZcs6aff/JDSR9vthpbyh1ZmFJ47EsMN38UKcZcEWUALBLt43B0K8p0/5C6f/3OHTrxo2frd3/7j/Tc1r6aefdIOqnZajxT8tCcKbILyMlmOJi/8xEAA0IXEEC/vrXm2zp5zrmae9JCff97fR/+/yzpA81W46kSh5aMUOsX3b80RBsAi2zXchYRjs6zc7p/SE3zuee16LKr9cH3nqqzP/Wr+u6/3tnvPx2X9CVJZzRbjefKG6E/RXQB6f6Fo8h5O8blXyniAIh9pdIFpEgjJdu3v6R/vu5b+oXzflP1n32ffuPXPq+7f/jjQb5EU9JZzVbji81WI/c9cCkbtK6k2P1DWKb7HgAGM39NZVaKB2hl/bxZgxRgun+I1fj4uO750UbdctNtumn9rVq//rv9XtvXzXWSfrPZavR8EnQMKjPXjQ1aG8Y3ztk0aG0INfyNiuXfsEQdAO8eq4wV1QY+ftP4pljbwABs2rlzpx584GH9+Mf369577tNdP/iRbrn5tl7v7O3HI5IubLYaK0YeZAJYVQgLy7/9iToAxmqULuCyueMbQj1L67sLeMnFRwz8ten+oWQ7d+7US9tfUmv7dm3f/tLE/93armbzeT315DN68smn9eSTT+vppzbricef1oMPPqyNP2lo+/aXihxGS9L/lvRHzVbj+SK/cCiG6QLqkouP0AUXbe7r6wfc/ePmj7QQAAFgMJnB6Quf/7K+8PkvuxxLv5qS/k7S3zRbjSd9DwaAf9HfBBLr3cApPhJG6uPsmu4fyne/7wEMYLOkL0o6rtlqfI7wN2GoY76P2kL3zz+Wf/sXfQBEfEIusojCGkmFrssWrCVpmaT5ko5tthpf4o0e5aMuITQEwAFZ6gKOIuQuYCa6f3Cg2WpslvTHvscxxcuS1kr6ZUmvarYaZzdbjeXNVmO753GZVVYXMESxzAexzM+uJBEAY23jWmq7u8bZNjz7S0m3efz+OyTdKunLkk6WdGiz1fh4s9X4x1gf5GxZyvUo1nko1tzQKYkAiO5CP+ubVHTp/sGhZquxUxPB658cfLstkv5V0iWSflvSSZIOa7YaH2i2Gr/fbDW+1Ww1XnQwjugU0QUMPfyFPg9geNwFPARLzwRM9cHQgG/NVmOrpF+qVetXSvp1Se+VdJSyT6x3auL6vO1T/nubJm7WeFzSEx3/eVzS/c1W47ESfwxgaJa6fyz/Dq7iewAuxXp30KgB0NJBPAze+gFgFMPUEF1w0ebUu3+W5o5Y5/cysQQ8JEtnG5YOQgBIQejhb1SW5h1L83FIkgqAqaT6QYW8hDzsmTuvdgKwR59v+eg0VO0xJOS6X6aUckJSATBmo56NpVgMCIEAUqwDMS39YngEwBHQdvZr2O5fCUNJQugdjxTwNxpBgl3AGDAPDy+5ABhze5cu4OBSPPsf1PjGOZuY6MLB36t/KR7/dP+yxZwPukkuABaNsw8/iuz+pTgJ9KNbkCBY2NXtb8XfK1vX454uYFCYf0eTZACMOeXTBRwOIXAvgkNc+HvuK9Xjne5ftphzQZYkA2DROAtxq6xr/1KdFNr6DQqECXv6/bvxt+vjOKcLGATm3dElGwBjTvt0AYeXYggkGKQl5b93isd3G92/bDHngTxJvQlkqqLPIKztRDEe8K7u/E3hIa+jhgDepmIDf8f+DBz+Inq/eGxzQexztyvJdgCRjhTC3CB8dIBS7TgNw8ffhr8PkJ6kO4BS/GcSMZ35jfLO32GWfmILjmVM8nkdj6nfz2p3xJpBfm+u/6ahGvb4j+E94zHNAVL8c7ZL030PAHChsn7erEEngfHZqzfEEAJddXd6fZ/xjXM2WZscren2O3QdpNvfL5a/FSd/QHfJdwClYs8oLJ5NxHAGWNSZeEqTgcVlvVhCRVn4mxWriOM95C5gDLV/qtjna5e4BrBgMd6aHtNdwcOEudDuHHR1TZeVSS5lLv4GoV4jmNLJXjcx1e22GOdXnwiAiv8swOJZ3CCKPgOPNQS6DH7t3++gASTEIOHKoL+bzr8BQXCyIsPfML/bUH5PeUKfN3qJfd7vBwGwBBbPUng24GQxhUAfwQ/2EAQnpN75k1j6RX8IgLtxNtCbjxBY5vU3oYdAgh+6STkIlhX+QuoCxnayXgbm+wkEwJJYPFuxeFbnW4gh0FrwYxl4dMMu//b6TEpBkM5fMSzOExbn0xgQADEQl2eXru6+CyUEWgt+CEMKQdBF+AuhC0j3D4MgAHYoui1s8ayliLO7GIuM5RBI8EMRYg2CdP4mFFGXU+j+sfy7F88BnKKM0GZxh7N+kbCvZ28NG+rKmFBcTaJFhYIyljFT4Ov3Ftr+NZWvY9XqcwGt1/RhpDIf+0IHcAp2jv7E2AWUhp8ciuwG0vGDCyF3BC2dqFkQaz0uGvP7ZARAB1gKHozvM2xfIZDgBx9CC4K+w5+1awFZ+sWwCIBdpHKWYPGgt8JlCIwl+HE38OAsLZuHEAR9h78YpTIPpDKvD4IA6EisZzNFdwF9d/8mfd2SQ2AswQ9xsRoELYU/K13AWJd+Y50vrSEAZkjlbMHyUrAFZYRAgh9CYCkIWgp/VsS69FuGVObzQXEXcI6U7kCyUEwsdf+mGuX6vvYkFPpdl/2ytKxpWWi/Jx/7bxHHXZl81SwL9bosKc27vk33PQDL7h6rjNGKhjQxmQw7GaUS/BC39v5V9v685+tfcNHmYb9GzJ0/DIbwl40OYB9SeRClz7NKy92/TgOFwEsuPqLEoexhLfiF1tnyJfTfk7ObeAYMgq7Dn+vaRfevf1bnWiu4BtADq11Frgfsra/J5ZKLj3AR/qxe48fdwMWz+nd2Mq4BjqfYO3+EPxSJANgHziIGM2iRCqX7t+d7Z00yiQc/9C+m0GslCPoKf67uCI795LpozNu9EQA9sXq2Y/Xs0JpJkw3BD/AaBGPv/BXFan23Oh/GjmsAB5DS9QmulhpC6/514uaOfKFf41amFH43qR0fZdaymJd+pbTmVkvoAHpk+ayH6wGz8Rw/jCKF8CfZeo5gyAh/KAsBcABlnFXEvvPnFa/Qun8EP2BwqQTBMq4FjPUkuo1n/vlFAESmos4aQy9iziaWCy7aPMqzz6zhbmB0qsxcN+Zi//YdBItSVN203P2DX1wDOITUzlrKWIIIofvn+zlnMVzYnspyZ79S/X10fX5mpM/JLKq2sfQ7OMvzqEV0AIeQ2k6W2vWAVjp+o7wGC7Aicz921PEOsSMYe/grQ2rzchHoAA4ptbOXIpcjrHb/fHf88oTcDUy169VNSr+LgU9gIuoIjlLjUlj6TW3+tIoO4JBSuyEk5usBrXT88tANDB/hrwc6goS/IRH+hkMARN+KKCpnffWkgc/yy5oIQ7urd3z26g0EQVhWyD56wUWbQ79r2NXbQbqxHP5gCwFwBKl1AaU4iouv4FfUMm5oQZC7geNX5D7ZPk5SeXxMkazXZ7p/tnAN4IjKCmyWd+phlyl8d/8svZmgyAAXwvWBKS1/dhPrz+9yP7Z0/PZrmDEvv3Dt0MvglgNginOldXQAR5Tizme5yHRjcam3yNAWUjcQ8XB9EkNHMF9odbkIKc6/RaIDWJAUW9uDdAJ9dP9C6Rik0g2MtQvWj5h+div7azDHt4MuoPXwl+L8GAI6gIZxPeBwLHb8cr9Owd1AOoK2xBL+it63Rt3v6QhOsFqH26zPYymjA1igVM9yenUCXXX/QukI5Ck6vFnqCMYShAYV+s8dyj5p+fgvqwtoPfxJ6c6LISAAFizVnT0vBJYdAC0X/mGFMukOKvQwNIxQf+ZQ90GL9aCMAEj4w6gIgAVL+U6nbiGwzPBnsdAXqaylXJ9hMNQwNKzQft6Y9jlr9aHIEJhq+JPCmAtDMd33AGJz91hljGseRrNs7viGvAJnrbCX9v13T5pFT8rtr2elKwj/Ygp+e7737uO37HrR/vq+60UKCH/FogNYgpTPfDq7gMN0/zrPeKeGwFSCX5ZYJunQumKjsP6zxrJP9cNn/WjXxVFrokT3r4yvmyo6gCUoqwt4/KbxTdYPgPlrKrOKep9luxOYevBrq6yfN6uMCbvza1qcuENlNfyVfZe41X3IV0ewyPefE/5QJDqAJUr5QCjiepdhzpaHYT34dRPyJG41GBXN2s8Z8j5TBlcnlkXUteUXrt1M+EPR6ADCHIJfb2VdH9hWZlewMnPd2CCT7/jGOZtC/lv55OKZkKEFvzZXHcF2PYv1FW8IFx3AkqV4RjRs94/gNzxXD38uarK31h0rms+fL7R9wQqXHUHf70UvQ4pzXegIgA6kdmBYfWq+9QJaBJdvAXH5Gq/Q/nauf75Q/u4hoH4NLrU5LhYEQEdSOUAsFk/LhbMsPl4HN2gwiDkElv2zhfD3DR21rD+pzG0x4hpARMtisXSl7GsEu+Fu4gllhT9f73hO9W/p6hpBwBc6gA7FfqZkpVCmHPzy+AoQUvcQEWsHsKify9rfK3XUt33FPqfFjgDoWMwHjO8CaakwWuYzWHSqrJ838DMeQ/gbD/MzWfqb+B6DddS5CTHPZakgADpW5mvifB44PotiKM/Issh78Ljk4oHuhrQy+WUZ+Di44KKhHw1SFELfcHzWPN/HQazzWGq4BtAx3hVcnM7navV6fzC683GtIGwg+A1v2dzxDcsv1GbJ3XNLU0D4c4sOoCcxtc9dnwnnPVCVEDg652FwwC5gXtfMRajJ/f0U+LOUgdA3uqxXu7kOgr66gDHNXakjAHoUy4Hk65VKWQiBxXESBo2Hpr4Z/TkIfcXp572+MT/QPpY5CxNYAo7Q8ZvGN7k6oFyEv0FfodQu0gTB0XWGB5aJw0HoK1Y/wa+tXa/KDoKuX5HIpUvxoQPoWegX05YZAEd5d2YbIbAchYdBo92zgXj+GQh95Rgk/HVTZhB0FQBDn6fQHR1Az0K+KaSs8FdE8Gvj5pBy0BkcUUHhj9BXrlHDn1RuR9B1F7BohD+/CIAGlBUCXS4FF6FdyJbNVaGBghBYrqkhJMlAOGj3b0gEPneKCH+d2o+r8v0cwUFx3V+8WAI2IrQWe5FFrNsZbNHFt40g6F7fgTDkZeCSxk7gc89V7Sm7hhYhtHkJg6EDaESZS8FWO4F5RWv+msqsMgox3UD3ur4GLsUuYQ+EPf9cnnhaf9cw4S9+dACNCeGgG7VgDXK2SicwHSG+RUPSUN0/wp49vmuNy7raSwjzEEZHADTI+sE3bKEapUD5Ls5wI8gQGNnr7FJjrbb4qK+drM8/KA4B0KCy7woe5SAcpjgVVZisFWoUb9D9q3PfcrmsPOku6BHGDL8s1xQftdby3IPiEQCNsnogDlKUypjoLBdsjC60MBXaeLFXKLXEVc21OuegPARAw6y14vstRGVPcmUVbokgaEFIoSqksWJCqPWj7Pprbb5B+fbzPQBkK/OgKeNgr8xcN+ZigiuzyJY5OQDwK9TwJ5VbXwl/aaIDGAALB2fe2aevrkbZYY1uoB+hdNVCGSfirBVF1WQL8wv8IAAGwvdB2q3YWJnQQj6rR3chhKsQxoj468Motdn3vAK/WAJGzyIwtcC4WurtV9lLwiwLA+Ep+9i1EP6k7vW4n5OTUN9Bj+IQAANR9tlUP8XAWvDrVHYxJgSiE90/22Jc8u1lkPrMHb+QWAIOjusDd3zjnE2hTV4pFv8YWQ5ZlseWMo79vbJqN+EPbXQAA+O6ExjixEU3EEgP4W8ywh96oQMYKA7k3lwEtdAmhZBY7bJZHVeqOM77w5yBqQiAAeOA7g8TRLh8v3mmGwKgDRzX/WOuQDcsAQfMwo0hIXBRxFkW9m+Yd6ciTIS//hH+kIUOYAQ4wPvjKqTFMnFYYK3bZm08qeEYHgxzA/JM9z0A2Hf8pvFNMRzo7aJe9iTS/vqxTCKAbwS/wcWygoPy0AGMhIuDPYYQ2OZyyTamScUHS103S2NJAcfpcJgP0A8CYEQ46AdHZ8E+K6HLyjhSwbE5HOYB9IubQCLi4qCMbVnBVfHnlXJAf1weK4S/wRH+4kEHMEIUgeGw3GSXhe6bhTHEjONvNNR9DIoAGCmKwXBcd+linIjK4Dt8+f7+MeOYGx31HsMgAEbM1XJtjIWBSckW3wHM9/ePEcfY6KjxGAUBMHIUiOH5uGYvxkmqKD5DGAGwOBxXxaC2Y1QEwARQKEbj6+aNGCetUfgKYYS/0XEMFYuajiIQABNBwRgdk5hfBMDwcMwUj1qOohAAE0LhGJ3PR7nEPKn1y0cYIwAOjuOkHNRwFIkAmBgKSDF8P9Mv5kkuj+swRvjrH8dEuajdKBoBMEEUkuIw6blFALSHY6B81GyUgQCYKJdv9EihqPieBKU0JkLJbSgjAHbH/u4GdRplIgAmjOJSLAuTohT/xGg1AKYQ/tjH3aE+o2wEwMRRZIpnZZKU4pwoXQVAun8T2J/doy7DBQIgKDYlsTRxSnFNni7CWcoBkH3XH+oxXCEAQpLboiOlVXisTaZS+BMqAbB47Kd+UYPhGgEQe1CAymVxgpXCnGTLDmephD/2SRuovfCBAIh9sARRLquTrhTWxFtmSIs5ALL/2UK9hS8EQHTFGWn5LE/EbZYnZAJgf9jPbKLGwjcCIDJRoNwJYZKWbE3UZYW00MMf+5J91FZYQABELgqVW6FM3m2+J/EywlpoAZB9JizUVFhBAERPrguWRNEKbVLv5HKCTy0Asl+EizoKawiA6AvFy5+QJ/22sib/osOapfDH3z0e1E9YRABE3yhifsUQCKYqIiAUGdp8BED+rnGjbsIqAiAGRkHzK8bA0E2/ISKEAMjfLD3USVhHAMRQKG42pBIs8pz11ZOOGOTzWaFt0PC3/MK1mwf5fKwIffuiPiIEBEAMzUeRkyh0WVIOg4OGwG7hrYivkQpCX3fURIRkuu8BIFx3j1XGfBS84zeNb6Lg7atzUk45DKIchL58hD+EhgCIkfgMge3v7/p7h4AwOBi6f90R+nrzFfwk6h9GwxIwCsMZsH0xh8FRQhwBcC9CX/+oeQgZHUAUhm6gfXQG0Q2hbzB0/RADAiAK5SsESlwbOKipk36qgTDF7h+Bb3iEP8SCJWCUhkIZrlDD4DBhLpUASOgbDfUMsaEDiNL47ga2x+Dj+4eO7mD4CHzF8Bn8JGoYykMHEKWjgMbJYigctJs3KKvdP8JeOahdiBkBEM5QTONmJRCWGQKtBEACX7moVUgBS8BwxueSsMSycNmyQomVYBgigp5bvoOfRH2CO3QA4RxFFlJ5wbCsDmCZ3T+Cnn/UJaSGAAhvKLjIMmo4LCMEjhoACXk2UYeQKpaA4Y3vJWGJZWGrBglLPpeYCXXh8l172qg98IUOIEygGKNI4xvnFLo/VWauY7+IBLUGmEAAhBlWCrNEcY5BkSGQABg+6gsw2X6+BwC0WSqKliYLAKOxdDxbqnNIGx1AmETBxqiK6gDS/QsXdQTIRgCEWZaKt0QBD1ERIZAAGB5qB9AbdwHDrHbRtFLMuWMYsM1KrWijVsAyOoAIhrXiLlHgrRu1A0j3zz7qAjAcAiCCYrHYSxR8y0YJgQRAu6gFwGhYAkZQrC0Lt7E8DLhh7dhv49hHaOgAIlhWJwKJycCSYTuAdP9s4XgHikUARPCYGNDLMCGQAGgDxzdQDpaAETyry8LS5DExWQD9sXgsd+JYRgwIgIiG5SAocZ0g0IvVY7eNYxcxYQkYUbI+kbQxobgzyDIwy7/ucKwCftABRJSsdwPb6AoiVdaPzTaOTcSKAIiohRYEJSYcxMv6cdiJ4xCxYwkYSQlpApKYhIrWzzIwy7/F4pgDbKIDiKSE0hFsY4kYoQrlGGvjGENqCIBI0t1jlbGQJiiWiBGCkI6pThxTSBFLwEheqJOWxMQ1jLxlYJZ/B8fxA4SJDiCSF9qycKepY2ZCQ9lCPE6m4jgBCIDAHiEHwTaWilGGkI+JThwTwF4sAQMZYpn0JCa+qbotA7P8Oxn7PxA3OoBAhs5JI/TJkKVi9BL6Pj4V+ziQjwAI9CGG5eFOBELEsi9Pxb4M9IclYGAIsU6ebSlMop3LwCks/7LPAuhEBxAYQmwdwam6/VxMsOGIdb/shv0SGA4BEBhBTNcJ9kIotCn2/a4b9jtgdCwBAwVLcUKeKpQJenzjnE2hLP+yX4WzXwEhoAMIFCz25eF+ZP3sTOC9pbzfZGG/AYpHBxBwgEm9PylM9OwL/UlhXwB8IgACDjH5F8tCSOBvWiwLf1MgBQRAwBOCAzCB0Ae4RwAEDCAMIjWEPsAvAiBgDGEQsSL0AXYQAAHDCIMIHaEPsIkACASCMIhQEPoA+wiAQIAIg7CG0AeEhQAIBI4wCF8IfUC4CIBAZAiEKAuBD4gHARCIGGEQoyL0AXEiAAIJIRCiFwIfkAYCIJAwAiEIfECaCIAAJiEUxouwB6CNAAggF4EwXAQ+AFkIgACGQjC0g6AHYFAEQACFIRSWj7AHoAgEQABOEA77R8gDUDYCIAAzUgiJhDsAFhAAAQTLQmAk0AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEKX/H6dm63YSe2ZrAAAAAElFTkSuQmCC";
+}
+
+function removePng() {
+  state.png.image = null;
+  state.png.visible = false;
+  state.png.burst = 0;
+  pngVisible.checked = false;
+
+  if (state.latchedEffects.has("KeyJ")) {
+    state.latchedEffects.delete("KeyJ");
+    updateEffectButtonLatchState("KeyJ");
+  }
+  pngInput.value = "";
+  setStatus("PNG layer removed");
+}
+
+function releaseBackgroundVideoSource() {
+  if (state.video.stream) {
+    for (const track of state.video.stream.getTracks()) {
+      track.stop();
+    }
+  }
+
+  state.video.stream = null;
+
+  if (state.video.objectUrl) {
+    URL.revokeObjectURL(state.video.objectUrl);
+  }
+
+  state.video.objectUrl = null;
+  state.video.sourceType = null;
+  state.video.active = false;
+
+  backgroundVideo.pause();
+  backgroundVideo.srcObject = null;
+  backgroundVideo.removeAttribute("src");
+  backgroundVideo.loop = true;
+  videoInput.value = "";
+  stopVideoButton.disabled = true;
+}
+
+function stopBackgroundVideo() {
+  releaseBackgroundVideoSource();
+  setStatus("Video background stopped");
+}
+
+async function attachVideoStream(
+  stream,
+  sourceType,
+  statusMessage,
+) {
+  releaseBackgroundVideoSource();
+
+  state.video.stream = stream;
+  state.video.sourceType = sourceType;
+
+  backgroundVideo.loop = false;
+  backgroundVideo.srcObject = stream;
+
+  for (const track of stream.getVideoTracks()) {
+    track.addEventListener(
+      "ended",
+      () => {
+        if (state.video.stream === stream) {
+          stopBackgroundVideo();
+        }
+      },
+      { once: true },
+    );
+  }
+
+  await backgroundVideo.play();
+
+  state.video.active = true;
+  stopVideoButton.disabled = false;
+  setStatus(statusMessage);
+  stage.focus();
+}
+
+async function startCameraBackground() {
+  if (
+    !navigator.mediaDevices ||
+    !navigator.mediaDevices.getUserMedia
+  ) {
+    setStatus("Camera input is not supported in this browser");
+    return;
+  }
+
+  try {
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 30, max: 60 },
+        },
+        audio: false,
+      });
+
+    await attachVideoStream(
+      stream,
+      "camera",
+      "Camera is streaming behind the visuals",
+    );
+  } catch (error) {
+    releaseBackgroundVideoSource();
+
+    setStatus(
+      error.name === "NotAllowedError"
+        ? "Camera permission was not granted"
+        : "The camera could not be started",
+    );
+  }
+}
+
+async function startScreenBackground() {
+  if (
+    !navigator.mediaDevices ||
+    !navigator.mediaDevices.getDisplayMedia
+  ) {
+    setStatus(
+      "Screen and window capture are not supported in this browser",
+    );
+    return;
+  }
+
+  try {
+    const stream =
+      await navigator.mediaDevices.getDisplayMedia({
+        video: {
+          frameRate: { ideal: 30, max: 60 },
+        },
+        audio: false,
+      });
+
+    await attachVideoStream(
+      stream,
+      "screen",
+      "Screen or window is streaming behind the visuals",
+    );
+  } catch (error) {
+    releaseBackgroundVideoSource();
+
+    if (error.name !== "AbortError") {
+      setStatus(
+        error.name === "NotAllowedError"
+          ? "Screen sharing was canceled or blocked"
+          : "The screen or window could not be captured",
+      );
+    }
+  }
+}
+
+async function loadBackgroundVideoFile(file) {
+  if (!file || !file.type.startsWith("video/")) {
+    setStatus("Please choose a video file");
+    return;
+  }
+
+  releaseBackgroundVideoSource();
+
+  const objectUrl = URL.createObjectURL(file);
+  state.video.objectUrl = objectUrl;
+  state.video.sourceType = "file";
+
+  backgroundVideo.loop = true;
+  backgroundVideo.srcObject = null;
+  backgroundVideo.src = objectUrl;
+
+  try {
+    await backgroundVideo.play();
+
+    state.video.active = true;
+    stopVideoButton.disabled = false;
+    setStatus(`${file.name} is playing behind the visuals`);
+    stage.focus();
+  } catch (error) {
+    releaseBackgroundVideoSource();
+    setStatus("The video file could not be played");
+  }
+}
+
+function drawVideoBackground(
+  drawContext,
+  width,
+  height,
+) {
+  if (
+    !state.video.active ||
+    backgroundVideo.readyState <
+      HTMLMediaElement.HAVE_CURRENT_DATA ||
+    !backgroundVideo.videoWidth ||
+    !backgroundVideo.videoHeight
+  ) {
+    return false;
+  }
+
+  const sourceWidth = backgroundVideo.videoWidth;
+  const sourceHeight = backgroundVideo.videoHeight;
+
+  let drawWidth = width;
+  let drawHeight = height;
+  let drawX = 0;
+  let drawY = 0;
+
+  if (state.video.fit !== "stretch") {
+    const scale =
+      state.video.fit === "contain"
+        ? Math.min(
+            width / sourceWidth,
+            height / sourceHeight,
+          )
+        : Math.max(
+            width / sourceWidth,
+            height / sourceHeight,
+          );
+
+    drawWidth = sourceWidth * scale;
+    drawHeight = sourceHeight * scale;
+    drawX = (width - drawWidth) / 2;
+    drawY = (height - drawHeight) / 2;
+  }
+
+  drawContext.save();
+  drawContext.globalAlpha = state.video.opacity;
+  drawContext.imageSmoothingEnabled = true;
+
+  if (state.video.mirror) {
+    drawContext.translate(width, 0);
+    drawContext.scale(-1, 1);
+
+    drawContext.drawImage(
+      backgroundVideo,
+      width - drawX - drawWidth,
+      drawY,
+      drawWidth,
+      drawHeight,
+    );
+  } else {
+    drawContext.drawImage(
+      backgroundVideo,
+      drawX,
+      drawY,
+      drawWidth,
+      drawHeight,
+    );
+  }
+
+  drawContext.restore();
+  return true;
+}
+
+async function toggleFullscreen() {
+  try {
+    if (!document.fullscreenElement) {
+      await stage.requestFullscreen();
+    } else {
+      await document.exitFullscreen();
+    }
+  } catch (error) {
+    setStatus("Fullscreen was blocked by the browser");
+  }
+}
+
+function clearVisuals() {
+  state.particles.length = 0;
+  state.rings.length = 0;
+  state.pending.length = 0;
+
+  state.backgroundPulse = 0;
+  state.dropFlash = 0;
+  state.shake = 0;
+  state.tunnel = 0;
+  state.kaleidoscope = 0;
+
+  state.rgbSplit = 0;
+  state.waveWarp = 0;
+  state.pixelGlitch = 0;
+  state.mirrorSlice = 0;
+  state.feedbackEcho = 0;
+  state.prismBloom = 0;
+  state.scanlineDrift = 0;
+  state.negativePulse = 0;
+  state.zoomEcho = 0;
+  state.png.burst = 0;
+
+  clearLatchedEffects();
+
+  feedbackContext.fillStyle = "#010208";
+  feedbackContext.fillRect(
+    0,
+    0,
+    feedbackCanvas.width,
+    feedbackCanvas.height,
+  );
+
+  setStatus("Visuals cleared");
+}
+
+function updateEffectButtonLatchState(code) {
+  const button = effectButtons.find(
+    (item) => item.dataset.code === code,
+  );
+
+  if (!button) {
+    return;
+  }
+
+  const latched = state.latchedEffects.has(code);
+  button.classList.toggle("is-latched", latched);
+  button.classList.toggle("is-active", latched);
+  button.setAttribute("aria-pressed", String(latched));
+}
+
+function clearEffectValue(code) {
+  switch (code) {
+    case "KeyA":
+      state.backgroundPulse = 0;
+      break;
+    case "KeyF":
+      state.shake = 0;
+      break;
+    case "KeyG":
+      state.tunnel = 0;
+      break;
+    case "KeyH":
+      state.kaleidoscope = 0;
+      break;
+    case "KeyJ":
+      state.png.burst = 0;
+      break;
+    case "KeyQ":
+      state.rgbSplit = 0;
+      break;
+    case "KeyW":
+      state.waveWarp = 0;
+      break;
+    case "KeyE":
+      state.pixelGlitch = 0;
+      break;
+    case "KeyR":
+      state.mirrorSlice = 0;
+      break;
+    case "KeyT":
+      state.feedbackEcho = 0;
+      break;
+    case "KeyY":
+      state.prismBloom = 0;
+      break;
+    case "KeyU":
+      state.scanlineDrift = 0;
+      break;
+    case "KeyI":
+      state.negativePulse = 0;
+      break;
+    case "KeyO":
+      state.zoomEcho = 0;
+      break;
+    case "Space":
+      state.dropFlash = 0;
+      break;
+    default:
+      break;
+  }
+}
+
+function toggleLatchedEffect(code) {
+  if (!LATCHABLE_EFFECT_CODES.has(code)) {
+    return;
+  }
+
+  if (state.latchedEffects.has(code)) {
+    state.latchedEffects.delete(code);
+    clearEffectValue(code);
+    setStatus(`${keyNames[code]} latch off`);
+  } else {
+    state.latchedEffects.add(code);
+    setStatus(`${keyNames[code]} latched on`);
+  }
+
+  updateEffectButtonLatchState(code);
+}
+
+function clearLatchedEffects() {
+  for (const code of state.latchedEffects) {
+    clearEffectValue(code);
+  }
+
+  state.latchedEffects.clear();
+
+  for (const button of effectButtons) {
+    button.classList.remove("is-latched", "is-active");
+    button.setAttribute("aria-pressed", "false");
+  }
+}
+
+function beginEffectPress(code) {
+  if (
+    !ACCEPTED_EFFECT_CODES.has(code) ||
+    activeEffectPresses.has(code)
+  ) {
+    return;
+  }
+
+  scheduleEffect(code);
+
+  if (!LATCHABLE_EFFECT_CODES.has(code)) {
+    return;
+  }
+
+  const press = {
+    timer: window.setTimeout(() => {
+      toggleLatchedEffect(code);
+      press.didLatch = true;
+    }, LATCH_HOLD_MS),
+    didLatch: false,
+  };
+
+  activeEffectPresses.set(code, press);
+}
+
+function endEffectPress(code) {
+  const press = activeEffectPresses.get(code);
+
+  if (!press) {
+    return;
+  }
+
+  window.clearTimeout(press.timer);
+  activeEffectPresses.delete(code);
+}
+
+function cancelAllEffectPresses() {
+  for (const [code, press] of activeEffectPresses) {
+    window.clearTimeout(press.timer);
+    activeEffectPresses.delete(code);
+  }
+}
+
+function applyLatchedEffects(beatChanged) {
+  const power = state.fxPower;
+
+  for (const code of state.latchedEffects) {
+    switch (code) {
+      case "KeyA":
+        state.backgroundPulse = Math.max(
+          state.backgroundPulse,
+          0.72 * power,
+        );
+
+        if (beatChanged) {
+          state.hue = (state.hue + 9) % 360;
+        }
+        break;
+
+      case "KeyS":
+        if (beatChanged) {
+          createParticleBurst(Math.round(34 * power));
+        }
+        break;
+
+      case "KeyD":
+        if (beatChanged) {
+          createRingBurst(Math.max(2, Math.round(3 * power)));
+        }
+        break;
+
+      case "KeyF":
+        state.shake = Math.max(state.shake, 8 * power);
+        break;
+
+      case "KeyG":
+        state.tunnel = Math.max(state.tunnel, 1.55 * power);
+        break;
+
+      case "KeyH":
+        state.kaleidoscope = Math.max(
+          state.kaleidoscope,
+          1.75 * power,
+        );
+        break;
+
+      case "KeyJ":
+        if (state.png.visible && state.png.image) {
+          state.png.burst = Math.max(state.png.burst, 0.42);
+        }
+        break;
+
+      case "KeyQ":
+        state.rgbSplit = Math.max(state.rgbSplit, 0.72 * power);
+        break;
+
+      case "KeyW":
+        state.waveWarp = Math.max(state.waveWarp, 0.82 * power);
+        break;
+
+      case "KeyE":
+        state.pixelGlitch = Math.max(
+          state.pixelGlitch,
+          0.66 * power,
+        );
+        break;
+
+      case "KeyR":
+        state.mirrorSlice = Math.max(
+          state.mirrorSlice,
+          0.92 * power,
+        );
+        break;
+
+      case "KeyT":
+        state.feedbackEcho = Math.max(
+          state.feedbackEcho,
+          1.25 * power,
+        );
+        break;
+
+      case "KeyY":
+        state.prismBloom = Math.max(
+          state.prismBloom,
+          0.9 * power,
+        );
+        break;
+
+      case "KeyU":
+        state.scanlineDrift = Math.max(
+          state.scanlineDrift,
+          0.86 * power,
+        );
+        break;
+
+      case "KeyI":
+        state.negativePulse = Math.max(
+          state.negativePulse,
+          0.72 * power,
+        );
+        break;
+
+      case "KeyO":
+        state.zoomEcho = Math.max(
+          state.zoomEcho,
+          0.92 * power,
+        );
+        break;
+
+      case "Space":
+        state.backgroundPulse = Math.max(
+          state.backgroundPulse,
+          0.72 * power,
+        );
+        state.tunnel = Math.max(state.tunnel, 0.65 * power);
+        state.kaleidoscope = Math.max(
+          state.kaleidoscope,
+          0.55 * power,
+        );
+
+        if (beatChanged) {
+          state.dropFlash = Math.max(state.dropFlash, 0.22);
+          createParticleBurst(Math.round(28 * power));
+          createRingBurst(2);
+        }
+        break;
+
+      default:
+        break;
+    }
+  }
+}
+
+function updateEffects(deltaSeconds, now) {
+  const beatDuration = getBeatDuration();
+
+  const beatIndex = Math.floor(
+    (now - state.startTime) / beatDuration,
+  );
+
+  const beatChanged =
+    beatIndex !== state.lastBeatIndex;
+
+  if (beatChanged) {
+    state.lastBeatIndex = beatIndex;
+    beatIndicator.classList.add("is-beating");
+
+    window.setTimeout(() => {
+      beatIndicator.classList.remove("is-beating");
+    }, 90);
+  }
+
+  const readyEffects = state.pending.filter(
+    (item) => item.time <= now,
+  );
+
+  state.pending = state.pending.filter(
+    (item) => item.time > now,
+  );
+
+  for (const item of readyEffects) {
+    triggerEffect(item.code);
+  }
+
+  const decay = (value, speed) => {
+    return Math.max(0, value - deltaSeconds * speed);
+  };
+
+  state.backgroundPulse =
+    decay(state.backgroundPulse, 2.4);
+
+  state.dropFlash =
+    decay(state.dropFlash, 3.8);
+
+  state.shake =
+    decay(state.shake, 38);
+
+  state.tunnel =
+    decay(state.tunnel, 0.55);
+
+  state.kaleidoscope =
+    decay(state.kaleidoscope, 1);
+
+  state.rgbSplit =
+    decay(state.rgbSplit, 1.45);
+
+  state.waveWarp =
+    decay(state.waveWarp, 1.05);
+
+  state.pixelGlitch =
+    decay(state.pixelGlitch, 1.35);
+
+  state.mirrorSlice =
+    decay(state.mirrorSlice, 0.9);
+
+  state.feedbackEcho =
+    decay(state.feedbackEcho, 0.58);
+
+  state.prismBloom =
+    decay(state.prismBloom, 0.95);
+
+  state.scanlineDrift =
+    decay(state.scanlineDrift, 0.85);
+
+  state.negativePulse =
+    decay(state.negativePulse, 1.1);
+
+  state.zoomEcho =
+    decay(state.zoomEcho, 0.8);
+
+  state.png.burst =
+    decay(state.png.burst, 1.7);
+
+  state.kaleidoscopeSpin +=
+    deltaSeconds *
+    (0.75 + state.kaleidoscope * 0.16);
+
+  state.png.angle +=
+    deltaSeconds *
+    state.png.speed *
+    (1.25 + state.png.burst * 4.5);
+
+  applyLatchedEffects(beatChanged);
+
+  for (const particle of state.particles) {
+    particle.x +=
+      particle.velocityX * deltaSeconds;
+
+    particle.y +=
+      particle.velocityY * deltaSeconds;
+
+    particle.velocityX *= Math.pow(
+      0.18,
+      deltaSeconds,
+    );
+
+    particle.velocityY *= Math.pow(
+      0.18,
+      deltaSeconds,
+    );
+
+    particle.velocityY +=
+      75 * deltaSeconds;
+
+    particle.life -= deltaSeconds;
+  }
+
+  state.particles = state.particles.filter(
+    (particle) => particle.life > 0,
+  );
+
+  for (const ring of state.rings) {
+    ring.radius += ring.speed * deltaSeconds;
+    ring.life -= deltaSeconds;
+  }
+
+  state.rings = state.rings.filter(
+    (ring) => ring.life > 0,
+  );
+}
+
+function drawBackground(
+  drawContext,
+  width,
+  height,
+  now,
+) {
+  const variation = currentVariation();
+  const pulse = state.backgroundPulse;
+  const centerX = width / 2;
+  const centerY = height / 2;
+
+  const gradient =
+    drawContext.createRadialGradient(
+      centerX,
+      centerY,
+      15,
+      centerX,
+      centerY,
+      Math.max(width, height) * 0.84,
+    );
+
+  gradient.addColorStop(
+    0,
+    `hsl(${currentHue()}, ` +
+    `${variation.saturation}%, ` +
+    `${variation.backgroundLight + pulse * 27}%)`,
+  );
+
+  gradient.addColorStop(
+    0.55,
+    `hsl(${currentHue(62)}, ` +
+    `${variation.saturation}%, 7%)`,
+  );
+
+  gradient.addColorStop(1, "#010208");
+
+  drawContext.fillStyle = gradient;
+  drawContext.fillRect(0, 0, width, height);
+
+  const beatPhase = getBeatPhase(now);
+  const beatGlow =
+    0.06 + Math.pow(1 - beatPhase, 7) * 0.25;
+
+  drawContext.strokeStyle =
+    `hsla(${currentHue()}, 100%, 72%, ${beatGlow})`;
+
+  drawContext.lineWidth =
+    Math.max(1, width / 1280);
+
+  if (variation.gridStyle === "rays") {
+    drawContext.save();
+    drawContext.translate(centerX, centerY);
+
+    for (let index = 0; index < 48; index += 1) {
+      const angle =
+        index * Math.PI * 2 / 48 +
+        now * 0.00005;
+
+      drawContext.beginPath();
+      drawContext.moveTo(0, 0);
+      drawContext.lineTo(
+        Math.cos(angle) * Math.max(width, height),
+        Math.sin(angle) * Math.max(width, height),
+      );
+      drawContext.stroke();
+    }
+
+    drawContext.restore();
+    return;
+  }
+
+  if (variation.gridStyle === "cells") {
+    const cell = Math.max(35, width / 22);
+
+    for (let x = -cell; x < width + cell; x += cell) {
+      for (
+        let y = -cell;
+        y < height + cell;
+        y += cell
+      ) {
+        const wobble =
+          Math.sin(now * 0.002 + x * 0.01 + y * 0.01) *
+          5;
+
+        drawContext.strokeRect(
+          x + wobble,
+          y - wobble,
+          cell * 0.75,
+          cell * 0.75,
+        );
+      }
+    }
+
+    return;
+  }
+
+  if (variation.gridStyle === "scan") {
+    for (let y = 0; y < height; y += 8) {
+      drawContext.beginPath();
+      drawContext.moveTo(0, y);
+      drawContext.lineTo(width, y);
+      drawContext.stroke();
+    }
+
+    return;
+  }
+
+  if (variation.gridStyle === "sun") {
+    const radius =
+      Math.min(width, height) *
+      (0.18 + pulse * 0.08);
+
+    drawContext.beginPath();
+    drawContext.arc(
+      centerX,
+      centerY,
+      radius,
+      0,
+      Math.PI * 2,
+    );
+    drawContext.stroke();
+
+    for (let index = 0; index < 32; index += 1) {
+      const angle =
+        index * Math.PI * 2 / 32 +
+        now * 0.0002;
+
+      drawContext.beginPath();
+
+      drawContext.moveTo(
+        centerX + Math.cos(angle) * radius,
+        centerY + Math.sin(angle) * radius,
+      );
+
+      drawContext.lineTo(
+        centerX +
+          Math.cos(angle) *
+          Math.max(width, height),
+        centerY +
+          Math.sin(angle) *
+          Math.max(width, height),
+      );
+
+      drawContext.stroke();
+    }
+
+    return;
+  }
+
+  for (let x = 0; x < width; x += width / 24) {
+    drawContext.beginPath();
+    drawContext.moveTo(centerX, height * 0.58);
+    drawContext.lineTo(x, height);
+    drawContext.stroke();
+  }
+
+  for (
+    let y = height * 0.62;
+    y < height;
+    y += height / 18
+  ) {
+    drawContext.beginPath();
+    drawContext.moveTo(0, y);
+    drawContext.lineTo(width, y);
+    drawContext.stroke();
+  }
+}
+
+function drawTunnel(
+  drawContext,
+  width,
+  height,
+  now,
+) {
+  if (state.tunnel <= 0) {
+    return;
+  }
+
+  const strength = clamp(
+    state.tunnel /
+      (2.5 * state.fxPower),
+    0,
+    1,
+  );
+
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const maximumRadius =
+    Math.hypot(width, height) * 0.62;
+  const time = now * 0.00042;
+
+  const baseSides = currentVariation().tunnelSides;
+  const sideChanges = [0, -2, 4, -4];
+
+  const polygonSides = Math.max(
+    3,
+    baseSides +
+      sideChanges[state.tunnelVariation],
+  );
+
+  const ringCount =
+    23 + state.tunnelVariation * 3;
+
+  drawContext.save();
+  drawContext.translate(centerX, centerY);
+  drawContext.globalCompositeOperation = "lighter";
+
+  for (
+    let ringIndex = 0;
+    ringIndex < ringCount;
+    ringIndex += 1
+  ) {
+    const depth =
+      (
+        ringIndex / ringCount +
+        time *
+          (0.36 + state.tunnelVariation * 0.05)
+      ) % 1;
+
+    const easedDepth = Math.pow(
+      depth,
+      1.7 + state.tunnelVariation * 0.12,
+    );
+
+    const radius =
+      17 + easedDepth * maximumRadius;
+
+    const alpha =
+      (1 - depth) * 0.6 * strength;
+
+    const rotation =
+      time *
+        (
+          state.tunnelVariation % 2 === 0
+            ? 1.4
+            : -1.8
+        ) +
+      ringIndex *
+        (0.07 + state.tunnelVariation * 0.035);
+
+    drawContext.strokeStyle =
+      `hsla(${currentHue(ringIndex * 11)}, ` +
+      `100%, 67%, ${alpha})`;
+
+    drawContext.lineWidth =
+      1.2 + (1 - depth) * 5.5;
+
+    drawContext.beginPath();
+
+    for (
+      let side = 0;
+      side <= polygonSides;
+      side += 1
+    ) {
+      const angle =
+        rotation +
+        side * Math.PI * 2 / polygonSides;
+
+      const waveAmount =
+        0.035 +
+        state.tunnelVariation * 0.025;
+
+      const ripple =
+        1 +
+        Math.sin(
+          side *
+            (2 + state.tunnelVariation) +
+          ringIndex * 0.7 +
+          time * 9,
+        ) * waveAmount;
+
+      const squeeze =
+        0.7 +
+        state.tunnelVariation * 0.035;
+
+      const x =
+        Math.cos(angle) * radius * ripple;
+
+      const y =
+        Math.sin(angle) *
+        radius *
+        ripple *
+        squeeze;
+
+      if (side === 0) {
+        drawContext.moveTo(x, y);
+      } else {
+        drawContext.lineTo(x, y);
+      }
+    }
+
+    drawContext.stroke();
+  }
+
+  for (
+    let rail = 0;
+    rail < polygonSides * 2;
+    rail += 1
+  ) {
+    const angle =
+      rail * Math.PI * 2 /
+        (polygonSides * 2) -
+      time *
+        (0.7 + state.tunnelVariation * 0.2);
+
+    const innerRadius =
+      10 +
+      Math.sin(time * 6 + rail) * 5;
+
+    drawContext.strokeStyle =
+      `hsla(${currentHue(rail * 15)}, ` +
+      `100%, 70%, ${0.25 * strength})`;
+
+    drawContext.lineWidth = 2;
+    drawContext.beginPath();
+
+    drawContext.moveTo(
+      Math.cos(angle) * innerRadius,
+      Math.sin(angle) * innerRadius * 0.72,
+    );
+
+    drawContext.lineTo(
+      Math.cos(angle) * maximumRadius,
+      Math.sin(angle) * maximumRadius * 0.72,
+    );
+
+    drawContext.stroke();
+  }
+
+  const core =
+    drawContext.createRadialGradient(
+      0,
+      0,
+      0,
+      0,
+      0,
+      Math.min(width, height) * 0.12,
+    );
+
+  core.addColorStop(
+    0,
+    `hsla(${currentHue()}, 100%, 80%, ` +
+    `${0.6 * strength})`,
+  );
+
+  core.addColorStop(
+    0.35,
+    `hsla(${currentHue(95)}, 100%, 45%, ` +
+    `${0.34 * strength})`,
+  );
+
+  core.addColorStop(1, "rgba(0, 0, 0, 0)");
+
+  drawContext.fillStyle = core;
+  drawContext.beginPath();
+
+  drawContext.arc(
+    0,
+    0,
+    Math.min(width, height) * 0.12,
+    0,
+    Math.PI * 2,
+  );
+
+  drawContext.fill();
+  drawContext.restore();
+}
+
+function drawKaleidoscope(
+  drawContext,
+  width,
+  height,
+  now,
+) {
+  if (state.kaleidoscope <= 0) {
+    return;
+  }
+
+  const strength = clamp(
+    state.kaleidoscope /
+      (3.4 * state.fxPower),
+    0,
+    1,
+  );
+
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const maximumRadius =
+    Math.hypot(width, height) * 0.68;
+
+  const baseSlices =
+    currentVariation().kaleidoSlices;
+
+  const sliceAdjustments = [0, 4, -2, 8];
+
+  const sliceCount = Math.max(
+    6,
+    baseSlices +
+      sliceAdjustments[state.kaleidoVariation],
+  );
+
+  const layerCount =
+    17 + state.kaleidoVariation * 3;
+
+  const time = now * 0.0005;
+
+  drawContext.save();
+  drawContext.translate(centerX, centerY);
+  drawContext.globalCompositeOperation = "lighter";
+
+  for (
+    let slice = 0;
+    slice < sliceCount;
+    slice += 1
+  ) {
+    const direction =
+      state.kaleidoVariation % 2 === 0
+        ? 1
+        : -1;
+
+    const sliceAngle =
+      slice * Math.PI * 2 / sliceCount +
+      state.kaleidoscopeSpin * direction;
+
+    drawContext.save();
+    drawContext.rotate(sliceAngle);
+
+    if (
+      (slice + state.kaleidoVariation) % 2 === 1
+    ) {
+      drawContext.scale(1, -1);
+    }
+
+    for (
+      let layer = 0;
+      layer < layerCount;
+      layer += 1
+    ) {
+      const depth =
+        (
+          layer / layerCount +
+          time *
+            (0.65 +
+              state.kaleidoVariation * 0.08)
+        ) % 1;
+
+      const perspective =
+        Math.pow(
+          depth,
+          1.55 +
+            state.kaleidoVariation * 0.13,
+        );
+
+      const innerRadius =
+        12 + perspective * maximumRadius;
+
+      const outerRadius =
+        innerRadius +
+        20 +
+        perspective *
+          (50 + state.kaleidoVariation * 10);
+
+      const halfAngle =
+        Math.PI /
+        sliceCount *
+        (
+          0.58 +
+          state.kaleidoVariation * 0.07
+        );
+
+      const wobble =
+        Math.sin(
+          time *
+            (7 + state.kaleidoVariation * 2) +
+          layer * 0.9 +
+          slice * 0.7,
+        ) *
+        (
+          0.055 +
+          state.kaleidoVariation * 0.015
+        );
+
+      const alpha =
+        (1 - depth) * 0.27 * strength;
+
+      drawContext.fillStyle =
+        `hsla(${currentHue(
+          layer * 17 + slice * 8,
+        )}, 100%, ` +
+        `${48 + (layer % 3) * 9}%, ${alpha})`;
+
+      drawContext.beginPath();
+
+      drawContext.moveTo(
+        Math.cos(-halfAngle + wobble) *
+          innerRadius,
+        Math.sin(-halfAngle + wobble) *
+          innerRadius *
+          0.82,
+      );
+
+      drawContext.lineTo(
+        Math.cos(-halfAngle - wobble) *
+          outerRadius,
+        Math.sin(-halfAngle - wobble) *
+          outerRadius *
+          0.82,
+      );
+
+      drawContext.lineTo(
+        Math.cos(halfAngle + wobble) *
+          outerRadius,
+        Math.sin(halfAngle + wobble) *
+          outerRadius *
+          0.82,
+      );
+
+      drawContext.lineTo(
+        Math.cos(halfAngle - wobble) *
+          innerRadius,
+        Math.sin(halfAngle - wobble) *
+          innerRadius *
+          0.82,
+      );
+
+      drawContext.closePath();
+      drawContext.fill();
+
+      drawContext.strokeStyle =
+        `hsla(${currentHue(
+          90 + layer * 11,
+        )}, 100%, 78%, ${alpha * 1.55})`;
+
+      drawContext.lineWidth =
+        1 + (1 - depth) * 2.5;
+
+      drawContext.stroke();
+    }
+
+    drawContext.restore();
+  }
+
+  for (
+    let crystal = 0;
+    crystal < 6 + state.kaleidoVariation;
+    crystal += 1
+  ) {
+    const radius =
+      17 +
+      crystal * 14 +
+      Math.sin(time * 12 + crystal) * 7;
+
+    const sides =
+      5 +
+      (
+        crystal +
+        state.kaleidoVariation
+      ) % 4;
+
+    drawContext.strokeStyle =
+      `hsla(${currentHue(crystal * 34)}, ` +
+      `100%, 80%, ` +
+      `${Math.max(
+        0.12,
+        0.72 - crystal * 0.07,
+      ) * strength})`;
+
+    drawContext.lineWidth = 2.5;
+    drawContext.beginPath();
+
+    for (
+      let side = 0;
+      side <= sides;
+      side += 1
+    ) {
+      const angle =
+        side * Math.PI * 2 / sides +
+        time *
+          (
+            crystal % 2 === 0
+              ? 2.3
+              : -1.8
+          );
+
+      const x = Math.cos(angle) * radius;
+      const y =
+        Math.sin(angle) * radius * 0.82;
+
+      if (side === 0) {
+        drawContext.moveTo(x, y);
+      } else {
+        drawContext.lineTo(x, y);
+      }
+    }
+
+    drawContext.stroke();
+  }
+
+  drawContext.restore();
+}
+
+function drawRings(drawContext) {
+  drawContext.save();
+  drawContext.globalCompositeOperation = "lighter";
+
+  for (const ring of state.rings) {
+    drawContext.strokeStyle =
+      `hsla(${ring.hue}, 100%, 72%, ` +
+      `${clamp(ring.life, 0, 1)})`;
+
+    drawContext.lineWidth =
+      4 + ring.life * 7;
+
+    drawContext.beginPath();
+
+    drawContext.arc(
+      ring.x,
+      ring.y,
+      ring.radius,
+      0,
+      Math.PI * 2,
+    );
+
+    drawContext.stroke();
+  }
+
+  drawContext.restore();
+}
+
+function drawParticles(drawContext) {
+  drawContext.save();
+  drawContext.globalCompositeOperation = "lighter";
+
+  for (const particle of state.particles) {
+    const alpha = clamp(
+      particle.life / particle.maximumLife,
+      0,
+      1,
+    );
+
+    drawContext.fillStyle =
+      `hsla(${particle.hue}, 100%, 67%, ` +
+      `${alpha})`;
+
+    drawContext.beginPath();
+
+    drawContext.arc(
+      particle.x,
+      particle.y,
+      particle.size * alpha,
+      0,
+      Math.PI * 2,
+    );
+
+    drawContext.fill();
+  }
+
+  drawContext.restore();
+}
+
+function getPngDimensions() {
+  const image = state.png.image;
+  const width = sceneCanvas.width;
+  const height = sceneCanvas.height;
+
+  const maximumSize =
+    Math.min(width, height) *
+    state.png.sizePercent /
+    100;
+
+  const imageRatio =
+    image.width / image.height;
+
+  if (imageRatio >= 1) {
+    return {
+      width: maximumSize,
+      height: maximumSize / imageRatio,
+    };
+  }
+
+  return {
+    width: maximumSize * imageRatio,
+    height: maximumSize,
+  };
+}
+
+function drawSinglePng(
+  drawContext,
+  x,
+  y,
+  scale,
+  angle,
+  alpha,
+) {
+  const image = state.png.image;
+
+  if (!image) {
+    return;
+  }
+
+  const dimensions = getPngDimensions();
+
+  drawContext.save();
+  drawContext.translate(x, y);
+  drawContext.rotate(angle);
+  drawContext.scale(scale, scale);
+  drawContext.globalAlpha = clamp(alpha, 0, 1);
+
+  // Copies combine normally inside the transparent image buffer.
+  drawContext.globalCompositeOperation = "source-over";
+  drawContext.imageSmoothingEnabled = true;
+
+  drawContext.drawImage(
+    image,
+    -dimensions.width / 2,
+    -dimensions.height / 2,
+    dimensions.width,
+    dimensions.height,
+  );
+
+  drawContext.restore();
+}
+
+function wrapMotion(value) {
+  return ((value % 1) + 1) % 1;
+}
+
+function drawPngMotion(
+  drawContext,
+  width,
+  height,
+  now,
+) {
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const beatPhase = getBeatPhase(now);
+  const beatPulse = Math.pow(1 - beatPhase, 8);
+  const minimumSide = Math.min(width, height);
+  const motion = state.png.angle;
+  const burstScale = 1 + state.png.burst * 0.55;
+  const opacity = state.png.opacity;
+
+  if (state.png.mode === "orbit") {
+    const orbitRadius = minimumSide * 0.23;
+    const orbitAngle = motion * 0.7;
+
+    drawSinglePng(
+      drawContext,
+      centerX + Math.cos(orbitAngle) * orbitRadius,
+      centerY + Math.sin(orbitAngle) * orbitRadius,
+      burstScale * (0.9 + beatPulse * 0.18),
+      motion * 1.55,
+      opacity,
+    );
+
+    return;
+  }
+
+  if (state.png.mode === "pulse") {
+    const breathing = Math.sin(motion * 1.2) * 0.05;
+
+    drawSinglePng(
+      drawContext,
+      centerX,
+      centerY,
+      burstScale * (0.86 + breathing + beatPulse * 0.38),
+      motion * 0.12,
+      opacity,
+    );
+
+    return;
+  }
+
+  if (state.png.mode === "kaleido") {
+    const copies = 10;
+
+    for (let index = 0; index < copies; index += 1) {
+      const angle =
+        index * Math.PI * 2 / copies + motion * 0.32;
+      const radius =
+        minimumSide * (0.15 + beatPulse * 0.045);
+
+      drawSinglePng(
+        drawContext,
+        centerX + Math.cos(angle) * radius,
+        centerY + Math.sin(angle) * radius,
+        burstScale * 0.45,
+        motion * (index % 2 === 0 ? 0.95 : -0.95),
+        opacity * 0.72,
+      );
+    }
+
+    return;
+  }
+
+  if (state.png.mode === "tunnel") {
+    const copies = 9;
+
+    for (let index = copies - 1; index >= 0; index -= 1) {
+      // Tunnel motion now uses the shared motion clock. This means
+      // the speed slider can pause it at 0 or reverse it below 0.
+      const phase = wrapMotion(
+        index / copies + motion * 0.11,
+      );
+      const scale =
+        0.12 + Math.pow(phase, 1.8) * 1.35 * burstScale;
+      const alpha = opacity * (0.1 + phase * 0.76);
+      const spiral = motion * 0.42 + index * 0.32;
+
+      drawSinglePng(
+        drawContext,
+        centerX + Math.cos(spiral) * minimumSide * 0.018 * phase,
+        centerY + Math.sin(spiral) * minimumSide * 0.018 * phase,
+        scale,
+        motion * 0.72 + index * 0.32,
+        alpha,
+      );
+    }
+
+    return;
+  }
+
+  drawSinglePng(
+    drawContext,
+    centerX,
+    centerY,
+    burstScale * (1 + beatPulse * 0.1),
+    motion,
+    opacity,
+  );
+}
+
+function drawPngLayer(
+  drawContext,
+  width,
+  height,
+  now,
+) {
+  if (!state.png.visible || !state.png.image) {
+    return;
+  }
+
+  imageLayerContext.save();
+  imageLayerContext.setTransform(1, 0, 0, 1, 0, 0);
+  imageLayerContext.globalAlpha = 1;
+  imageLayerContext.globalCompositeOperation = "source-over";
+  imageLayerContext.clearRect(0, 0, width, height);
+
+  drawPngMotion(
+    imageLayerContext,
+    width,
+    height,
+    now,
+  );
+
+  imageLayerContext.restore();
+
+  const allowedBlendModes = new Set([
+    "source-over",
+    "screen",
+    "lighter",
+    "difference",
+  ]);
+
+  drawContext.save();
+  drawContext.globalAlpha = 1;
+  drawContext.globalCompositeOperation =
+    allowedBlendModes.has(state.png.blend)
+      ? state.png.blend
+      : "source-over";
+  drawContext.drawImage(imageLayerCanvas, 0, 0, width, height);
+  drawContext.restore();
+}
+
+function drawDropFlash(
+  drawContext,
+  width,
+  height,
+) {
+  if (state.dropFlash <= 0) {
+    return;
+  }
+
+  drawContext.fillStyle =
+    `rgba(255, 255, 255, ` +
+    `${state.dropFlash})`;
+
+  drawContext.fillRect(0, 0, width, height);
+
+  drawContext.strokeStyle =
+    `hsla(${currentHue()}, 100%, 62%, ` +
+    `${state.dropFlash})`;
+
+  drawContext.lineWidth =
+    10 + state.dropFlash * 26;
+
+  drawContext.strokeRect(
+    16,
+    16,
+    width - 32,
+    height - 32,
+  );
+}
+
+function drawScene(now) {
+  const width = sceneCanvas.width;
+  const height = sceneCanvas.height;
+
+  sceneContext.save();
+  sceneContext.setTransform(1, 0, 0, 1, 0, 0);
+  sceneContext.clearRect(0, 0, width, height);
+
+  const shakeX =
+    state.shake > 0
+      ? (Math.random() - 0.5) * state.shake
+      : 0;
+
+  const shakeY =
+    state.shake > 0
+      ? (Math.random() - 0.5) * state.shake
+      : 0;
+
+  sceneContext.translate(shakeX, shakeY);
+
+  const hasVideoBackground =
+    drawVideoBackground(
+      sceneContext,
+      width,
+      height,
+    );
+
+  sceneContext.save();
+
+  if (hasVideoBackground) {
+    sceneContext.globalAlpha =
+      state.video.visualOpacity;
+  }
+
+  drawBackground(
+    sceneContext,
+    width,
+    height,
+    now,
+  );
+
+  sceneContext.restore();
+
+  drawTunnel(
+    sceneContext,
+    width,
+    height,
+    now,
+  );
+
+  drawKaleidoscope(
+    sceneContext,
+    width,
+    height,
+    now,
+  );
+
+  drawRings(sceneContext);
+  drawParticles(sceneContext);
+
+  drawPngLayer(
+    sceneContext,
+    width,
+    height,
+    now,
+  );
+
+  drawDropFlash(
+    sceneContext,
+    width,
+    height,
+  );
+
+  sceneContext.restore();
+}
+
+function drawMirroredSource(
+  drawContext,
+  source,
+  width,
+  height,
+  strength,
+) {
+  const slices = 10;
+  const sliceWidth = width / slices;
+
+  for (let index = 0; index < slices; index += 1) {
+    const sourceX = index * sliceWidth;
+    const offset =
+      Math.sin(
+        performance.now() * 0.006 +
+        index * 1.7,
+      ) *
+      14 *
+      strength;
+
+    drawContext.save();
+
+    if (index % 2 === 0) {
+      drawContext.translate(
+        sourceX + sliceWidth,
+        offset,
+      );
+
+      drawContext.scale(-1, 1);
+
+      drawContext.drawImage(
+        source,
+        sourceX,
+        0,
+        sliceWidth,
+        height,
+        0,
+        0,
+        sliceWidth,
+        height,
+      );
+    } else {
+      drawContext.drawImage(
+        source,
+        sourceX,
+        0,
+        sliceWidth,
+        height,
+        sourceX,
+        offset,
+        sliceWidth,
+        height,
+      );
+    }
+
+    drawContext.restore();
+  }
+}
+
+function drawWaveSource(
+  drawContext,
+  source,
+  width,
+  height,
+  now,
+  strength,
+) {
+  const stripHeight =
+    Math.max(4, Math.floor(height / 100));
+
+  for (
+    let y = 0;
+    y < height;
+    y += stripHeight
+  ) {
+    const offset =
+      Math.sin(
+        y * 0.035 +
+        now * 0.012,
+      ) *
+      34 *
+      strength;
+
+    drawContext.drawImage(
+      source,
+      0,
+      y,
+      width,
+      stripHeight,
+      offset,
+      y,
+      width,
+      stripHeight,
+    );
+  }
+}
+
+function drawRgbSplit(
+  drawContext,
+  source,
+  width,
+  height,
+  strength,
+) {
+  const distance =
+    8 + 35 * strength;
+
+  drawContext.save();
+  drawContext.globalCompositeOperation = "screen";
+  drawContext.globalAlpha =
+    0.24 + strength * 0.2;
+
+  drawContext.filter =
+    "hue-rotate(110deg) saturate(3)";
+
+  drawContext.drawImage(
+    source,
+    -distance,
+    0,
+    width,
+    height,
+  );
+
+  drawContext.filter =
+    "hue-rotate(245deg) saturate(3)";
+
+  drawContext.drawImage(
+    source,
+    distance,
+    0,
+    width,
+    height,
+  );
+
+  drawContext.restore();
+}
+
+function drawPixelGlitch(
+  drawContext,
+  source,
+  width,
+  height,
+  strength,
+) {
+  const strips =
+    Math.round(6 + strength * 22);
+
+  drawContext.save();
+  drawContext.globalCompositeOperation = "difference";
+
+  for (let index = 0; index < strips; index += 1) {
+    const stripHeight =
+      3 + Math.random() * height * 0.055;
+
+    const y =
+      Math.random() *
+      (height - stripHeight);
+
+    const offset =
+      (Math.random() - 0.5) *
+      width *
+      0.18 *
+      strength;
+
+    drawContext.globalAlpha =
+      0.2 + Math.random() * 0.55;
+
+    drawContext.drawImage(
+      source,
+      0,
+      y,
+      width,
+      stripHeight,
+      offset,
+      y,
+      width,
+      stripHeight,
+    );
+  }
+
+  drawContext.restore();
+}
+
+function drawPrismBloom(
+  drawContext,
+  source,
+  width,
+  height,
+  now,
+  strength,
+) {
+  drawContext.save();
+  drawContext.globalCompositeOperation = "screen";
+  drawContext.imageSmoothingEnabled = true;
+
+  const pulse =
+    0.5 + 0.5 * Math.sin(now * 0.0035);
+
+  for (let index = 0; index < 3; index += 1) {
+    const zoom =
+      1 + strength * (0.025 + index * 0.018);
+
+    const drawWidth = width * zoom;
+    const drawHeight = height * zoom;
+    const drift =
+      Math.sin(now * 0.0018 + index * 2.1) *
+      width * 0.012 * strength;
+
+    drawContext.globalAlpha =
+      (0.09 + index * 0.035 + pulse * 0.025) *
+      strength;
+
+    drawContext.filter =
+      `hue-rotate(${index * 115 + now * 0.025}deg) ` +
+      `saturate(${1.2 + strength * 0.9})`;
+
+    drawContext.drawImage(
+      source,
+      (width - drawWidth) / 2 + drift,
+      (height - drawHeight) / 2 - drift * 0.5,
+      drawWidth,
+      drawHeight,
+    );
+  }
+
+  drawContext.restore();
+}
+
+function drawScanlineDrift(
+  drawContext,
+  source,
+  width,
+  height,
+  now,
+  strength,
+) {
+  drawContext.save();
+  drawContext.globalCompositeOperation = "screen";
+
+  const stripHeight = Math.max(3, Math.round(height / 72));
+  const travel = width * 0.055 * strength;
+
+  for (let y = 0; y < height; y += stripHeight * 2) {
+    const wave =
+      Math.sin(y * 0.035 + now * 0.006) * travel;
+
+    drawContext.globalAlpha = 0.1 + strength * 0.17;
+    drawContext.drawImage(
+      source,
+      0,
+      y,
+      width,
+      stripHeight,
+      wave,
+      y,
+      width,
+      stripHeight,
+    );
+  }
+
+  drawContext.restore();
+}
+
+function drawNegativePulse(
+  drawContext,
+  width,
+  height,
+  now,
+  strength,
+) {
+  const pulse =
+    0.55 + 0.45 * Math.sin(now * 0.0045);
+
+  drawContext.save();
+  drawContext.globalCompositeOperation = "difference";
+  drawContext.globalAlpha =
+    clamp(strength * (0.45 + pulse * 0.4), 0, 1);
+  drawContext.fillStyle = "#ffffff";
+  drawContext.fillRect(0, 0, width, height);
+  drawContext.restore();
+}
+
+function drawZoomEcho(
+  drawContext,
+  source,
+  width,
+  height,
+  now,
+  strength,
+) {
+  drawContext.save();
+  drawContext.translate(width / 2, height / 2);
+  drawContext.globalCompositeOperation = "screen";
+  drawContext.imageSmoothingEnabled = true;
+
+  for (let index = 1; index <= 4; index += 1) {
+    const phase = index / 4;
+    const zoom = 1 + phase * 0.12 * strength;
+    const rotation =
+      Math.sin(now * 0.0015 + index) *
+      0.018 * strength;
+
+    drawContext.save();
+    drawContext.rotate(rotation);
+    drawContext.globalAlpha =
+      (0.12 - index * 0.018) * strength;
+
+    drawContext.drawImage(
+      source,
+      -width * zoom / 2,
+      -height * zoom / 2,
+      width * zoom,
+      height * zoom,
+    );
+
+    drawContext.restore();
+  }
+
+  drawContext.restore();
+}
+
+function renderOutput(now) {
+  const width = canvas.width;
+  const height = canvas.height;
+
+  context.save();
+  context.setTransform(1, 0, 0, 1, 0, 0);
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = "#010208";
+  context.fillRect(0, 0, width, height);
+
+  const feedbackStrength = clamp(
+    state.feedbackEcho /
+      (2.4 * state.fxPower),
+    0,
+    1,
+  );
+
+  if (feedbackStrength > 0) {
+    const zoom =
+      1 + 0.045 * feedbackStrength;
+
+    const echoWidth = width * zoom;
+    const echoHeight = height * zoom;
+
+    context.globalAlpha =
+      0.3 + feedbackStrength * 0.28;
+
+    context.globalCompositeOperation = "screen";
+
+    context.drawImage(
+      feedbackCanvas,
+      (width - echoWidth) / 2,
+      (height - echoHeight) / 2,
+      echoWidth,
+      echoHeight,
+    );
+
+    context.globalAlpha = 1;
+    context.globalCompositeOperation = "source-over";
+  }
+
+  const mirrorStrength = clamp(
+    state.mirrorSlice /
+      (1.55 * state.fxPower),
+    0,
+    1,
+  );
+
+  const waveStrength = clamp(
+    state.waveWarp /
+      (1.45 * state.fxPower),
+    0,
+    1,
+  );
+
+  if (mirrorStrength > 0.02) {
+    drawMirroredSource(
+      context,
+      sceneCanvas,
+      width,
+      height,
+      mirrorStrength,
+    );
+  } else if (waveStrength > 0.02) {
+    drawWaveSource(
+      context,
+      sceneCanvas,
+      width,
+      height,
+      now,
+      waveStrength,
+    );
+  } else {
+    context.drawImage(
+      sceneCanvas,
+      0,
+      0,
+      width,
+      height,
+    );
+  }
+
+  const rgbStrength = clamp(
+    state.rgbSplit /
+      (1.15 * state.fxPower),
+    0,
+    1,
+  );
+
+  if (rgbStrength > 0.02) {
+    drawRgbSplit(
+      context,
+      sceneCanvas,
+      width,
+      height,
+      rgbStrength,
+    );
+  }
+
+  const glitchStrength = clamp(
+    state.pixelGlitch /
+      (1.2 * state.fxPower),
+    0,
+    1,
+  );
+
+  if (glitchStrength > 0.02) {
+    drawPixelGlitch(
+      context,
+      sceneCanvas,
+      width,
+      height,
+      glitchStrength,
+    );
+  }
+
+  const prismStrength = clamp(
+    state.prismBloom /
+      (1.4 * state.fxPower),
+    0,
+    1,
+  );
+
+  if (prismStrength > 0.02) {
+    drawPrismBloom(
+      context,
+      sceneCanvas,
+      width,
+      height,
+      now,
+      prismStrength,
+    );
+  }
+
+  const scanlineStrength = clamp(
+    state.scanlineDrift /
+      (1.35 * state.fxPower),
+    0,
+    1,
+  );
+
+  if (scanlineStrength > 0.02) {
+    drawScanlineDrift(
+      context,
+      sceneCanvas,
+      width,
+      height,
+      now,
+      scanlineStrength,
+    );
+  }
+
+  const zoomStrength = clamp(
+    state.zoomEcho /
+      (1.5 * state.fxPower),
+    0,
+    1,
+  );
+
+  if (zoomStrength > 0.02) {
+    drawZoomEcho(
+      context,
+      sceneCanvas,
+      width,
+      height,
+      now,
+      zoomStrength,
+    );
+  }
+
+  const negativeStrength = clamp(
+    state.negativePulse /
+      (1.2 * state.fxPower),
+    0,
+    1,
+  );
+
+  if (negativeStrength > 0.02) {
+    drawNegativePulse(
+      context,
+      width,
+      height,
+      now,
+      negativeStrength,
+    );
+  }
+
+  context.restore();
+
+  feedbackContext.save();
+  feedbackContext.setTransform(1, 0, 0, 1, 0, 0);
+  feedbackContext.globalAlpha = 0.86;
+
+  feedbackContext.drawImage(
+    canvas,
+    0,
+    0,
+    feedbackCanvas.width,
+    feedbackCanvas.height,
+  );
+
+  feedbackContext.restore();
+}
+
+function updateRecordingTimer(now) {
+  if (!state.recording.recorder) {
+    return;
+  }
+
+  const elapsed =
+    Math.max(
+      0,
+      now - state.recording.startedAt,
+    ) / 1000;
+
+  const minutes =
+    Math.floor(elapsed / 60);
+
+  const seconds =
+    Math.floor(elapsed % 60);
+
+  recordingTimer.textContent =
+    `${String(minutes).padStart(2, "0")}:` +
+    `${String(seconds).padStart(2, "0")}`;
+}
+
+function chooseRecordingMimeType(includeAudio) {
+  const candidates = includeAudio
+    ? [
+        "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+        "video/webm;codecs=vp9,opus",
+        "video/webm;codecs=vp8,opus",
+        "video/webm",
+      ]
+    : [
+        "video/mp4;codecs=avc1.42E01E",
+        "video/webm;codecs=vp9",
+        "video/webm;codecs=vp8",
+        "video/webm",
+      ];
+
+  return (
+    candidates.find((type) => {
+      return MediaRecorder.isTypeSupported(type);
+    }) || ""
+  );
+}
+
+function extensionForMimeType(mimeType) {
+  return mimeType.includes("mp4")
+    ? "mp4"
+    : "webm";
+}
+
+function createRecordingFileName(extension) {
+  const now = new Date();
+
+  const timestamp = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+    "-",
+    String(now.getHours()).padStart(2, "0"),
+    String(now.getMinutes()).padStart(2, "0"),
+    String(now.getSeconds()).padStart(2, "0"),
+  ].join("");
+
+  return `dj-visual-${outputPreset.value}-${timestamp}.` +
+    extension;
+}
+
+async function startRecording() {
+  if (
+    !canvas.captureStream ||
+    !window.MediaRecorder
+  ) {
+    setStatus(
+      "This browser does not support canvas recording",
+    );
+    return;
+  }
+
+  if (state.recording.recorder) {
+    return;
+  }
+
+  try {
+    const canvasStream = canvas.captureStream(60);
+    const tracks = [
+      ...canvasStream.getVideoTracks(),
+    ];
+
+    let audioWasAdded = false;
+
+    if (recordAudio.checked) {
+      try {
+        const audioStream =
+          await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: false,
+              noiseSuppression: false,
+              autoGainControl: false,
+            },
+            video: false,
+          });
+
+        state.recording.audioStream = audioStream;
+
+        for (
+          const track of audioStream.getAudioTracks()
+        ) {
+          tracks.push(track);
+          audioWasAdded = true;
+        }
+      } catch (error) {
+        setStatus(
+          "Audio input unavailable; recording visuals only",
+        );
+      }
+    }
+
+    const recordingStream =
+      new MediaStream(tracks);
+
+    const mimeType =
+      chooseRecordingMimeType(audioWasAdded);
+
+    const options = {
+      videoBitsPerSecond: 8_000_000,
+    };
+
+    if (audioWasAdded) {
+      options.audioBitsPerSecond = 192_000;
+    }
+
+    if (mimeType) {
+      options.mimeType = mimeType;
+    }
+
+    const recorder =
+      new MediaRecorder(
+        recordingStream,
+        options,
+      );
+
+    state.recording.recorder = recorder;
+    state.recording.stream = recordingStream;
+    state.recording.chunks = [];
+    state.recording.startedAt = performance.now();
+    state.recording.mimeType =
+      recorder.mimeType ||
+      mimeType ||
+      "video/webm";
+
+    recorder.addEventListener(
+      "dataavailable",
+      (event) => {
+        if (event.data.size > 0) {
+          state.recording.chunks.push(
+            event.data,
+          );
+        }
+      },
+    );
+
+    recorder.addEventListener("stop", () => {
+      finishRecordingDownload();
+    });
+
+    recorder.addEventListener("error", () => {
+      setStatus("Recording stopped because of an error");
+      cleanupRecording();
+    });
+
+    recorder.start(1000);
+
+    document.body.classList.add("is-recording");
+    recordButton.disabled = true;
+    stopRecordButton.disabled = false;
+    outputPreset.disabled = true;
+    recordingTimer.textContent = "00:00";
+
+    setStatus(
+      audioWasAdded
+        ? "Recording visuals and audio"
+        : "Recording visuals",
+    );
+  } catch (error) {
+    setStatus(
+      `Recording could not start: ${error.message}`,
+    );
+
+    cleanupRecording();
+  }
+}
+
+function stopRecording() {
+  const recorder = state.recording.recorder;
+
+  if (!recorder) {
+    return;
+  }
+
+  if (recorder.state !== "inactive") {
+    recorder.stop();
+  }
+
+  setStatus("Preparing recording download");
+}
+
+function finishRecordingDownload() {
+  const mimeType =
+    state.recording.mimeType ||
+    "video/webm";
+
+  const blob = new Blob(
+    state.recording.chunks,
+    {
+      type: mimeType,
+    },
+  );
+
+  const extension =
+    extensionForMimeType(mimeType);
+
+  const objectUrl =
+    URL.createObjectURL(blob);
+
+  const downloadLink =
+    document.createElement("a");
+
+  downloadLink.href = objectUrl;
+  downloadLink.download =
+    createRecordingFileName(extension);
+
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  downloadLink.remove();
+
+  window.setTimeout(() => {
+    URL.revokeObjectURL(objectUrl);
+  }, 1000);
+
+  setStatus(
+    `Recording saved as ${extension.toUpperCase()}`,
+  );
+
+  cleanupRecording();
+}
+
+function cleanupRecording() {
+  const streams = [
+    state.recording.stream,
+    state.recording.audioStream,
+  ];
+
+  for (const stream of streams) {
+    if (!stream) {
+      continue;
+    }
+
+    for (const track of stream.getTracks()) {
+      track.stop();
+    }
+  }
+
+  state.recording.recorder = null;
+  state.recording.stream = null;
+  state.recording.audioStream = null;
+  state.recording.chunks = [];
+  state.recording.startedAt = 0;
+
+  document.body.classList.remove("is-recording");
+  recordButton.disabled = false;
+  stopRecordButton.disabled = true;
+  outputPreset.disabled = false;
+  recordingTimer.textContent = "00:00";
+}
+
+function animate(now) {
+  const deltaSeconds = clamp(
+    (now - state.lastFrameTime) / 1000,
+    0,
+    0.05,
+  );
+
+  state.lastFrameTime = now;
+
+  updateEffects(deltaSeconds, now);
+  drawScene(now);
+  renderOutput(now);
+  updateRecordingTimer(now);
+
+  window.requestAnimationFrame(animate);
+}
+
+function isTypingTarget(target) {
+  return [
+    "INPUT",
+    "SELECT",
+    "TEXTAREA",
+  ].includes(target.tagName);
+}
+
+function handleKeyboardDown(event) {
+  if (isTypingTarget(event.target)) {
+    return;
+  }
+
+  if (!ACCEPTED_EFFECT_CODES.has(event.code)) {
+    return;
+  }
+
+  event.preventDefault();
+
+  if (event.repeat) {
+    return;
+  }
+
+  beginEffectPress(event.code);
+}
+
+function handleKeyboardUp(event) {
+  if (!ACCEPTED_EFFECT_CODES.has(event.code)) {
+    return;
+  }
+
+  event.preventDefault();
+  endEffectPress(event.code);
+}
+
+effectButtons.forEach((button) => {
+  button.setAttribute("aria-pressed", "false");
+
+  button.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    event.preventDefault();
+    button.dataset.ignoreNextClick = "true";
+
+    try {
+      button.setPointerCapture(event.pointerId);
+    } catch (error) {
+      // Pointer capture is optional.
+    }
+
+    beginEffectPress(button.dataset.code);
+  });
+
+  const endPointerPress = () => {
+    endEffectPress(button.dataset.code);
+    stage.focus();
+
+    window.setTimeout(() => {
+      delete button.dataset.ignoreNextClick;
+    }, 80);
+  };
+
+  button.addEventListener("pointerup", endPointerPress);
+  button.addEventListener("pointercancel", endPointerPress);
+  button.addEventListener("lostpointercapture", endPointerPress);
+
+  button.addEventListener("click", () => {
+    if (button.dataset.ignoreNextClick === "true") {
+      delete button.dataset.ignoreNextClick;
+      return;
+    }
+
+    scheduleEffect(button.dataset.code);
+    stage.focus();
+  });
+
+  button.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+  });
+});
+
+
+menuDragHandle.addEventListener(
+  "pointerdown",
+  beginMenuPull,
+);
+
+menuDragHandle.addEventListener(
+  "pointermove",
+  moveMenuPull,
+);
+
+menuDragHandle.addEventListener(
+  "pointerup",
+  finishMenuPull,
+);
+
+menuDragHandle.addEventListener(
+  "pointercancel",
+  finishMenuPull,
+);
+
+collapseMenuButton.addEventListener(
+  "click",
+  toggleMenuCollapsed,
+);
+
+detachMenuButton.addEventListener(
+  "click",
+  detachControlPanel,
+);
+
+dockMenuButton.addEventListener(
+  "click",
+  restoreControlPanel,
+);
+
+bpmInput.addEventListener("change", updateBpm);
+bpmInput.addEventListener("blur", updateBpm);
+tapButton.addEventListener("click", registerTap);
+
+pngInput.addEventListener("change", () => {
+  loadPngFile(pngInput.files[0]);
+});
+
+videoInput.addEventListener("change", () => {
+  loadBackgroundVideoFile(videoInput.files[0]);
+});
+
+cameraVideoButton.addEventListener(
+  "click",
+  startCameraBackground,
+);
+
+screenVideoButton.addEventListener(
+  "click",
+  startScreenBackground,
+);
+
+stopVideoButton.addEventListener(
+  "click",
+  stopBackgroundVideo,
+);
+
+videoFit.addEventListener("change", () => {
+  state.video.fit = videoFit.value;
+  setStatus(
+    `Video fit: ${videoFit.selectedOptions[0].text}`,
+  );
+});
+
+videoMirror.addEventListener("change", () => {
+  state.video.mirror = videoMirror.checked;
+});
+
+videoOpacity.addEventListener("input", () => {
+  state.video.opacity = Number(videoOpacity.value);
+  videoOpacityOutput.textContent =
+    `${Math.round(state.video.opacity * 100)}%`;
+});
+
+videoVisualOpacity.addEventListener("input", () => {
+  state.video.visualOpacity =
+    Number(videoVisualOpacity.value);
+
+  videoVisualOpacityOutput.textContent =
+    `${Math.round(
+      state.video.visualOpacity * 100,
+    )}%`;
+});
+
+pngMode.addEventListener("change", () => {
+  state.png.mode = pngMode.value;
+  setStatus(`PNG motion: ${pngMode.selectedOptions[0].text}`);
+});
+
+pngBlend.addEventListener("change", () => {
+  state.png.blend = pngBlend.value;
+  setStatus(
+    `Image blend: ${pngBlend.selectedOptions[0].text}`,
+  );
+});
+
+pngSize.addEventListener("input", () => {
+  state.png.sizePercent =
+    Number(pngSize.value);
+
+  pngSizeOutput.textContent =
+    `${pngSize.value}%`;
+});
+
+pngSpeed.addEventListener("input", () => {
+  state.png.speed =
+    Number(pngSpeed.value);
+
+  pngSpeedOutput.textContent =
+    `${Number(pngSpeed.value).toFixed(1)}×`;
+});
+
+pngVisible.addEventListener("change", () => {
+  state.png.visible = pngVisible.checked;
+
+  setStatus(
+    state.png.visible
+      ? "Image layer shown"
+      : "Image layer hidden",
+  );
+});
+
+pngOpacity.addEventListener("input", () => {
+  state.png.opacity =
+    Number(pngOpacity.value);
+
+  pngOpacityOutput.textContent =
+    `${Math.round(
+      Number(pngOpacity.value) * 100,
+    )}%`;
+});
+
+removePngButton.addEventListener(
+  "click",
+  removePng,
+);
+
+variationSelect.addEventListener(
+  "change",
+  () => {
+    state.variationIndex =
+      Number(variationSelect.value);
+
+    state.backgroundPulse = 0.55;
+
+    setStatus(
+      `Variation: ${currentVariation().name}`,
+    );
+  },
+);
+
+nextVariationButton.addEventListener(
+  "click",
+  nextVariation,
+);
+
+fxPower.addEventListener("input", () => {
+  state.fxPower =
+    Number(fxPower.value);
+
+  fxPowerOutput.textContent =
+    `${state.fxPower.toFixed(2)}×`;
+});
+
+outputPreset.addEventListener(
+  "change",
+  configureOutput,
+);
+
+recordButton.addEventListener(
+  "click",
+  startRecording,
+);
+
+stopRecordButton.addEventListener(
+  "click",
+  stopRecording,
+);
+
+fullscreenButton.addEventListener(
+  "click",
+  toggleFullscreen,
+);
+
+clearButton.addEventListener(
+  "click",
+  clearVisuals,
+);
+
+stage.addEventListener(
+  "click",
+  () => stage.focus(),
+);
+
+window.addEventListener(
+  "keydown",
+  handleKeyboardDown,
+);
+
+window.addEventListener(
+  "keyup",
+  handleKeyboardUp,
+);
+
+window.addEventListener(
+  "blur",
+  cancelAllEffectPresses,
+);
+
+document.addEventListener(
+  "fullscreenchange",
+  () => {
+    const active =
+      document.fullscreenElement === stage;
+
+    document.body.classList.toggle(
+      "stage-fullscreen",
+      active,
+    );
+
+    fullscreenButton.textContent =
+      active
+        ? "Exit Fullscreen"
+        : "Enter Fullscreen";
+  },
+);
+
+window.addEventListener("beforeunload", () => {
+  if (state.recording.recorder) {
+    cleanupRecording();
+  }
+
+  releaseBackgroundVideoSource();
+});
+
+configureOutput();
+loadSamplePng();
+stage.focus();
+document.documentElement.dataset.appReady = "true";
+setStatus("System ready — controls connected");
+window.requestAnimationFrame(animate);

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="0PTICBOX member area — account hub, profile settings, messages, posts, ratings, and comments." name="description"/>
+<meta content="#080b13" name="theme-color"/>
+<title>Member Area | 0PTICBOX Productions</title>
+<link href="styles.css" rel="stylesheet"/>
+<link href="network-upgrade.css?v=10" rel="stylesheet"/>
+
+<link rel="preconnect" href="https://fonts.cdnfonts.com"/>
+<link rel="stylesheet" href="https://fonts.cdnfonts.com/css/alsina"/>
+<style id="alsina-global-font">:where(html,body,body *,button,input,select,textarea,option){font-family:"Alsina","Alsina Ultrajada",Impact,"Arial Narrow",sans-serif!important}</style>
+</head>
+<body>
+<canvas aria-hidden="true" id="page-particles"></canvas>
+<a class="skip-link" href="#members">Skip to Member Area</a>
+<div class="ticker"><div class="ticker-track"><span>★ 0PTICBOX PRODUCTIONS IS ONLINE ★ BROWSER VISUALS ★ AUDIO TOOLS ★ PICO-8 GAMES ★</span><span aria-hidden="true">★ 0PTICBOX PRODUCTIONS IS ONLINE ★ BROWSER VISUALS ★ AUDIO TOOLS ★ PICO-8 GAMES ★</span></div></div>
+<header class="topbar" id="top"><div class="shell topbar-inner">
+<a class="wordmark" href="index.html"><b>0</b><span><strong>PTICBOX</strong><small>productions</small></span></a>
+<button aria-controls="site-nav" aria-expanded="false" class="menu-toggle" type="button">Menu</button>
+<nav aria-label="Primary navigation" class="site-nav" id="site-nav"><a href="index.html">Home</a><a href="opticbox.html#projects">Projects</a><a href="opticbox.html#media">Media</a><a href="index.html">Network</a><a href="community.html">Community feed</a><a href="https://github.com/0pticbox/opticbox-productions" rel="noopener" target="_blank">GitHub</a><a data-auth-only hidden href="messages.html">Messages</a><a data-auth-only hidden href="profile-settings.html">Settings</a><a data-signed-out-only href="signin.html?next=members.html">Sign in</a><a class="support" href="https://cash.app/$0pticBox" rel="noopener" target="_blank">Support</a></nav>
+</div></header>
+<main class="shell member-page">
+<section class="box member-page-intro"><div class="box-title split-title"><span>0PTICBOX Members</span><small>account · ratings · comments</small></div><div class="member-page-intro-body"><div><span class="mini-label">COMMUNITY ACCESS</span><h1>Your account, without the clutter.</h1><p>Sign-in now opens on its own page. Once your session is active, this page becomes your account hub.</p></div><a class="retro-button" href="index.html">Browse the network</a></div></section>
+<section class="box member-activity-launch"><div class="box-title split-title"><span>Post anything</span><small>text · images · music · events</small></div><div class="member-activity-launch-body"><div><span class="mini-label">COMMUNITY FEED</span><h2>Start with a normal post—or switch to music or events.</h2><p>The community composer opens as a regular text post. Track and event formats remain available.</p></div><a class="retro-button primary" href="community.html">Open community feed</a></div></section>
+<section aria-labelledby="members-title" class="box member-box" id="members">
+<div class="box-title split-title"><span id="members-title">Member Area</span><small>account · profile · reviews</small></div>
+<div class="member-body">
+<p class="member-warning" hidden id="member-config-warning">Connect Supabase and apply the newest database schema to enable member features.</p>
+<div class="member-auth-grid" id="member-logged-out">
+<div class="dedicated-signin-card"><span class="mini-label">SIGNED OUT</span><h3>Account access has moved.</h3><p>Use the dedicated sign-in page. After sign-in, you will return here with the account controls fully refreshed.</p><a class="retro-button primary" href="signin.html?next=members.html">Sign in or create account</a></div>
+</div>
+<div class="member-session" hidden id="member-logged-in"><div class="member-account-hub">
+<div class="member-account-summary"><span aria-hidden="true" class="member-account-avatar" id="member-session-avatar">M</span><div><span class="mini-label">Signed in</span><strong id="member-session-name">Member</strong><small id="member-session-email"></small></div></div>
+<div class="member-account-menu">
+<a class="member-account-tile" href="profile-settings.html"><span aria-hidden="true">⚙</span><strong>Profile settings</strong><small>Name, bio, background, links, avatar, colors, and cursor.</small></a>
+<a class="member-account-tile" href="messages.html"><span aria-hidden="true">✉</span><strong>Messages</strong><small>Friends, private conversations, and video attachments.</small></a>
+<a class="member-account-tile" href="community.html"><span aria-hidden="true">＋</span><strong>Create a post</strong><small>Write a normal post, share music, or add an event.</small></a>
+<a class="member-account-tile" hidden href="profile.html" id="member-view-profile"><span aria-hidden="true">◎</span><strong>View my page</strong><small>Open your personalized public profile.</small></a>
+</div>
+<div class="member-owner-access" hidden id="member-owner-access"><span class="mini-label">OWNER ACCOUNT</span><a class="retro-button primary" href="admin.html">Open private dashboard</a></div>
+<button class="retro-button danger member-hub-signout" id="member-signout-button" type="button">Sign out</button>
+</div></div>
+<p aria-live="polite" class="member-message member-hub-message" id="member-auth-message"></p>
+<div class="reviews-layout">
+<div class="review-editor"><div class="review-summary-panel"><label for="review-product">Choose a product</label><select id="review-product"><option value="opticscope">0PTICSCOPE</option><option value="0ps3">0PS3 Visualizer</option><option value="spectravault">SPECTRAVAULT</option><option value="distortion">DISTORTION</option><option value="dj-visual-studio">DJ Visual Studio</option><option value="boxed-arp">BOXED ARP</option><option value="orbital-repair">Orbital Repair</option><option value="inner-light-runner">Inner Light Runner</option></select><div class="selected-rating"><strong id="selected-average">New</strong><span aria-hidden="true" id="selected-stars">☆☆☆☆☆</span><small id="selected-review-count">No ratings yet</small></div></div>
+<form class="review-form" hidden id="review-form"><fieldset><legend>Your rating</legend><div aria-label="Choose a rating from one to five stars" class="star-picker"><input id="rating-5" name="rating" required type="radio" value="5"/><label for="rating-5" title="5 stars"><span aria-hidden="true">★</span><span class="sr-only">5 stars</span></label><input id="rating-4" name="rating" type="radio" value="4"/><label for="rating-4" title="4 stars"><span aria-hidden="true">★</span><span class="sr-only">4 stars</span></label><input id="rating-3" name="rating" type="radio" value="3"/><label for="rating-3" title="3 stars"><span aria-hidden="true">★</span><span class="sr-only">3 stars</span></label><input id="rating-2" name="rating" type="radio" value="2"/><label for="rating-2" title="2 stars"><span aria-hidden="true">★</span><span class="sr-only">2 stars</span></label><input id="rating-1" name="rating" type="radio" value="1"/><label for="rating-1" title="1 star"><span aria-hidden="true">★</span><span class="sr-only">1 star</span></label></div></fieldset><label for="review-comment">Small comment</label><textarea id="review-comment" maxlength="500" placeholder="What did you think?" required rows="4"></textarea><div class="review-form-footer"><small><span id="review-character-count">0</span>/500</small><div><button class="retro-button primary" type="submit">Save review</button><button class="retro-button danger" hidden id="delete-review-button" type="button">Delete mine</button></div></div><p aria-live="polite" class="member-message" id="review-message"></p></form>
+<p class="review-login-note" id="review-login-note">Sign in on the account page to leave one rating and comment per product.</p></div>
+<div class="review-feed"><div class="review-feed-heading"><h3 id="review-list-heading">Recent comments</h3><span id="public-review-count">0</span></div><div aria-live="polite" class="product-reviews" id="product-reviews"><p class="review-empty">No comments yet. You could be first.</p></div></div>
+</div>
+</div></section>
+</main>
+<footer><div class="shell footer-inner"><p>© <span id="year"></span> 0PTICBOX Productions</p><div><a data-auth-only hidden href="messages.html">Messages</a><a data-auth-only hidden href="profile-settings.html">Settings</a><a href="community.html">Community feed</a><a href="members.html#top">Back to top</a><a href="https://cash.app/$0pticBox" rel="noopener" target="_blank">Support 0PTICBOX</a></div></div></footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-state.js?v=10" type="module"></script><script src="cms.js" type="module"></script><script src="reviews.js?v=10" type="module"></script><script src="site.js?v=19"></script>
+</body>
+</html>

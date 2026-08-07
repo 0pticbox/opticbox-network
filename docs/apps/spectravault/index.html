@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#101215" />
+  <title>SPECTRAVAULT — Audio-Reactive Visual Engine</title>
+  <link rel="stylesheet" href="styles.css" />
+
+<link rel="preconnect" href="https://fonts.cdnfonts.com"/>
+<link rel="stylesheet" href="https://fonts.cdnfonts.com/css/alsina"/>
+<style id="alsina-global-font">:where(html,body,body *,button,input,select,textarea,option){font-family:"Alsina","Alsina Ultrajada",Impact,"Arial Narrow",sans-serif!important}</style>
+</head>
+<body data-theme="chrome">
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand-lockup">
+        <div class="brand">SPECTRAVAULT</div>
+        <div class="subtitle">SIGNAL-DRIVEN VISUAL ENGINE</div>
+      </div>
+
+      <nav class="top-nav" aria-label="Main navigation">
+        <button class="nav-tab active" data-tab="visuals" aria-selected="true">VISUALS</button>
+        <button class="nav-tab" data-tab="help" aria-selected="false">HELP</button>
+      </nav>
+
+      <div class="status-group">
+        <div class="theme-switch" aria-label="Interface theme">
+          <button class="theme-chip active" data-theme-choice="chrome" aria-pressed="true">CHROME</button>
+          <button class="theme-chip" data-theme-choice="rave" aria-pressed="false">RAVE</button>
+        </div>
+        <span id="fpsReadout">60 FPS</span>
+        <span id="statusText">READY</span>
+      </div>
+    </header>
+
+    <section id="visualsTab" class="tab-page active">
+    <section class="workspace">
+      <div class="stage-wrap" id="stageWrap">
+        <canvas id="visualCanvas" width="1280" height="720"></canvas>
+        <video id="pipVideo" autoplay muted playsinline hidden></video>
+        <div class="stage-hint" id="stageHint">SELECT AN AUDIO SOURCE</div>
+      </div>
+
+      <aside class="control-panel">
+        <section class="panel-section">
+          <h2>AUDIO</h2>
+          <div class="button-grid two">
+            <button id="micBtn">MIC</button>
+            <button id="desktopBtn">DESKTOP / TAB</button>
+            <label class="file-button">
+              AUDIO FILE
+              <input id="audioFileInput" type="file" accept="audio/*" />
+            </label>
+            <button id="stopAudioBtn" class="danger">STOP AUDIO</button>
+          </div>
+          <audio id="audioPlayer" controls hidden></audio>
+          <div class="meter"><div id="audioMeterFill"></div></div>
+        </section>
+
+        <section class="panel-section">
+          <h2>VISUAL</h2>
+          <label>
+            CORE VISUAL
+            <select id="presetSelect">
+              <option value="kaleido">Kaleido Reactor</option>
+              <option value="tunnel">Neon Tunnel</option>
+              <option value="water">Water Drift</option>
+              <option value="scope">Vector Scope</option>
+              <option value="aurora">Aurora Ribbons</option>
+              <option value="rings">Pulse Rings</option>
+              <option value="matrix">Cube Matrix</option>
+              <option value="pyramid">Pyramid Spire</option>
+            </select>
+          </label>
+          <label>
+            SENSITIVITY
+            <input id="sensitivityInput" type="range" min="0.4" max="3" step="0.05" value="1.35" />
+          </label>
+          <label>
+            MOTION
+            <input id="motionInput" type="range" min="0.2" max="3" step="0.05" value="1" />
+          </label>
+          <label>
+            FEEDBACK
+            <input id="feedbackInput" type="range" min="0" max="0.96" step="0.01" value="0.82" />
+          </label>
+          <div class="button-grid two">
+            <button id="flowToggleBtn">AUTO FLOW: ON</button>
+            <button id="autoFeedbackBtn">AUTO FEEDBACK: ON</button>
+          </div>
+          <div class="button-grid two">
+            <button id="fullscreenBtn">FULL SCREEN</button>
+            <button id="pipBtn">PICTURE IN PICTURE</button>
+          </div>
+          <p class="microcopy">Auto Flow now uses a slower, gradual crossfade across all 8 core visuals. Auto Feedback keeps the trail depth shifting on its own. Use Picture in Picture to float the visual above other windows.</p>
+        </section>
+
+        <section class="panel-section">
+          <h2>LOGO</h2>
+          <div class="button-grid two">
+            <label class="file-button">
+              ADD PNG / JPG
+              <input id="logoInput" type="file" accept="image/png,image/jpeg,image/webp" />
+            </label>
+            <button id="removeLogoBtn">REMOVE</button>
+          </div>
+          <label>
+            SIZE
+            <input id="logoSizeInput" type="range" min="0.05" max="0.75" step="0.01" value="0.22" />
+          </label>
+          <label>
+            OPACITY
+            <input id="logoOpacityInput" type="range" min="0.05" max="1" step="0.01" value="0.95" />
+          </label>
+          <label>
+            SPIN
+            <input id="logoSpinInput" type="range" min="-2" max="2" step="0.02" value="0" />
+          </label>
+          <p class="microcopy">Drag the logo directly on the visual.</p>
+        </section>
+
+        <section class="panel-section">
+          <h2>DISTORTION 1–9</h2>
+          <div class="fx-grid" id="fxGrid">
+            <button data-fx="1"><kbd>1</kbd> Kaleido</button>
+            <button data-fx="2"><kbd>2</kbd> VHS</button>
+            <button data-fx="3"><kbd>3</kbd> Prism Shift</button>
+            <button data-fx="4"><kbd>4</kbd> Pixel</button>
+            <button data-fx="5"><kbd>5</kbd> Mirror</button>
+            <button data-fx="6"><kbd>6</kbd> Wave</button>
+            <button data-fx="7"><kbd>7</kbd> Scan Pulse</button>
+            <button data-fx="8"><kbd>8</kbd> Echo</button>
+            <button data-fx="9"><kbd>9</kbd> Thermal Map</button>
+          </div>
+          <button id="clearFxBtn" class="wide">CLEAR ALL FX</button>
+        </section>
+
+        <section class="panel-section">
+          <h2>RECORD</h2>
+          <label>
+            OUTPUT
+            <select id="resolutionSelect">
+              <option value="1280x720">YouTube 720p · 16:9</option>
+              <option value="1920x1080">YouTube 1080p · 16:9</option>
+              <option value="1080x1920">TikTok / Shorts · 9:16</option>
+              <option value="1080x1080">Square · 1:1</option>
+            </select>
+          </label>
+          <div class="button-grid two">
+            <button id="recordBtn" class="record">● RECORD</button>
+            <button id="stopRecordBtn" disabled>■ STOP</button>
+          </div>
+          <div class="record-status">
+            <span id="recordTimer">00:00</span>
+            <span id="recordState">CHECKING MP4</span>
+          </div>
+          <p class="microcopy">No watermark is added. Recording exports as MP4 only. If the browser cannot record MP4 directly, the Record button is disabled instead of falling back to WebM.</p>
+        </section>
+      </aside>
+    </section>
+    </section>
+
+    <section id="helpTab" class="tab-page help-page" aria-hidden="true">
+      <div class="help-hero">
+        <div>
+          <p class="eyebrow">SPECTRAVAULT FIELD MANUAL</p>
+          <h1>Turn sound into a live visual transmission.</h1>
+          <p class="help-lead">Connect audio, choose a visual core, stack distortion keys 1–9, place your logo, and record a clean video with no added watermark.</p>
+        </div>
+        <button id="returnToVisualsBtn" class="help-launch">OPEN VISUAL ENGINE</button>
+      </div>
+
+      <div class="help-grid quick-start-grid">
+        <article class="help-card numbered-card">
+          <span class="step-number">01</span>
+          <h2>Connect audio</h2>
+          <p>Use <strong>MIC</strong>, load an <strong>AUDIO FILE</strong>, or choose <strong>DESKTOP / TAB</strong>. When sharing a tab or screen, enable the browser's audio-sharing option.</p>
+        </article>
+        <article class="help-card numbered-card">
+          <span class="step-number">02</span>
+          <h2>Shape the visual</h2>
+          <p>The engine includes eight core looks: <strong>Kaleido Reactor</strong>, <strong>Neon Tunnel</strong>, <strong>Water Drift</strong>, <strong>Vector Scope</strong>, <strong>Aurora Ribbons</strong>, <strong>Pulse Rings</strong>, <strong>Cube Matrix</strong>, and <strong>Pyramid Spire</strong>. <strong>Auto Flow</strong> uses a slower equal-power crossfade, Pulse Rings includes adaptive performance protection targeting smooth 60 FPS at high settings, Pyramid Spire adds a spinning wireframe pyramid family related to the cube visual, and Picture in Picture can float the visual over other apps. Use the top-right theme buttons to switch between <strong>Chrome Bubble</strong> and <strong>Rave Worm</strong>.</p>
+        </article>
+        <article class="help-card numbered-card">
+          <span class="step-number">03</span>
+          <h2>Perform with FX</h2>
+          <p>Press keys <strong>1–9</strong> or click the distortion pads. Effects can be stacked. <strong>Auto Feedback</strong> continuously shifts the trail depth for hands-free movement. Press <strong>CLEAR ALL FX</strong> to reset the chain.</p>
+        </article>
+        <article class="help-card numbered-card">
+          <span class="step-number">04</span>
+          <h2>Record and export</h2>
+          <p>Select YouTube, vertical, or square output, then press <strong>RECORD</strong>. The downloaded MP4 contains the visual, logo, and connected audio.</p>
+        </article>
+      </div>
+
+      <div class="help-section-heading">
+        <p class="eyebrow">DISTORTION BANK</p>
+        <h2>Keyboard controls 1–9</h2>
+      </div>
+
+      <div class="fx-help-grid">
+        <article><kbd>1</kbd><div><h3>Kaleido</h3><p>Folds the frame into rotating mirrored segments.</p></div></article>
+        <article><kbd>2</kbd><div><h3>VHS</h3><p>Adds horizontal tracking slices, jitter, and scan lines.</p></div></article>
+        <article><kbd>3</kbd><div><h3>Prism Shift</h3><p>Adds iridescent displaced layers and moving refracted bands without washing out the frame.</p></div></article>
+        <article><kbd>4</kbd><div><h3>Pixel</h3><p>Crushes the image into chunky low-resolution blocks.</p></div></article>
+        <article><kbd>5</kbd><div><h3>Mirror</h3><p>Reflects the frame for a symmetrical stage look.</p></div></article>
+        <article><kbd>6</kbd><div><h3>Wave</h3><p>Bends horizontal bands into a moving signal wave.</p></div></article>
+        <article><kbd>7</kbd><div><h3>Scan Pulse</h3><p>Sweeps a moving refracted distortion band across the visual without full-screen flashing.</p></div></article>
+        <article><kbd>8</kbd><div><h3>Echo</h3><p>Stacks delayed frames into expanding feedback trails.</p></div></article>
+        <article><kbd>9</kbd><div><h3>Thermal Map</h3><p>Recolors the existing light and shadow with a moving heat-style palette.</p></div></article>
+      </div>
+
+      <div class="help-grid detail-grid">
+        <article class="help-card">
+          <p class="eyebrow">LOGO LAYER</p>
+          <h2>Brand the performance</h2>
+          <p>Load a transparent PNG for the cleanest result. Drag the logo directly on the visual. Use size, opacity, and spin to match the scene.</p>
+          <div class="tip-line"><span>TIP</span> Keep important logo details away from the extreme edges for vertical crops.</div>
+        </article>
+
+        <article class="help-card">
+          <p class="eyebrow">RECORDING</p>
+          <h2>Clean, watermark-free output</h2>
+          <p>SPECTRAVAULT adds no watermark and exports MP4 only. The app checks the browser before recording and disables the Record button when direct MP4 recording is unavailable. For smoother recording, keep this tab visible, close heavy background apps, and use 720p when the computer struggles at 1080p.</p>
+          <div class="format-list"><span>16:9 YouTube</span><span>9:16 Shorts / TikTok</span><span>1:1 Square</span></div>
+        </article>
+
+        <article class="help-card">
+          <p class="eyebrow">AUTOMATION</p>
+          <h2>Let the visuals evolve</h2>
+          <dl class="shortcut-list">
+            <div><dt>AUTO FLOW</dt><dd>Slowly crossfades all 6 core visuals with a long, gradual transition</dd></div>
+            <div><dt>AUTO FEEDBACK</dt><dd>Randomly shifts the feedback depth for changing trail intensity</dd></div>
+            <div><dt>1–9</dt><dd>Toggle distortion effects live</dd></div>
+            <div><dt>THEME</dt><dd>Switch between Chrome Bubble and Rave Worm; your choice is remembered</dd></div>
+            <div><dt>?</dt><dd>Open or close Help</dd></div>
+          </dl>
+        </article>
+
+        <article class="help-card">
+          <p class="eyebrow">TROUBLESHOOTING</p>
+          <h2>When audio is not reacting</h2>
+          <ul class="help-list">
+            <li>Click the audio source again and approve browser permission.</li>
+            <li>For desktop audio, select a browser tab or screen and enable audio sharing.</li>
+            <li>Try Chrome, Edge, or Firefox on desktop.</li>
+            <li>If local-file permissions fail, run <code>python -m http.server 8080</code> inside the folder.</li>
+          </ul>
+        </article>
+      </div>
+
+      <footer class="help-footer">
+        <span>SPECTRAVAULT</span>
+        <span>6 CORE VISUALS · MP4 EXPORT · NO WATERMARK</span>
+      </footer>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="Sign in to or create an 0PTICBOX Network account." name="description"/>
+<meta content="#080b13" name="theme-color"/>
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate"/>
+<title>Sign In | 0PTICBOX Network</title>
+<link href="styles.css" rel="stylesheet"/>
+<link href="network-upgrade.css?v=10" rel="stylesheet"/>
+
+<link rel="preconnect" href="https://fonts.cdnfonts.com"/>
+<link rel="stylesheet" href="https://fonts.cdnfonts.com/css/alsina"/>
+<style id="alsina-global-font">:where(html,body,body *,button,input,select,textarea,option){font-family:"Alsina","Alsina Ultrajada",Impact,"Arial Narrow",sans-serif!important}</style>
+</head>
+<body>
+<canvas aria-hidden="true" id="page-particles"></canvas>
+<a class="skip-link" href="#account-access">Skip to account access</a>
+<div class="ticker"><div class="ticker-track"><span>★ 0PTICBOX NETWORK ACCOUNT ACCESS ★ FRIENDS ★ MESSAGES ★ PROFILES ★</span><span aria-hidden="true">★ 0PTICBOX NETWORK ACCOUNT ACCESS ★ FRIENDS ★ MESSAGES ★ PROFILES ★</span></div></div>
+<header class="topbar" id="top"><div class="shell topbar-inner">
+<a class="wordmark" href="index.html"><b>0</b><span><strong>PTICBOX</strong><small>network</small></span></a>
+<button aria-controls="site-nav" aria-expanded="false" class="menu-toggle" type="button">Menu</button>
+<nav aria-label="Primary navigation" class="site-nav" id="site-nav"><a href="index.html">Home</a><a href="community.html">Community feed</a><a href="members.html">Member area</a><a class="support" href="https://cash.app/$0pticBox" rel="noopener" target="_blank">Support</a></nav>
+</div></header>
+<main class="shell auth-page" id="account-access">
+<div class="auth-shell">
+<section class="box auth-card">
+<div class="box-title split-title"><span>Account Access</span><small>sign in · create account</small></div>
+<div class="auth-card-body">
+<h1>Enter the 0PTICBOX Network.</h1>
+<p class="auth-intro">Account access now has its own page. After a successful sign-in, the site reloads the authenticated session and sends you directly to the page you were trying to open.</p>
+<p class="member-warning" hidden id="auth-config-warning">Connect Supabase in <code>supabase-config.js</code> before using accounts.</p>
+<div class="auth-tabs" role="tablist" aria-label="Account access options">
+<button class="retro-button primary" id="show-signin" role="tab" aria-selected="true" aria-controls="signin-panel" type="button">Sign in</button>
+<button class="retro-button" id="show-signup" role="tab" aria-selected="false" aria-controls="signup-panel" type="button">Create account</button>
+</div>
+<form class="auth-form" id="signin-form" autocomplete="on">
+<div id="signin-panel" role="tabpanel" aria-labelledby="show-signin">
+<div class="auth-form">
+<label for="signin-email">Email</label>
+<input id="signin-email" name="email" type="email" autocomplete="email" required/>
+<label for="signin-password">Password</label>
+<input id="signin-password" name="password" type="password" autocomplete="current-password" minlength="8" required/>
+<button class="retro-button primary" type="submit">Sign in</button>
+</div>
+</div>
+</form>
+<form class="auth-form" id="signup-form" autocomplete="on" hidden>
+<div id="signup-panel" role="tabpanel" aria-labelledby="show-signup">
+<div class="auth-form">
+<label for="signup-name">Display name</label>
+<input id="signup-name" name="display-name" type="text" autocomplete="nickname" minlength="2" maxlength="32" required/>
+<label for="signup-email">Email</label>
+<input id="signup-email" name="email" type="email" autocomplete="email" required/>
+<label for="signup-password">Password</label>
+<input id="signup-password" name="password" type="password" autocomplete="new-password" minlength="8" required/>
+<button class="retro-button primary" type="submit">Create account</button>
+</div>
+</div>
+</form>
+<p class="auth-message" id="auth-message" aria-live="polite"></p>
+<div class="auth-help"><a href="index.html">Return to the network</a><a href="members.html">Open Member Area</a></div>
+</div>
+</section>
+</div>
+</main>
+<footer><div class="shell footer-inner"><p>© <span id="year"></span> 0PTICBOX Productions</p><div><a href="index.html">Network</a><a href="community.html">Community feed</a><a href="members.html">Member area</a></div></div></footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="signin.js" type="module"></script>
+<script src="site.js"></script>
+</body>
+</html>
