@@ -22,7 +22,7 @@ const themes={
   monochrome:["#ffffff","#b8c1d1","#667085"]
 };
 
-let ac,an,src,stream,fileSrc,freq,energy=0,bass=0,treble=0,t=0,pts=[],autoPhase=0,dpr=1,w=innerWidth,h=innerHeight,fractalImage=null,captureStream=null;
+let ac,an,src,stream,fileSrc,freq,energy=0,bass=0,treble=0,t=0,pts=[],autoPhase=0,dpr=1,w=innerWidth,h=innerHeight,fractalImage=null,captureStream=null,bridgeMode=true;
 const layerA=document.createElement("canvas"),layerB=document.createElement("canvas");
 const ctxA=layerA.getContext("2d"),ctxB=layerB.getContext("2d");
 
@@ -50,8 +50,24 @@ async function refreshFirefoxAudioDevices(requestPermission=false){
     status(false,"Audio input permission is needed to list Firefox devices.");
   }finally{probe?.getTracks().forEach(t=>t.stop())}
 }
+function updateBridgeUi(){
+  const bridge=window.OpticsAudioBridge?.state;
+  const box=$("bridgeStatus"),text=$("bridgeStatusText");
+  if(!box||!text)return;
+  const connected=Boolean(bridge?.connected);
+  box.classList.toggle("connected",connected);
+  text.textContent=connected?"BRIDGE CONNECTED · WINDOWS OUTPUT":"LOOKING FOR 0PTIC'S AUDIO BRIDGE";
+  if(bridgeMode)status(connected,connected?"0PTIC'S AUDIO BRIDGE · COMPUTER OUTPUT":"Start 0PTIC'S AUDIO BRIDGE to use computer output");
+}
+function useBridge(){
+  stop(false);bridgeMode=true;
+  window.OpticsAudioBridge?.reconnect?.();
+  updateBridgeUi();
+}
+window.addEventListener("opticbridgechange",updateBridgeUi);
+
 async function mic(){try{
-  stop(false);
+  bridgeMode=false;stop(false);
   const deviceId=$("firefoxAudioDevice")?.value||"";
   const audio={echoCancellation:false,noiseSuppression:false,autoGainControl:false};
   if(deviceId)audio.deviceId={exact:deviceId};
@@ -63,7 +79,7 @@ async function mic(){try{
 }catch(e){status(false,e.message)}}
 async function desktop(){
   try{
-    stop(false);
+    bridgeMode=false;stop(false);
     if(!navigator.mediaDevices?.getDisplayMedia)throw Error("Screen audio sharing is not available in this browser.");
     stream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});
     const tracks=stream.getAudioTracks();
@@ -84,9 +100,25 @@ async function desktop(){
     status(false,e.message||"Desktop audio could not start.");
   }
 }
-async function file(f){if(!f)return;stop(false);await prep();const p=$("audioPlayer");p.src=URL.createObjectURL(f);p.classList.add("visible");if(!fileSrc)fileSrc=ac.createMediaElementSource(p);fileSrc.connect(an);fileSrc.connect(recordingDestination);fileSrc.connect(ac.destination);await p.play();status(true,f.name)}
+async function file(f){if(!f)return;bridgeMode=false;stop(false);await prep();const p=$("audioPlayer");p.src=URL.createObjectURL(f);p.classList.add("visible");if(!fileSrc)fileSrc=ac.createMediaElementSource(p);fileSrc.connect(an);fileSrc.connect(recordingDestination);fileSrc.connect(ac.destination);await p.play();status(true,f.name)}
 
-function analyze(){if(!an){energy*=.94;bass*=.94;treble*=.94;return}an.getByteFrequencyData(freq);let sum=0;for(const v of freq)sum+=v;const raw=sum/freq.length/255;energy+=(Math.min(1,raw*+sens.value*3.2)-energy)*.25;const be=Math.max(1,Math.floor(freq.length*.045));let bs=0;for(let i=0;i<be;i++)bs+=freq[i];bass+=(bs/be/255-bass)*.25;let ts=0,n=0;for(let i=Math.floor(freq.length*.25);i<Math.floor(freq.length*.7);i++){ts+=freq[i];n++}treble+=(ts/Math.max(1,n)/255-treble)*.2}
+function analyze(){
+  if(bridgeMode){
+    const bridge=window.OpticsAudioBridge;
+    if(bridge?.state.connected){
+      if(!freq||freq.length!==1024)freq=new Uint8Array(1024);
+      bridge.fillFrequency(freq,+sens.value);
+      const b=bridge.state;
+      energy+=(Math.min(1,b.level*+sens.value*2.4)-energy)*.32;
+      bass+=(Math.min(1,b.bass*+sens.value*1.8)-bass)*.28;
+      treble+=(Math.min(1,b.treble*+sens.value*1.9)-treble)*.25;
+      return;
+    }
+    energy*=.94;bass*=.94;treble*=.94;return;
+  }
+  if(!an){energy*=.94;bass*=.94;treble*=.94;return}
+  an.getByteFrequencyData(freq);let sum=0;for(const v of freq)sum+=v;const raw=sum/freq.length/255;energy+=(Math.min(1,raw*+sens.value*3.2)-energy)*.25;const be=Math.max(1,Math.floor(freq.length*.045));let bs=0;for(let i=0;i<be;i++)bs+=freq[i];bass+=(bs/be/255-bass)*.25;let ts=0,n=0;for(let i=Math.floor(freq.length*.25);i<Math.floor(freq.length*.7);i++){ts+=freq[i];n++}treble+=(ts/Math.max(1,n)/255-treble)*.2
+}
 function pal(){return themes[theme.value]}
 function fv(r,range=.35){if(!freq)return 0;const i=Math.min(freq.length-1,Math.max(0,Math.floor(r*freq.length*range)));return freq[i]/255}
 function clearLayer(ctx){ctx.clearRect(0,0,w,h)}
@@ -364,10 +396,11 @@ function render(frameTime=0){
   t+=+motion.value;
   analyze();if(autoCrossfade.checked&&remixEnabled.checked){autoPhase+=+autoSpeed.value*+motion.value;crossfade.value=Math.round((Math.sin(autoPhase)*.5+.5)*100);updateFade(+crossfade.value)}ambient();if(remixEnabled.checked){drawTo(remixModeA.value,ctxA);drawTo(remixModeB.value,ctxB);const mix=+crossfade.value/100;mainCtx.save();mainCtx.globalCompositeOperation="screen";mainCtx.globalAlpha=1-mix;mainCtx.drawImage(layerA,0,0,w,h);mainCtx.globalAlpha=mix;mainCtx.drawImage(layerB,0,0,w,h);mainCtx.restore();$("overlayMode").textContent=`REMIX · ${remixModeA.options[remixModeA.selectedIndex].text.toUpperCase()} + ${remixModeB.options[remixModeB.selectedIndex].text.toUpperCase()}`}else{drawTo(mode.value,ctxA);mainCtx.save();mainCtx.globalCompositeOperation="screen";mainCtx.drawImage(layerA,0,0,w,h);mainCtx.restore();$("overlayMode").textContent=mode.options[mode.selectedIndex].text.toUpperCase()}$("overlayTitle").textContent=$("titleInput").value.trim()||"OPTICBOX";document.querySelector(".now-playing").style.display=$("showTitle").checked?"flex":"none";}
 
-$("micButton").addEventListener("click",mic);$("desktopButton").addEventListener("click",desktop);$("fileButton").addEventListener("click",()=>$("audioFileInput").click());$("stopButton").addEventListener("click",()=>stop());$("audioFileInput").addEventListener("change",e=>{file(e.target.files[0]);e.target.value=""});
+$("micButton").addEventListener("click",mic);$("desktopButton").addEventListener("click",desktop);$("fileButton").addEventListener("click",()=>$("audioFileInput").click());$("bridgeBtn")?.addEventListener("click",useBridge);$("stopButton").addEventListener("click",()=>{bridgeMode=false;stop()});$("audioFileInput").addEventListener("change",e=>{file(e.target.files[0]);e.target.value=""});
 $("refreshAudioDevices")?.addEventListener("click",()=>refreshFirefoxAudioDevices(true));
 navigator.mediaDevices?.addEventListener?.("devicechange",()=>refreshFirefoxAudioDevices(false));
 refreshFirefoxAudioDevices(false);
+useBridge();
 $("collapseButton").addEventListener("click",()=>{$("controlDock").classList.toggle("collapsed");$("collapseButton").textContent=$("controlDock").classList.contains("collapsed")?"+":"−"});
 remixEnabled.addEventListener("change",()=>{remixControls.classList.toggle("active",remixEnabled.checked);remixControls.setAttribute("aria-hidden",String(!remixEnabled.checked));mode.disabled=remixEnabled.checked});
 crossfade.addEventListener("input",()=>updateFade(+crossfade.value));

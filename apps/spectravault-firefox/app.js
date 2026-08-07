@@ -42,6 +42,7 @@
   let mediaElementSource = null;
   let recordDestination = null;
   let monitorGain = null;
+  let bridgeMode = true;
 
   let mediaRecorder = null;
   let recordedChunks = [];
@@ -281,8 +282,32 @@
     }
   }
 
+  function updateBridgeUi() {
+    const bridge = window.OpticsAudioBridge?.state;
+    const box = document.getElementById('bridgeStatus');
+    const text = document.getElementById('bridgeStatusText');
+    if (!box || !text) return;
+    const connected = Boolean(bridge?.connected);
+    box.classList.toggle('connected', connected);
+    text.textContent = connected ? 'BRIDGE CONNECTED · WINDOWS OUTPUT' : "LOOKING FOR 0PTIC'S AUDIO BRIDGE";
+    if (bridgeMode) {
+      setStatus(connected ? "0PTIC'S AUDIO BRIDGE LIVE" : "START 0PTIC'S AUDIO BRIDGE");
+      stageHint.style.display = connected ? 'none' : 'block';
+      stageHint.textContent = connected ? '' : "START 0PTIC'S AUDIO BRIDGE";
+    }
+  }
+
+  function useBridge() {
+    disconnectCurrentAudio();
+    bridgeMode = true;
+    window.OpticsAudioBridge?.reconnect?.();
+    updateBridgeUi();
+  }
+  window.addEventListener('opticbridgechange', updateBridgeUi);
+
   async function startMic() {
     try {
+      bridgeMode = false;
       disconnectCurrentAudio();
       await ensureAudioGraph();
       const deviceId = document.getElementById('firefoxAudioDevice')?.value || '';
@@ -302,6 +327,7 @@
 
   async function startDesktopAudio() {
     try {
+      bridgeMode = false;
       disconnectCurrentAudio();
       await ensureAudioGraph();
       audioInputStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
@@ -325,6 +351,7 @@
   async function loadAudioFile(file) {
     if (!file) return;
     try {
+      bridgeMode = false;
       disconnectCurrentAudio();
       await ensureAudioGraph();
       const url = URL.createObjectURL(file);
@@ -350,6 +377,25 @@
   }
 
   function updateAudioData() {
+    if (bridgeMode) {
+      const bridge = window.OpticsAudioBridge;
+      if (bridge?.state.connected) {
+        if (!frequencyData || frequencyData.length !== 512) frequencyData = new Uint8Array(512);
+        if (!waveformData || waveformData.length !== 1024) waveformData = new Uint8Array(1024);
+        bridge.fillFrequency(frequencyData, Number(sensitivityInput.value));
+        bridge.fillByteWave(waveformData);
+        const sensitivity = Number(sensitivityInput.value);
+        bass = Math.min(1.8, bridge.state.bass * sensitivity * 1.55);
+        mids = Math.min(1.8, bridge.state.mid * sensitivity * 1.45);
+        treble = Math.min(1.8, bridge.state.treble * sensitivity * 1.55);
+        level = Math.min(1.8, bridge.state.level * sensitivity * 1.65);
+        audioMeterFill.style.width = `${Math.min(100, level * 75)}%`;
+        return;
+      }
+      bass *= 0.93; mids *= 0.93; treble *= 0.93; level *= 0.93;
+      audioMeterFill.style.width = `${Math.min(100, level * 75)}%`;
+      return;
+    }
     if (!analyser) {
       bass *= 0.93;
       mids *= 0.93;
@@ -1590,11 +1636,13 @@
 
   document.getElementById('micBtn').addEventListener('click', startMic);
   document.getElementById('desktopBtn').addEventListener('click', startDesktopAudio);
-  document.getElementById('stopAudioBtn').addEventListener('click', disconnectCurrentAudio);
+  document.getElementById('bridgeBtn')?.addEventListener('click', useBridge);
+  document.getElementById('stopAudioBtn').addEventListener('click', () => { bridgeMode = false; disconnectCurrentAudio(); });
   document.getElementById('audioFileInput').addEventListener('change', event => loadAudioFile(event.target.files[0]));
   document.getElementById('refreshAudioDevices')?.addEventListener('click', () => refreshFirefoxAudioDevices(true));
   navigator.mediaDevices?.addEventListener?.('devicechange', () => refreshFirefoxAudioDevices(false));
   refreshFirefoxAudioDevices(false);
+  useBridge();
   document.getElementById('logoInput').addEventListener('change', event => loadLogo(event.target.files[0]));
   document.getElementById('removeLogoBtn').addEventListener('click', () => { logoImage = null; setStatus('LOGO REMOVED'); });
   flowToggleBtn.addEventListener('click', () => {

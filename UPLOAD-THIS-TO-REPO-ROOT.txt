@@ -1,17 +1,13 @@
-OPTICBOX NETWORK v31 — FIREFOX COMPATIBILITY
+OPTICBOX NETWORK v32 — ROOT READY
+================================
+Upload the CONTENTS of this ZIP to the root of the opticbox-network GitHub repository.
+Replace matching files.
 
-Upload the CONTENTS of this ZIP to the repository root and replace matching files.
-Keep your existing supabase-config.js if it is stored separately / ignored.
+v32 FIREFOX AUDIO CHANGE
+- Firefox versions of 0PTICSCOPE, 0PS3, and SPECTRAVAULT default to 0PTIC'S AUDIO BRIDGE.
+- Bridge download: downloads/0ptics-audio-bridge-windows.zip
+- Bridge listens only on 127.0.0.1:17491 and reads the Windows default output meter.
+- Audio Input / Audio File / Screen Audio remain available as fallback sources.
+- No new Supabase SQL is required.
 
-No new Supabase SQL is required for the Firefox compatibility update.
-
-Firefox behavior:
-- SPECTRAVAULT records MP4 when supported, otherwise WebM automatically.
-- 0PS3 / SPECTRAVAULT PiP falls back to a detachable floating window when standard web PiP is unavailable.
-- Screen/window VIDEO capture works where getDisplayMedia is supported.
-- Firefox may not provide SYSTEM AUDIO for every screen-share source; Mic and Audio File remain the reliable audio inputs.
-- DISTORTION and DJ Visual Studio select browser-supported recording encoders automatically.
-
-
-
-v31 adds separate Firefox browser builds for 0PTICSCOPE, 0PS3, and SPECTRAVAULT plus Chrome/Firefox launch buttons on FREE TOOLS. No Supabase change is required.
+Keep your existing supabase-config.js. It is intentionally not included here.

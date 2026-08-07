@@ -30,7 +30,7 @@ textarea, option, label, html body *::before, html body *::after {
 .firefox-audio-panel{margin-top:10px;padding:10px;border:1px solid rgba(255,255,255,.18);background:rgba(93,36,126,.18)}
 .firefox-audio-panel strong{display:block;margin-bottom:8px;color:#ff9a45;letter-spacing:.08em}
 .firefox-device-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;margin-top:5px}.firefox-device-row select,.firefox-device-row button{min-width:0}
-.firefox-audio-panel p{margin:7px 0 0;font-size:11px;opacity:.75;line-height:1.4}
+.firefox-audio-panel p{margin:7px 0 0;font-size:11px;opacity:.75;line-height:1.4}.bridge-status{display:flex;align-items:center;gap:7px;margin:8px 0;padding:8px;border:1px solid rgba(255,255,255,.18);background:#09090d}.bridge-dot{width:9px;height:9px;border-radius:50%;background:#725f78}.bridge-status.connected .bridge-dot{background:#68ff9b;box-shadow:0 0 9px #68ff9b}.bridge-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0}.bridge-actions a,.bridge-actions button{display:block;text-align:center;padding:8px;background:#11131a;color:#fff;border:1px solid rgba(255,255,255,.25);text-decoration:none}
 </style>
 </head>
 <body data-theme="chrome">
@@ -69,7 +69,7 @@ textarea, option, label, html body *::before, html body *::after {
           <h2>AUDIO</h2>
           <div class="button-grid two">
             <button id="micBtn">AUDIO INPUT</button>
-            <button id="desktopBtn">TRY SCREEN AUDIO</button>
+            <button id="desktopBtn">SCREEN AUDIO (FALLBACK)</button>
             <label class="file-button">
               AUDIO FILE
               <input id="audioFileInput" type="file" accept="audio/*" />
@@ -77,13 +77,18 @@ textarea, option, label, html body *::before, html body *::after {
             <button id="stopAudioBtn" class="danger">STOP AUDIO</button>
           </div>
           <div class="firefox-audio-panel">
-            <strong>FIREFOX AUDIO BUILD</strong>
-            <label for="firefoxAudioDevice">AUDIO INPUT DEVICE</label>
+            <strong>0PTIC'S AUDIO BRIDGE · DEFAULT</strong>
+            <div id="bridgeStatus" class="bridge-status"><span class="bridge-dot"></span><b id="bridgeStatusText">LOOKING FOR BRIDGE</b></div>
+            <div class="bridge-actions">
+              <button id="bridgeBtn" type="button">USE COMPUTER OUTPUT</button>
+              <a href="../../downloads/0ptics-audio-bridge-windows.zip" download>DOWNLOAD BRIDGE</a>
+            </div>
+            <p>Start 0PTIC'S AUDIO BRIDGE and leave it open. SPECTRAVAULT will use the Windows speaker/headphone output before trying Firefox capture.</p>
+            <label for="firefoxAudioDevice">FALLBACK AUDIO INPUT DEVICE</label>
             <div class="firefox-device-row">
               <select id="firefoxAudioDevice"><option value="">DEFAULT AUDIO INPUT</option></select>
               <button id="refreshAudioDevices" type="button">REFRESH</button>
             </div>
-            <p>For system audio in Firefox, choose Stereo Mix or a loopback/virtual input if your OS exposes one. Screen audio is still attempted when Firefox makes it available.</p>
           </div>
           <audio id="audioPlayer" controls hidden></audio>
           <div class="meter"><div id="audioMeterFill"></div></div>
@@ -288,6 +293,7 @@ textarea, option, label, html body *::before, html body *::after {
     </section>
   </main>
 
-  <script src="app.js?v=31"></script>
+  <script src="../firefox-audio-bridge-client.js?v=32"></script>
+  <script src="app.js?v=32"></script>
 </body>
 </html>

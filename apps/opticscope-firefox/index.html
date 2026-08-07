@@ -26,7 +26,7 @@ textarea, option, label, html body *::before, html body *::after {
 </style>
 
 <style>
-.firefox-audio-panel{margin:8px 0;padding:8px;border:1px solid #73518d;background:#1b1021;color:#ddd}.firefox-audio-panel>b{display:block;color:#ff9a45;margin-bottom:6px}.firefox-audio-panel label{display:block;margin-bottom:4px}.firefox-device-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.firefox-device-row select,.firefox-device-row button{min-width:0}.firefox-audio-panel small{display:block;margin-top:6px;line-height:1.35;opacity:.8}
+.firefox-audio-panel{margin:8px 0;padding:8px;border:1px solid #73518d;background:#1b1021;color:#ddd}.firefox-audio-panel>b{display:block;color:#ff9a45;margin-bottom:6px}.firefox-audio-panel label{display:block;margin-bottom:4px}.firefox-device-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.firefox-device-row select,.firefox-device-row button{min-width:0}.firefox-audio-panel small{display:block;margin-top:6px;line-height:1.35;opacity:.8}.bridge-status{display:flex;align-items:center;gap:7px;margin:7px 0;padding:7px;border:1px solid #66457d;background:#0c0710}.bridge-dot{width:9px;height:9px;border-radius:50%;background:#8f748f}.bridge-status.connected .bridge-dot{background:#65ff97;box-shadow:0 0 8px #65ff97}.bridge-status strong{color:#fff}.bridge-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:7px 0}.bridge-actions a,.bridge-actions button{display:block;text-align:center;padding:7px;border:1px solid #73518d;background:#24152d;color:#fff;text-decoration:none}
 </style>
 </head>
 <body>
@@ -67,19 +67,24 @@ textarea, option, label, html body *::before, html body *::after {
           <fieldset><legend>INPUT</legend>
             <div class="button-grid">
               <button id="micBtn" type="button">AUDIO INPUT</button>
-              <button id="desktopBtn" type="button">TRY SCREEN AUDIO</button>
+              <button id="desktopBtn" type="button">SCREEN AUDIO (FALLBACK)</button>
               <label class="file-button" for="audioFile">AUDIO FILE</label>
               <input id="audioFile" type="file" accept="audio/*">
               <button id="stopInputBtn" type="button">DISCONNECT</button>
             </div>
             <div class="firefox-audio-panel">
-              <b>FIREFOX AUDIO BUILD</b>
-              <label for="firefoxAudioDevice">INPUT DEVICE</label>
+              <b>0PTIC'S AUDIO BRIDGE · DEFAULT</b>
+              <div id="bridgeStatus" class="bridge-status"><span class="bridge-dot"></span><strong id="bridgeStatusText">LOOKING FOR BRIDGE</strong></div>
+              <div class="bridge-actions">
+                <button id="bridgeBtn" type="button">USE COMPUTER OUTPUT</button>
+                <a href="../../downloads/0ptics-audio-bridge-windows.zip" download>DOWNLOAD BRIDGE</a>
+              </div>
+              <small>Firefox mode now looks for 0PTIC'S AUDIO BRIDGE first. Start the Windows bridge, leave it open, then play music through your normal speakers/headphones.</small>
+              <label for="firefoxAudioDevice">FALLBACK AUDIO INPUT</label>
               <div class="firefox-device-row">
                 <select id="firefoxAudioDevice"><option value="">DEFAULT AUDIO INPUT</option></select>
                 <button id="refreshAudioDevices" type="button">REFRESH</button>
               </div>
-              <small>For system audio, choose Stereo Mix or a loopback/virtual input if Firefox/your OS exposes one. Audio File works directly.</small>
             </div>
             <audio id="audioElement" controls preload="metadata"></audio>
           </fieldset>
@@ -268,6 +273,7 @@ textarea, option, label, html body *::before, html body *::after {
       </aside>
     </div>
   </main>
-  <script src="script.js?v=31"></script>
+  <script src="../firefox-audio-bridge-client.js?v=32"></script>
+  <script src="script.js?v=32"></script>
 </body>
 </html>
