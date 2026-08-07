@@ -3645,31 +3645,70 @@ html body,html body *,html body [class],html body [id],button,input,select,texta
   .social-brand-logo-gif{height:54px;max-width:92px}
 }
 
-/* v24 — every member gets the full 0PTICBOX-style profile template */
+/* v25 — equal member profiles + one member-chosen Instagram highlight photo */
 .member-network-profile .feature-label{border-color:var(--member-accent,var(--orange));color:var(--member-accent,var(--orange));background:color-mix(in srgb,var(--member-accent,var(--orange)) 10%,transparent)}
 .member-network-profile .blurb-copy h2,.member-network-profile .meet-list strong{color:var(--member-accent,var(--orange))}
 .member-network-profile .member-status-callout{border-color:color-mix(in srgb,var(--member-accent,var(--orange)) 58%,#425374)}
 .member-social-section[hidden]{display:none!important}
 .member-instagram-profile{align-items:stretch}
-.member-instagram-feature{min-width:0;min-height:520px;display:grid;place-items:center;overflow:hidden;background:linear-gradient(145deg,#100b18,#28112b)}
-.member-instagram-feature>.member-instagram-embed{width:100%;height:100%}
-.member-instagram-embed{min-width:0;overflow:hidden;background:#fff}
-.member-instagram-embed iframe{display:block;width:100%;min-height:610px;border:0;background:#fff}
-.member-instagram-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:14px;background:#eaf0ff}
-.member-instagram-grid:empty{display:none}
+.member-instagram-feature{min-width:0;aspect-ratio:1/1;display:grid;place-items:center;overflow:hidden;background:linear-gradient(145deg,#100b18,#28112b)}
+.member-instagram-photo-link{display:block;width:100%;height:100%;background:#080a12}
+.member-instagram-photo{display:block;width:100%;height:100%;aspect-ratio:1/1;object-fit:cover;object-position:center;background:#080a12}
+.member-instagram-grid{display:none!important}
 .member-social-placeholder{min-height:360px;width:100%;display:grid;place-items:center;align-content:center;gap:10px;padding:28px;text-align:center;color:#fff;background:radial-gradient(circle at 50% 15%,rgba(255,77,166,.28),transparent 45%),#0b0d16}
 .member-social-placeholder span{font-size:64px;line-height:1;color:#ff4da6}
 .member-social-placeholder strong{font-size:18px}
 .member-social-placeholder small{max-width:260px;color:#bfc8da;line-height:1.55}
-.member-network-profile .instagram-copy{min-height:520px;display:flex;flex-direction:column;justify-content:center}
+.member-network-profile .instagram-copy{display:flex;flex-direction:column;justify-content:center}
 .member-network-profile .instagram-actions{margin-top:18px}
 .member-network-profile .media-grid:empty{display:none}
 .member-network-profile .media-card{height:100%}
 .member-network-profile .video-frame{background:#05070d}
 .member-network-profile .blurb-note p{white-space:pre-wrap}
+.settings-instagram-highlight-preview{width:min(260px,100%);aspect-ratio:1/1;margin-top:10px;border:2px solid rgba(157,174,207,.32);background-position:center;background-size:cover;background-repeat:no-repeat;box-shadow:5px 5px 0 rgba(0,0,0,.34)}
+.settings-inline-check{display:flex!important;align-items:center;gap:8px;margin-top:10px}
+.settings-optional{font-size:.78em;opacity:.7}
 @media(max-width:760px){
-  .member-instagram-feature{min-height:420px}
-  .member-instagram-embed iframe{min-height:560px}
-  .member-instagram-grid{grid-template-columns:1fr}
+  .member-instagram-feature,.member-instagram-photo-link,.member-instagram-photo{min-height:0}
   .member-network-profile .instagram-copy{min-height:0}
+}
+
+
+/* =============================================================================
+   v26 — ADMIN FEED BACKGROUND + MEMBER-OWNED PROFILE WALLPAPERS
+   The main Opinion Hub uses the GIF/image selected in Admin > Site background.
+   Member profile pages deliberately ignore that global background so each
+   member's own animated wallpaper can take over their page.
+   ============================================================================= */
+body.social-home.has-admin-feed-background {
+  background-color: #03050a !important;
+  background-image:
+    linear-gradient(rgba(2, 5, 12, .70), rgba(2, 5, 12, .82)),
+    var(--admin-feed-background-image) !important;
+  background-position: center, center !important;
+  background-repeat: no-repeat, no-repeat !important;
+  background-size: cover, cover !important;
+  background-attachment: fixed, fixed !important;
+}
+
+/* Do not let the network/admin background cover a member's personal wallpaper. */
+body.member-profile-page {
+  position: relative;
+  isolation: isolate;
+  background-color: transparent !important;
+  background-image: none !important;
+  background-attachment: scroll !important;
+}
+body.member-profile-page .member-profile-wallpaper { z-index: 0 !important; }
+body.member-profile-page .member-profile-wallpaper-shade { z-index: 1 !important; }
+body.member-profile-page .member-network-profile { position: relative; z-index: 3 !important; }
+body.member-profile-page > .ticker,
+body.member-profile-page > footer { position: relative; z-index: 3; }
+body.member-profile-page > .topbar { z-index: 40; }
+
+@media (max-width: 760px) {
+  body.social-home.has-admin-feed-background {
+    background-attachment: scroll, scroll !important;
+    background-position: center top, center top !important;
+  }
 }

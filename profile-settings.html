@@ -6,8 +6,8 @@
 <meta content="Edit your 0PTICBOX Network profile, links, appearance, and site cursor." name="description"/>
 <meta content="#080b13" name="theme-color"/>
 <title>Profile Settings | 0PTICBOX Network</title>
-<link href="styles.css?v=24" rel="stylesheet"/>
-<link href="network-upgrade.css?v=24" rel="stylesheet"/>
+<link href="styles.css?v=25" rel="stylesheet"/>
+<link href="network-upgrade.css?v=25" rel="stylesheet"/>
 
 
 
@@ -92,17 +92,17 @@ Game developers | people making weird things"></textarea><small>One person or gr
 <fieldset class="settings-group"><legend>Privacy</legend>
 <div class="settings-field"><label>Blocked accounts</label><div class="request-list" id="settings-blocked-list"><p class="empty-state">No blocked accounts.</p></div><small>Blocked members stay out of your friends list, requests, and conversations.</small></div>
 </fieldset>
-<fieldset class="settings-group"><legend>Social embeds, links, and contact</legend>
+<fieldset class="settings-group"><legend>Social highlights, embeds, links, and contact</legend>
 <div class="settings-grid-2">
 <div class="settings-field"><label for="settings-instagram-url">Instagram profile URL</label><input id="settings-instagram-url" type="url" maxlength="2048" placeholder="https://instagram.com/yourname"/></div>
 <div class="settings-field"><label for="settings-youtube-url">YouTube channel / profile URL</label><input id="settings-youtube-url" type="url" maxlength="2048" placeholder="https://youtube.com/@yourname"/></div>
 </div>
 <div class="settings-grid-2">
-<div class="settings-field"><label for="settings-instagram-embeds">Instagram posts / reels to embed</label><textarea id="settings-instagram-embeds" maxlength="6500" rows="5" placeholder="https://www.instagram.com/p/.../
-https://www.instagram.com/reel/.../"></textarea><small>Up to 3 public post or reel links, one per line.</small></div>
+<div class="settings-field instagram-highlight-settings"><label for="settings-instagram-highlight-file">Favorite Instagram photo</label><input id="settings-instagram-highlight-file" accept="image/png,image/jpeg,image/webp,image/gif" type="file"/><small>Choose one favorite image to highlight. The public profile shows only the photo, not the full Instagram post.</small><div class="settings-instagram-highlight-preview" id="settings-instagram-highlight-preview" hidden></div><label class="settings-inline-check"><input id="settings-remove-instagram-highlight" type="checkbox"/> Remove the current highlighted photo</label></div>
 <div class="settings-field"><label for="settings-youtube-embeds">YouTube videos / playlists to embed</label><textarea id="settings-youtube-embeds" maxlength="6500" rows="5" placeholder="https://youtu.be/...
 https://youtube.com/playlist?list=..."></textarea><small>Up to 3 video or playlist links, one per line.</small></div>
 </div>
+<div class="settings-field"><label for="settings-instagram-highlight-post-url">Instagram post / reel link for the highlighted photo <span class="settings-optional">(optional)</span></label><input id="settings-instagram-highlight-post-url" type="url" maxlength="2048" placeholder="https://www.instagram.com/p/.../"/><small>If you add this, clicking the highlighted photo opens that exact Instagram post. Otherwise it opens your Instagram profile.</small></div>
 <div class="settings-grid-2">
 <div class="settings-field"><label for="settings-soundcloud-url">SoundCloud URL</label><input id="settings-soundcloud-url" type="url" maxlength="2048" placeholder="https://soundcloud.com/..."/></div>
 <div class="settings-field"><label for="settings-github-url">GitHub URL</label><input id="settings-github-url" type="url" maxlength="2048" placeholder="https://github.com/..."/></div>
@@ -118,7 +118,7 @@ https://youtube.com/playlist?list=..."></textarea><small>Up to 3 video or playli
 </main>
 <footer><div class="shell footer-inner"><p>© <span id="year"></span> 0PTICBOX Productions</p><div><a href="members.html">Member area</a><a href="messages.html">Messages</a><a href="community.html">Create post</a></div></div></footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="profile-settings.js?v=24" type="module"></script>
-<script src="site.js?v=24"></script>
+<script src="profile-settings.js?v=25" type="module"></script>
+<script src="site.js?v=25"></script>
 </body>
 </html>

@@ -40,6 +40,8 @@ const OPTICBOX_FALLBACK = Object.freeze({
   background_mode: 'cover',
   accent_color: '#ff6b36',
   instagram_url: 'https://www.instagram.com/0pticbox/',
+  instagram_highlight_image_url: 'assets/profile/0pticbox-instagram-highlight.png',
+  instagram_highlight_post_url: 'https://www.instagram.com/p/CIQsKb5loyL/',
   instagram_embeds: 'https://www.instagram.com/p/CIQsKb5loyL/',
   youtube_url: 'https://www.youtube.com/playlist?list=PLey2Gllwi6MQN1PMlx25zVkTHuVnQKVxR',
   youtube_embeds: 'https://www.youtube.com/playlist?list=PLey2Gllwi6MQN1PMlx25zVkTHuVnQKVxR\nhttps://www.youtube.com/playlist?list=PLey2Gllwi6MQF7k3X_ptILi6WKp6DJCdH\nhttps://www.youtube.com/watch?v=x3szoFCz8SM&t=972s',
@@ -277,15 +279,14 @@ function renderAboutPoints(profile) {
   }
 }
 
-function instagramEmbedUrl(value) {
+function instagramPostUrl(value) {
   const url = safeHttpUrl(value);
   if (!url) return '';
   try {
     const parsed = new URL(url);
-    if (!/(^|\.)instagram\.com$/i.test(parsed.hostname.replace(/^www\./i, ''))) return '';
-    const match = parsed.pathname.match(/^\/(p|reel|tv)\/([A-Za-z0-9_-]+)/i);
-    if (!match) return '';
-    return `https://www.instagram.com/${match[1]}/${match[2]}/embed/`;
+    const host = parsed.hostname.replace(/^www\./i, '').toLowerCase();
+    if (host !== 'instagram.com') return '';
+    return /^\/(p|reel|tv)\/[A-Za-z0-9_-]+/i.test(parsed.pathname) ? parsed.href : '';
   } catch {
     return '';
   }
@@ -304,36 +305,45 @@ function instagramHandle(value, fallback) {
   }
 }
 
-function createInstagramFrame(src, title) {
-  const wrap = document.createElement('div');
-  wrap.className = 'member-instagram-embed';
-  const frame = document.createElement('iframe');
-  frame.src = src;
-  frame.title = title;
-  frame.loading = 'lazy';
-  frame.allow = 'encrypted-media; picture-in-picture; web-share';
-  frame.referrerPolicy = 'strict-origin-when-cross-origin';
-  frame.setAttribute('scrolling', 'no');
-  wrap.append(frame);
-  return wrap;
+function createInstagramPhoto(src, href, name) {
+  const image = document.createElement('img');
+  image.className = 'member-instagram-photo';
+  image.src = src;
+  image.alt = `${name}'s favorite Instagram photo`;
+  image.loading = 'lazy';
+  image.decoding = 'async';
+
+  if (!href) return image;
+
+  const link = document.createElement('a');
+  link.className = 'member-instagram-photo-link';
+  link.href = href;
+  link.target = '_blank';
+  link.rel = 'noopener';
+  link.setAttribute('aria-label', `Open ${name}'s highlighted Instagram photo`);
+  link.append(image);
+  return link;
 }
 
 function renderInstagram(profile, name, handle) {
   const section = $('profile-instagram-section');
   const instagramUrl = safeHttpUrl(profile.instagram_url);
-  const embeds = listLines(profile.instagram_embeds, 3).map(instagramEmbedUrl).filter(Boolean);
-  if (!instagramUrl && !embeds.length) {
+  const imageUrl = safeLinkUrl(profile.instagram_highlight_image_url);
+  const legacyPost = listLines(profile.instagram_embeds, 1)[0] || '';
+  const highlightPostUrl = instagramPostUrl(profile.instagram_highlight_post_url || legacyPost);
+  if (!instagramUrl && !imageUrl) {
     section.hidden = true;
     return;
   }
+
   section.hidden = false;
   $('profile-instagram-title').textContent = `${name} on Instagram`;
   const igHandle = instagramHandle(instagramUrl, handle);
   $('profile-instagram-name').textContent = name;
   $('profile-instagram-handle').textContent = `@${igHandle}`;
-  $('profile-instagram-copy').textContent = embeds.length
-    ? `${name} connected public Instagram posts or reels to this profile.`
-    : `${name} connected an Instagram profile. Public posts or reels can also be embedded from Profile Settings.`;
+  $('profile-instagram-copy').textContent = imageUrl
+    ? `${name} chose this as a favorite Instagram photo to highlight.`
+    : `${name} connected an Instagram profile and can choose one favorite photo from Profile Settings.`;
 
   const tags = $('profile-instagram-tags');
   tags.replaceChildren();
@@ -351,13 +361,13 @@ function renderInstagram(profile, name, handle) {
   const grid = $('profile-instagram-grid');
   feature.replaceChildren();
   grid.replaceChildren();
-  if (embeds.length) {
-    feature.append(createInstagramFrame(embeds[0], `${name} Instagram post`));
-    embeds.slice(1).forEach((embed, index) => grid.append(createInstagramFrame(embed, `${name} Instagram post ${index + 2}`)));
+
+  if (imageUrl) {
+    feature.append(createInstagramPhoto(imageUrl, highlightPostUrl || instagramUrl, name));
   } else {
     const placeholder = document.createElement('div');
     placeholder.className = 'member-social-placeholder';
-    placeholder.innerHTML = '<span>◎</span><strong>Instagram connected</strong><small>Add up to 3 public post or reel links in Profile Settings.</small>';
+    placeholder.innerHTML = '<span>◎</span><strong>Instagram connected</strong><small>Choose one favorite photo in Profile Settings to show it here.</small>';
     feature.append(placeholder);
   }
 }

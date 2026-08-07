@@ -15,6 +15,7 @@ let user = null;
 let profile = null;
 let previewAvatarUrl = '';
 let previewWallpaperUrl = '';
+let previewInstagramHighlightUrl = '';
 
 function setMessage(text, isError = false) {
   message.textContent = text;
@@ -29,6 +30,17 @@ function safeFileName(name) { return name.toLowerCase().replace(/[^a-z0-9._-]+/g
 function cleanHandle(value) { return String(value || '').trim().replace(/^@+/, '').replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 32); }
 function safeUrl(value) { const raw=String(value||'').trim(); if(!raw)return ''; try{const url=new URL(raw);return ['http:','https:'].includes(url.protocol)?url.href:''}catch{return ''} }
 function safeFeaturedUrl(value) { const raw=String(value||'').trim(); if(!raw)return ''; try{const url=new URL(raw, window.location.href);return ['http:','https:'].includes(url.protocol)?url.href:''}catch{return ''} }
+function safeInstagramPostUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const safe = safeUrl(raw);
+  if (!safe) return '';
+  try {
+    const url = new URL(safe);
+    const host = url.hostname.replace(/^www\./i, '').toLowerCase();
+    return host === 'instagram.com' && /^\/(p|reel|tv)\/[A-Za-z0-9_-]+/i.test(url.pathname) ? url.href : '';
+  } catch { return ''; }
+}
 function validEmail(value) { const raw=String(value||'').trim(); return !raw || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw); }
 function cleanSocialEmbeds(value, kind) {
   const lines = String(value || '').split(/\n/).map((line) => line.trim()).filter(Boolean);
@@ -58,7 +70,7 @@ function cleanSocialEmbeds(value, kind) {
 const PROFILE_UPDATE_FIELDS = new Set([
   'display_name','profile_handle','profile_tagline','status','bio','genre','occupation','here_for','interests','meet_people',
   'avatar_url','background_url','background_dim','background_mode','accent_color','instagram_url','youtube_url',
-  'instagram_embeds','youtube_embeds','featured_title','featured_kicker','featured_description','featured_url',
+  'instagram_highlight_image_url','instagram_highlight_post_url','instagram_embeds','youtube_embeds','featured_title','featured_kicker','featured_description','featured_url',
   'soundcloud_url','github_url','website_url','contact_email','updated_at',
 ]);
 
@@ -148,6 +160,14 @@ function updatePreview() {
   $('settings-preview-cover').style.setProperty('--preview-dim', String(dim / 100));
   $('settings-dim-value').textContent = `${dim}%`;
 }
+function updateInstagramHighlightPreview() {
+  const root = $('settings-instagram-highlight-preview');
+  if (!root) return;
+  const remove = $('settings-remove-instagram-highlight')?.checked;
+  const image = remove ? '' : (previewInstagramHighlightUrl || profile?.instagram_highlight_image_url || '');
+  root.hidden = !image;
+  root.style.backgroundImage = image ? `url("${String(image).replaceAll('"', '%22')}")` : '';
+}
 function fillForm() {
   $('settings-display-name').value = profile.display_name || fallbackName();
   $('settings-profile-tagline').value = profile.profile_tagline || '';
@@ -168,7 +188,8 @@ function fillForm() {
   $('settings-background-mode').value = ['cover','contain','tile'].includes(profile.background_mode) ? profile.background_mode : 'cover';
   $('settings-instagram-url').value = profile.instagram_url || '';
   $('settings-youtube-url').value = profile.youtube_url || '';
-  $('settings-instagram-embeds').value = profile.instagram_embeds || '';
+  const legacyInstagramPost = String(profile.instagram_embeds || '').split(/\n/).map((line) => line.trim()).filter(Boolean)[0] || '';
+  $('settings-instagram-highlight-post-url').value = profile.instagram_highlight_post_url || legacyInstagramPost;
   $('settings-youtube-embeds').value = profile.youtube_embeds || '';
   $('settings-soundcloud-url').value = profile.soundcloud_url || '';
   $('settings-github-url').value = profile.github_url || '';
@@ -179,8 +200,11 @@ function fillForm() {
   $('settings-view-profile').href = `profile.html?id=${encodeURIComponent(user.id)}`;
   previewAvatarUrl = '';
   previewWallpaperUrl = '';
+  previewInstagramHighlightUrl = '';
+  $('settings-remove-instagram-highlight').checked = false;
   updateCursorButtons(selectedCursor());
   updatePreview();
+  updateInstagramHighlightPreview();
 }
 
 async function loadBlockedAccounts() {
@@ -232,6 +256,13 @@ form.addEventListener('input', updatePreview);
 document.querySelectorAll('[data-cursor-style]').forEach((button) => button.addEventListener('click', () => chooseCursor(button.dataset.cursorStyle)));
 $('settings-avatar-file').addEventListener('change', () => { const file=$('settings-avatar-file').files?.[0];previewAvatarUrl=file?URL.createObjectURL(file):'';updatePreview(); });
 $('settings-background-file').addEventListener('change', () => { const file=$('settings-background-file').files?.[0];previewWallpaperUrl=file?URL.createObjectURL(file):'';if(file)$('settings-remove-background').checked=false;updatePreview(); });
+$('settings-instagram-highlight-file').addEventListener('change', () => {
+  const file = $('settings-instagram-highlight-file').files?.[0];
+  previewInstagramHighlightUrl = file ? URL.createObjectURL(file) : '';
+  if (file) $('settings-remove-instagram-highlight').checked = false;
+  updateInstagramHighlightPreview();
+});
+$('settings-remove-instagram-highlight').addEventListener('change', updateInstagramHighlightPreview);
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -242,11 +273,15 @@ form.addEventListener('submit', async (event) => {
   try {
     let avatarUrl = profile.avatar_url || '';
     let backgroundUrl = profile.background_url || '';
+    let instagramHighlightImageUrl = profile.instagram_highlight_image_url || '';
     const avatarFile = $('settings-avatar-file').files?.[0];
     const backgroundFile = $('settings-background-file').files?.[0];
+    const instagramHighlightFile = $('settings-instagram-highlight-file').files?.[0];
     if (avatarFile) { setMessage('Uploading avatar…'); avatarUrl = await uploadProfileImage(avatarFile, 'avatar'); }
     if ($('settings-remove-background').checked) backgroundUrl = '';
     else if (backgroundFile) { setMessage('Uploading wallpaper…'); backgroundUrl = await uploadProfileImage(backgroundFile, 'wallpaper'); }
+    if ($('settings-remove-instagram-highlight').checked) instagramHighlightImageUrl = '';
+    else if (instagramHighlightFile) { setMessage('Uploading favorite Instagram photo…'); instagramHighlightImageUrl = await uploadProfileImage(instagramHighlightFile, 'instagram-highlight'); }
 
     const urlFields = ['instagram','youtube','soundcloud','github','website'];
     const urls = {};
@@ -261,7 +296,9 @@ form.addEventListener('submit', async (event) => {
     const featuredRaw = $('settings-featured-url').value.trim();
     const featuredUrl = safeFeaturedUrl(featuredRaw);
     if (featuredRaw && !featuredUrl) throw new Error('Featured link must be a full http:// or https:// URL.');
-    const instagramEmbeds = cleanSocialEmbeds($('settings-instagram-embeds').value, 'instagram');
+    const instagramHighlightPostRaw = $('settings-instagram-highlight-post-url').value.trim();
+    const instagramHighlightPostUrl = safeInstagramPostUrl(instagramHighlightPostRaw);
+    if (instagramHighlightPostRaw && !instagramHighlightPostUrl) throw new Error('Instagram highlight link must be a public Instagram post or reel URL.');
     const youtubeEmbeds = cleanSocialEmbeds($('settings-youtube-embeds').value, 'youtube');
 
     const changes = {
@@ -286,7 +323,8 @@ form.addEventListener('submit', async (event) => {
       accent_color: $('settings-accent-color').value,
       instagram_url: urls.instagram,
       youtube_url: urls.youtube,
-      instagram_embeds: instagramEmbeds,
+      instagram_highlight_image_url: instagramHighlightImageUrl,
+      instagram_highlight_post_url: instagramHighlightPostUrl,
       youtube_embeds: youtubeEmbeds,
       soundcloud_url: urls.soundcloud,
       github_url: urls.github,
@@ -300,12 +338,14 @@ form.addEventListener('submit', async (event) => {
     profile = data;
     $('settings-avatar-file').value = '';
     $('settings-background-file').value = '';
+    $('settings-instagram-highlight-file').value = '';
     $('settings-remove-background').checked = false;
+    $('settings-remove-instagram-highlight').checked = false;
     fillForm();
     if (skipped.length) {
       setMessage('Profile saved. Some newer profile options are not available yet, but the rest of your changes were saved.');
     } else {
-      setMessage('Profile, featured item, social embeds, links, and wallpaper saved.');
+      setMessage('Profile, favorite Instagram photo, YouTube embeds, links, and wallpaper saved.');
     }
   } catch (error) {
     console.error('Profile settings save failed:', error);

@@ -924,6 +924,8 @@ alter table public.profiles add column if not exists featured_title text not nul
 alter table public.profiles add column if not exists featured_kicker text not null default '';
 alter table public.profiles add column if not exists featured_description text not null default '';
 alter table public.profiles add column if not exists featured_url text not null default '';
+alter table public.profiles add column if not exists instagram_highlight_image_url text not null default '';
+alter table public.profiles add column if not exists instagram_highlight_post_url text not null default '';
 alter table public.profiles drop constraint if exists profiles_meet_people_check;
 alter table public.profiles add constraint profiles_meet_people_check check (char_length(meet_people) <= 1200);
 alter table public.profiles drop constraint if exists profiles_instagram_embeds_check;
@@ -938,4 +940,8 @@ alter table public.profiles drop constraint if exists profiles_featured_descript
 alter table public.profiles add constraint profiles_featured_description_check check (char_length(featured_description) <= 400);
 alter table public.profiles drop constraint if exists profiles_featured_url_check;
 alter table public.profiles add constraint profiles_featured_url_check check (char_length(featured_url) <= 2048);
+alter table public.profiles drop constraint if exists profiles_instagram_highlight_image_url_check;
+alter table public.profiles add constraint profiles_instagram_highlight_image_url_check check (char_length(instagram_highlight_image_url) <= 2048);
+alter table public.profiles drop constraint if exists profiles_instagram_highlight_post_url_check;
+alter table public.profiles add constraint profiles_instagram_highlight_post_url_check check (char_length(instagram_highlight_post_url) <= 2048);
 notify pgrst, 'reload schema';

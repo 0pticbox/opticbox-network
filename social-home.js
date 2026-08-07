@@ -4,7 +4,7 @@ import {
   isSupabaseConfigured,
 } from './supabase-config.js';
 
-console.info('0PTICBOX opinion hub v14 loaded');
+console.info('0PTICBOX opinion hub v26 loaded');
 
 const PRODUCTS = Object.freeze({
   opticscope: '0PTICSCOPE',
@@ -54,6 +54,33 @@ function cleanUrl(value) {
   } catch {
     return '';
   }
+}
+
+function cleanSiteAssetUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  try {
+    const parsed = new URL(raw, window.location.href);
+    return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : '';
+  } catch {
+    return '';
+  }
+}
+
+function applyAdminFeedBackground(value) {
+  if (!document.body.classList.contains('social-home')) return;
+  const url = cleanSiteAssetUrl(value);
+  if (!url) {
+    document.body.classList.remove('has-admin-feed-background');
+    document.body.style.removeProperty('--admin-feed-background-image');
+    return;
+  }
+
+  document.body.style.setProperty(
+    '--admin-feed-background-image',
+    `url(${JSON.stringify(url)})`
+  );
+  document.body.classList.add('has-admin-feed-background');
 }
 
 function youtubeId(value) {
@@ -630,7 +657,7 @@ async function loadHub({ quiet = false } = {}) {
   if (!supabase) return;
   if (!quiet) say('Loading every public post…');
 
-  const [activity, official, reviews, members] = await Promise.all([
+  const [activity, official, reviews, members, backgroundSetting] = await Promise.all([
     fetchAllPages(() => supabase
       .from('activity_posts')
       .select('id,user_id,post_type,title,subtitle,caption,media_url,image_url,event_date,city,created_at')
@@ -651,9 +678,20 @@ async function loadHub({ quiet = false } = {}) {
       .select('id,display_name,avatar_url,status,profile_tagline,created_at')
       .order('created_at', { ascending: false })
       .limit(8),
+    supabase
+      .from('site_content')
+      .select('key,value')
+      .eq('key', 'background_gif_url')
+      .maybeSingle(),
   ]);
 
   if (members.error) throw members.error;
+  if (!backgroundSetting.error) {
+    applyAdminFeedBackground(backgroundSetting.data?.value || '');
+  } else {
+    console.warn('Admin feed background could not load:', backgroundSetting.error.message);
+    applyAdminFeedBackground('');
+  }
 
   activityPosts = activity;
   await loadProfiles([
