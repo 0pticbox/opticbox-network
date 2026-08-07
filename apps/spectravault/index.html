@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#101215" />
   <title>SPECTRAVAULT — Audio-Reactive Visual Engine</title>
-  <link rel="stylesheet" href="styles.css?v=37" />
+  <link rel="stylesheet" href="styles.css?v=38" />
 
 
 
@@ -64,13 +64,13 @@ textarea, option, label, html body *::before, html body *::after {
             <button id="micBtn">MIC</button>
             <button id="desktopBtn">DESKTOP / TAB</button>
             <label class="file-button">
-              AUDIO FILE / IPHONE FILES
-              <input id="audioFileInput" type="file" accept=".wav,.wave,.mp3,.m4a,.aac,.aif,.aiff,.caf,.flac,.ogg,.opus,audio/*" aria-label="Choose an audio file from this device or the iPhone Files app" />
+              AUDIO FILE / FILES
+              <input id="audioFileInput" type="file" accept=".wav,.wave,.mp3,.m4a,.aac,.aif,.aiff,.caf,.flac,.ogg,.opus,audio/*" aria-label="Choose an audio file from Files" />
             </label>
             <button id="stopAudioBtn" class="danger">STOP AUDIO</button>
           </div>
           <audio id="audioPlayer" controls preload="metadata" hidden></audio>
-          <p class="microcopy iphone-files-note">iPhone/iPad: tap AUDIO FILE / IPHONE FILES → Browse → Files/iCloud Drive. If Safari loads the song but does not autoplay it, tap Play on the audio control once.</p>
+          <p class="microcopy files-note">Tap AUDIO FILE / FILES and choose an audio file. If the browser loads the song but does not autoplay it, tap Play once.</p>
           <div class="meter"><div id="audioMeterFill"></div></div>
         </section>
 
@@ -117,7 +117,7 @@ textarea, option, label, html body *::before, html body *::after {
           <div class="button-grid two">
             <label class="file-button">
               ADD PNG / JPG
-              <input id="logoInput" type="file" accept=".png,.jpg,.jpeg,.webp,.heic,.heif,image/*" aria-label="Choose a logo image from this device or the iPhone Files app" />
+              <input id="logoInput" type="file" accept=".png,.jpg,.jpeg,.webp,.heic,.heif,image/*" aria-label="Choose a logo image from Files" />
             </label>
             <button id="removeLogoBtn">REMOVE</button>
           </div>
@@ -273,6 +273,6 @@ textarea, option, label, html body *::before, html body *::after {
     </section>
   </main>
 
-  <script src="app.js?v=37"></script>
+  <script src="app.js?v=38"></script>
 </body>
 </html>

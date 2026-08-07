@@ -126,3 +126,20 @@
 .chrome-logo i{display:none}
 .chrome-launch{border-color:#4285f4!important}.zip-launch{font-weight:900}
 @media(max-width:520px){.free-tools-projects .project .browser-actions>a{flex:1 1 72px}}
+
+
+.free-tools-browser-guide{margin-top:18px}
+.browser-guide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
+.browser-guide-card{background:linear-gradient(180deg,rgba(11,18,40,.9),rgba(9,14,28,.98));border:1px solid rgba(125,169,255,.34);box-shadow:0 0 0 1px rgba(255,255,255,.03) inset;padding:16px;border-radius:16px}
+.browser-guide-card.recommended{border-color:rgba(255,170,94,.55);box-shadow:0 0 0 1px rgba(255,167,79,.14) inset,0 10px 24px rgba(0,0,0,.28)}
+.browser-guide-head{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.browser-guide-logo{width:56px;height:56px;display:block;border-radius:14px;background:rgba(0,0,0,.22);padding:6px;box-shadow:0 6px 16px rgba(0,0,0,.28)}
+.browser-guide-head h2{margin:0;font-size:1.15rem;letter-spacing:.02em}
+.browser-guide-tag{margin:3px 0 0;color:#8fd5ff;font-size:.9rem}
+.browser-guide-card p{margin:0;color:#d6dff7;line-height:1.55}
+.browser-guide-footnote{margin:16px 2px 0;color:#dbe6ff;line-height:1.6}
+.free-tools-projects .project .browser-hint{margin:8px 0 0;color:#9ed8ff;font-size:.83rem;line-height:1.35}
+.browser-logo{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 18px;border-radius:50%;overflow:hidden}
+.browser-logo img{width:100%;height:100%;display:block;object-fit:cover}
+.chrome-logo,.chrome-logo:before,.chrome-logo i{display:none !important}
+@media(max-width:760px){.browser-guide-grid{grid-template-columns:1fr}}
