@@ -5,6 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Opticbox Visualizer</title>
   <link rel="stylesheet" href="style.css">
+
+
+
+<link rel="preconnect" href="https://db.onlinewebfonts.com" crossorigin>
+<style id="alsina-global-font-v20">
+@font-face {
+  font-family: "Alsina Ultrajada";
+  src: url("https://db.onlinewebfonts.com/t/38635a91a1d7b6ab9e66cfdebf6f5a13.woff2") format("woff2"),
+       url("https://db.onlinewebfonts.com/t/38635a91a1d7b6ab9e66cfdebf6f5a13.woff") format("woff");
+  font-style: normal;
+  font-display: swap;
+}
+
+:root { --opticbox-global-font: "Alsina Ultrajada", Impact, "Arial Narrow", sans-serif; }
+html, body, html body *, html body [class], html body [id], button, input, select,
+textarea, option, label, html body *::before, html body *::after {
+  font-family: var(--opticbox-global-font) !important;
+}
+</style>
 </head>
 <body>
   <canvas id="visualizer"></canvas>

@@ -1,0 +1,10 @@
+OPTICBOX NETWORK v22 — ROOT-READY GITHUB FIX
+
+The earlier ZIP placed the updated website inside a nested docs/ folder, while your GitHub Pages site is currently publishing from the repository root.
+
+Upload the CONTENTS of this ZIP directly into the root of the opticbox-network repository and replace matching files.
+
+Important:
+- Keep your existing supabase-config.js. This ZIP intentionally does not include it.
+- You may delete the accidental nested docs/ folder afterward; it is not needed when Pages publishes from root.
+- Wait for the Pages action to finish, then refresh the live site with Ctrl+Shift+R.

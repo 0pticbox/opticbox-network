@@ -1,7 +1,7 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, isSupabaseConfigured } from './supabase-config.js';
 const cursor = document.getElementById('settings-cursor-style');
 const cursorNote = document.getElementById('settings-cursor-note');
-const allowed = new Set(['default', 'atom', 'star', 'heart', 'smile', 'rainbow']);
+const allowed = new Set(['default', 'cube', 'star', 'heart', 'smile', 'rainbow']);
 try { const saved = localStorage.getItem('opticbox-cursor-style'); if (allowed.has(saved)) cursor.value = saved; } catch {}
 cursor?.addEventListener('change', () => {
   const value = allowed.has(cursor.value) ? cursor.value : 'default';

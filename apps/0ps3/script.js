@@ -221,7 +221,7 @@ function liveCapture(ctx){
   if(!capturePreview.srcObject||capturePreview.readyState<2){
     ctx.save();
     ctx.fillStyle="rgba(255,255,255,.08)";
-    ctx.font="16px sans-serif";
+    ctx.font='16px "Alsina", Impact, sans-serif';
     ctx.textAlign="center";
     ctx.fillText("Choose a screen or window in Live Capture",w*.5,h*.5);
     ctx.restore();

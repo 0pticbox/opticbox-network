@@ -1,3 +1,5 @@
+console.info('OPTICBOX community v13 loaded: relationship-safe profile lookup');
+
 import {
   SUPABASE_URL,
   SUPABASE_PUBLISHABLE_KEY,

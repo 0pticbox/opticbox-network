@@ -213,7 +213,7 @@
 
   /* Cursor effects remain site-wide, but the chooser now lives in Settings. */
   const STORAGE_KEY = 'opticbox-cursor-style';
-  const allowed = new Set(['default', 'atom', 'star', 'heart', 'smile', 'rainbow']);
+  const allowed = new Set(['default', 'cube', 'star', 'heart', 'smile', 'rainbow']);
   const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
   let style = 'default';
   let canvas = null;
@@ -226,7 +226,8 @@
 
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (allowed.has(saved)) style = saved;
+    if (saved === 'atom') { style = 'cube'; try { localStorage.setItem(STORAGE_KEY, 'cube'); } catch (_) {} }
+    else if (allowed.has(saved)) style = saved;
   } catch (_) {
     style = 'default';
   }
@@ -286,34 +287,44 @@
     context.restore();
   }
 
-  function drawAtom(now) {
-    const t = now * 0.0024;
+  function drawCubeParticle(x, y, size, rotation, alpha = 1) {
+    const offset = size * 0.34;
     context.save();
-    context.translate(pointer.x, pointer.y);
-    context.rotate(t * 0.2);
-    context.strokeStyle = 'rgba(255,255,255,.72)';
-    context.lineWidth = 1;
-    [0, Math.PI / 3, (Math.PI * 2) / 3].forEach((angle) => {
-      context.save();
-      context.rotate(angle);
-      context.beginPath();
-      context.ellipse(0, 0, 15, 8, 0, 0, Math.PI * 2);
-      context.stroke();
-      context.restore();
-    });
-    context.restore();
-    context.save();
-    context.translate(pointer.x, pointer.y);
-    context.rotate(t);
-    context.fillStyle = 'rgba(255,255,255,.4)';
+    context.translate(x, y);
+    context.rotate(rotation);
+    context.globalAlpha = alpha;
+    context.lineJoin = 'round';
+    context.lineWidth = 1.35;
     context.strokeStyle = '#fff';
-    context.fillRect(-3.5, -3.5, 7, 7);
-    context.strokeRect(-3.5, -3.5, 7, 7);
+    context.fillStyle = 'rgba(255,255,255,.22)';
+    context.shadowBlur = 8;
+    context.shadowColor = 'rgba(255,255,255,.88)';
+    context.beginPath();
+    context.rect(-size / 2, -size / 2, size, size);
+    context.fill();
+    context.stroke();
+    context.beginPath();
+    context.rect(-size / 2 + offset, -size / 2 - offset, size, size);
+    context.stroke();
+    context.beginPath();
+    context.moveTo(-size / 2, -size / 2);
+    context.lineTo(-size / 2 + offset, -size / 2 - offset);
+    context.moveTo(size / 2, -size / 2);
+    context.lineTo(size / 2 + offset, -size / 2 - offset);
+    context.moveTo(size / 2, size / 2);
+    context.lineTo(size / 2 + offset, size / 2 - offset);
+    context.moveTo(-size / 2, size / 2);
+    context.lineTo(-size / 2 + offset, size / 2 - offset);
+    context.stroke();
     context.restore();
   }
 
+  function drawCubeCursor(now) {
+    drawCubeParticle(pointer.x, pointer.y, 9, now * 0.0022);
+  }
+
   function drawMainCursor(now) {
-    if (style === 'atom') drawAtom(now);
+    if (style === 'cube') drawCubeCursor(now);
     if (style === 'star') drawOutlined(() => starPath(pointer.x, pointer.y, 13, 5.8, now * 0.002));
     if (style === 'heart') drawOutlined(() => heartPath(pointer.x, pointer.y, 17 * (1 + Math.sin(now * 0.008) * 0.08)));
     if (style === 'smile') {
@@ -383,6 +394,8 @@
       drawOutlined(() => starPath(particle.x, particle.y, size, size * 0.44, particle.angle), alpha);
     } else if (style === 'heart') {
       drawOutlined(() => heartPath(particle.x, particle.y, size * 1.2), alpha);
+    } else if (style === 'cube') {
+      drawCubeParticle(particle.x, particle.y, size, particle.angle, alpha);
     } else {
       context.save();
       context.globalAlpha = alpha;

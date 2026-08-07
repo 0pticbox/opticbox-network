@@ -265,29 +265,6 @@ body.has-custom-background:before{opacity:.30}
 .background-gif-preview.has-preview{min-height:220px}
 @media(max-width:760px){body.has-custom-background{background-attachment:scroll,scroll,scroll,scroll}.background-gif-preview.has-preview{min-height:170px}}
 
-/* Atomic cube cursor — desktop/fine pointers only */
-.atom-cursor-canvas{
-  position:fixed;
-  inset:0;
-  z-index:99999;
-  width:100%;
-  height:100%;
-  pointer-events:none;
-  mix-blend-mode:difference;
-  isolation:isolate;
-}
-@media (hover:hover) and (pointer:fine){
-  body.atom-cursor-enabled,
-  body.atom-cursor-enabled a,
-  body.atom-cursor-enabled button,
-  body.atom-cursor-enabled input,
-  body.atom-cursor-enabled textarea,
-  body.atom-cursor-enabled select,
-  body.atom-cursor-enabled label{cursor:none!important}
-}
-@media (prefers-reduced-motion:reduce){
-  .atom-cursor-canvas{display:none}
-}
 
 
 /* Separate member area */
@@ -3556,4 +3533,114 @@ button {
   .social-mobile-nav a small {
     font-size: 11px;
   }
+}
+
+
+/* ==========================================================================\n   v19 — ALSINA GLOBAL FONT + MEMBER PROFILE WALLPAPER LAYOUT\n   ========================================================================== */
+:root{--font-alsina:"Alsina","Alsina Ultrajada",Impact,"Arial Narrow",sans-serif}
+html,body,body *,button,input,select,textarea,option{font-family:var(--font-alsina)!important}
+.member-profile-page{background:#05070d}
+.member-profile-wallpaper,.member-profile-wallpaper-shade{position:fixed;inset:0;pointer-events:none}
+.member-profile-wallpaper{z-index:-4;background-position:center;background-repeat:no-repeat;background-size:cover;opacity:.96;transform:translateZ(0)}
+.member-profile-wallpaper:not(.has-custom-wallpaper){background-image:linear-gradient(135deg,rgba(13,38,88,.88),rgba(63,14,77,.72)),url("assets/backgrounds/site-network.gif")}
+.member-profile-wallpaper.wallpaper-contain{background-size:contain;background-color:#02040a}
+.member-profile-wallpaper.wallpaper-tile{background-size:auto;background-repeat:repeat}
+.member-profile-wallpaper-shade{z-index:-3;background:rgba(3,5,10,.62)}
+.member-network-profile{position:relative;z-index:1;padding-top:24px}
+.member-network-profile .box{backdrop-filter:blur(7px)}
+.member-profile-avatar{width:100%;max-width:280px;margin-inline:auto}
+.member-profile-avatar img{position:relative;z-index:2;width:100%;height:100%;object-fit:cover}
+.member-profile-actions{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+.member-profile-stats strong{font-size:12px}
+.member-profile-stats span{font-size:8px}
+.member-contact-grid{min-height:54px}
+.member-contact-empty{grid-column:1/-1;margin:0;padding:12px;color:#52647f;font-size:10px}
+.member-about-panel{padding:20px;background:linear-gradient(135deg,rgba(5,8,17,.94),rgba(17,24,43,.92))}
+.member-about-panel h2{margin:7px 0 10px;color:var(--member-accent,var(--orange));font-size:clamp(25px,4vw,50px);letter-spacing:.04em}
+.member-about-copy{font-size:15px;line-height:1.75;white-space:pre-wrap}
+.member-status-callout{margin-top:18px;padding:13px;border-left:4px solid var(--member-accent,var(--orange));background:rgba(255,255,255,.055)}
+.member-status-callout strong{color:var(--cyan);text-transform:uppercase;letter-spacing:.12em;font-size:10px}
+.member-status-callout p{margin:5px 0 0}
+.member-profile-feed{padding:14px}
+.member-network-profile .box-title a{font-size:9px;text-decoration:none}
+.member-network-profile .box-title a:hover{text-decoration:underline}
+.settings-preview-cover{background-color:#060810}
+.settings-form select{width:100%;box-sizing:border-box;border:1px solid #5a6d92;background:#05070d;color:#f4f7ff;padding:12px;font:inherit}
+@media(max-width:760px){.member-network-profile{grid-template-columns:1fr}.member-profile-avatar{max-width:230px}.member-about-panel{padding:15px}}
+
+
+/* OPTICBOX V20 EXACT ALSINA FONT FIX */
+@font-face {
+  font-family: "Alsina Ultrajada";
+  src: url("https://db.onlinewebfonts.com/t/38635a91a1d7b6ab9e66cfdebf6f5a13.woff2") format("woff2"),
+       url("https://db.onlinewebfonts.com/t/38635a91a1d7b6ab9e66cfdebf6f5a13.woff") format("woff");
+  font-style: normal;
+  font-display: swap;
+}
+
+:root{--font-alsina:"Alsina Ultrajada",Impact,"Arial Narrow",sans-serif}
+html body,html body *,html body [class],html body [id],button,input,select,textarea,option,label{font-family:var(--font-alsina)!important}
+.personal-profile-card>.personal-profile-banner{display:none!important;min-height:0!important;height:0!important;padding:0!important;margin:0!important;border:0!important;background:none!important}
+.personal-profile-card>.personal-profile-header{padding-top:26px!important}
+.personal-profile-card .personal-profile-avatar{margin-top:0!important}
+
+/* 0PTICBOX V21 — animated header wordmark */
+.wordmark{
+  flex:0 0 auto;
+  width:auto;
+  min-width:0;
+  min-height:0;
+  padding:0;
+  overflow:visible;
+  line-height:0;
+}
+.wordmark-logo-gif{
+  display:block;
+  width:auto;
+  height:76px;
+  max-width:min(150px,34vw);
+  object-fit:contain;
+  image-rendering:auto;
+  filter:drop-shadow(3px 4px 0 rgba(0,0,0,.5));
+}
+.wordmark>b,
+.wordmark>span{
+  display:none !important;
+}
+@media(max-width:760px){
+  .wordmark-logo-gif{height:62px;max-width:112px}
+}
+@media(max-width:420px){
+  .wordmark-logo-gif{height:54px;max-width:92px}
+}
+
+
+/* 0PTICBOX V22 — animated logo in the Opinion Hub header too */
+.social-brand.social-brand-gif{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  min-width:0;
+  padding:0;
+  line-height:0;
+  overflow:visible;
+}
+.social-brand-logo-gif{
+  display:block;
+  width:auto;
+  height:76px;
+  max-width:min(150px,34vw);
+  object-fit:contain;
+  image-rendering:auto;
+  filter:drop-shadow(3px 4px 0 rgba(0,0,0,.5));
+}
+.social-brand-gif .social-brand-mark,
+.social-brand-gif > span:not(.social-brand-mark){
+  display:none !important;
+}
+@media(max-width:760px){
+  .social-brand-logo-gif{height:62px;max-width:112px}
+}
+@media(max-width:420px){
+  .social-brand-logo-gif{height:54px;max-width:92px}
 }

@@ -4,9 +4,26 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>DISTORTION v1.13 — Alsina Global Font</title>
-  <link rel="preconnect" href="https://fonts.cdnfonts.com" />
-  <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/alsina" />
   <link rel="stylesheet" href="styles.css" />
+
+
+
+<link rel="preconnect" href="https://db.onlinewebfonts.com" crossorigin>
+<style id="alsina-global-font-v20">
+@font-face {
+  font-family: "Alsina Ultrajada";
+  src: url("https://db.onlinewebfonts.com/t/38635a91a1d7b6ab9e66cfdebf6f5a13.woff2") format("woff2"),
+       url("https://db.onlinewebfonts.com/t/38635a91a1d7b6ab9e66cfdebf6f5a13.woff") format("woff");
+  font-style: normal;
+  font-display: swap;
+}
+
+:root { --opticbox-global-font: "Alsina Ultrajada", Impact, "Arial Narrow", sans-serif; }
+html, body, html body *, html body [class], html body [id], button, input, select,
+textarea, option, label, html body *::before, html body *::after {
+  font-family: var(--opticbox-global-font) !important;
+}
+</style>
 </head>
 <body>
   <div class="app-shell">

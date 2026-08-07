@@ -1,0 +1,57 @@
+@font-face {
+  font-family: "Alsina Ultrajada";
+  src: url("https://db.onlinewebfonts.com/t/38635a91a1d7b6ab9e66cfdebf6f5a13.woff2") format("woff2"),
+       url("https://db.onlinewebfonts.com/t/38635a91a1d7b6ab9e66cfdebf6f5a13.woff") format("woff");
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --opticbox-global-font: "Alsina Ultrajada", Impact, "Arial Narrow", sans-serif;
+}
+
+/* Use Alsina across every visible website element, including rules that
+   previously used class-level !important declarations. */
+html,
+body,
+html body *,
+html body [class],
+html body [id],
+button,
+input,
+select,
+textarea,
+option,
+label,
+html body *::before,
+html body *::after {
+  font-family: var(--opticbox-global-font) !important;
+}
+
+/* Remove the large solid cover/banner above member profile information. */
+.personal-profile-card > .personal-profile-banner,
+.member-profile-card > .member-profile-banner,
+.profile-card > .profile-cover-bar {
+  display: none !important;
+  min-height: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: none !important;
+}
+
+/* The avatar used to overlap the deleted banner. Put it back into the card. */
+.personal-profile-card > .personal-profile-header {
+  padding-top: 26px !important;
+}
+
+.personal-profile-card .personal-profile-avatar {
+  margin-top: 0 !important;
+}
+
+@media (max-width: 700px) {
+  .personal-profile-card > .personal-profile-header {
+    padding-top: 20px !important;
+  }
+}
