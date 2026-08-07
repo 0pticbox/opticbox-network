@@ -23,7 +23,7 @@ async function connectDesktop(){
   if(!a.length){
     sourceStream.getTracks().forEach(t=>t.stop());
     sourceStream=null;
-    throw Error("No desktop audio track was provided. Firefox may share the screen without system audio; use MICROPHONE or AUDIO FILE for the oscilloscope input.");
+    throw Error("No desktop audio track was provided by the browser. Use MICROPHONE or AUDIO FILE for the oscilloscope input.");
   }
   sourceNode=audioContext.createMediaStreamSource(new MediaStream(a));
   setupAnalysis(sourceNode,2);

@@ -284,7 +284,7 @@
         audioInputStream.getTracks().forEach(track => track.stop());
         audioInputStream = null;
         setStatus('NO SHARED AUDIO');
-        alert('No audio track was shared. Firefox may not provide system audio for this type of screen share. Use MIC or AUDIO FILE for audio-reactive visuals, or try another share source if an audio option is offered.');
+        alert('No audio track was shared by the browser. Use MIC or AUDIO FILE for audio-reactive visuals, or try another share source if an audio option is offered.');
         return;
       }
       connectSource(audioContext.createMediaStreamSource(audioInputStream), false);

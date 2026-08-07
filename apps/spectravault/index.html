@@ -171,7 +171,7 @@ textarea, option, label, html body *::before, html body *::after {
             <span id="recordTimer">00:00</span>
             <span id="recordState">CHECKING FORMAT</span>
           </div>
-          <p class="microcopy">No watermark is added. The app uses MP4 when the browser supports it and automatically falls back to WebM in Firefox and other browsers that prefer WebM.</p>
+          <p class="microcopy">No watermark is added. The app uses MP4 when the browser supports it and automatically falls back to WebM when needed.</p>
         </section>
       </aside>
     </section>
@@ -191,12 +191,12 @@ textarea, option, label, html body *::before, html body *::after {
         <article class="help-card numbered-card">
           <span class="step-number">01</span>
           <h2>Connect audio</h2>
-          <p>Use <strong>MIC</strong>, load an <strong>AUDIO FILE</strong>, or choose <strong>DESKTOP / TAB</strong>. When sharing a tab or screen, enable the browser's audio-sharing option when one is offered. Firefox may provide video-only screen sharing, so MIC and AUDIO FILE remain available as reliable audio sources.</p>
+          <p>Use <strong>MIC</strong>, load an <strong>AUDIO FILE</strong>, or choose <strong>DESKTOP / TAB</strong>. When sharing a tab or screen, enable the browser's audio-sharing option when one is offered. Some shared sources may provide video without audio, so MIC and AUDIO FILE remain available as reliable audio sources.</p>
         </article>
         <article class="help-card numbered-card">
           <span class="step-number">02</span>
           <h2>Shape the visual</h2>
-          <p>The engine includes eight core looks: <strong>Kaleido Reactor</strong>, <strong>Neon Tunnel</strong>, <strong>Water Drift</strong>, <strong>Vector Scope</strong>, <strong>Aurora Ribbons</strong>, <strong>Pulse Rings</strong>, <strong>Cube Matrix</strong>, and <strong>Pyramid Spire</strong>. <strong>Auto Flow</strong> uses a slower equal-power crossfade, Pulse Rings includes adaptive performance protection targeting smooth 60 FPS at high settings, Pyramid Spire adds a spinning wireframe pyramid family related to the cube visual, and Picture in Picture can float the visual over other apps. In Firefox, the same button opens a detachable floating visual window when the standard PiP web API is unavailable. Use the top-right theme buttons to switch between <strong>Chrome Bubble</strong> and <strong>Rave Worm</strong>.</p>
+          <p>The engine includes eight core looks: <strong>Kaleido Reactor</strong>, <strong>Neon Tunnel</strong>, <strong>Water Drift</strong>, <strong>Vector Scope</strong>, <strong>Aurora Ribbons</strong>, <strong>Pulse Rings</strong>, <strong>Cube Matrix</strong>, and <strong>Pyramid Spire</strong>. <strong>Auto Flow</strong> uses a slower equal-power crossfade, Pulse Rings includes adaptive performance protection targeting smooth 60 FPS at high settings, Pyramid Spire adds a spinning wireframe pyramid family related to the cube visual, and Picture in Picture can float the visual over other apps. When the standard PiP web API is unavailable, the same button opens a detachable floating visual window. Use the top-right theme buttons to switch between <strong>Chrome Bubble</strong> and <strong>Rave Worm</strong>.</p>
         </article>
         <article class="help-card numbered-card">
           <span class="step-number">03</span>
@@ -206,7 +206,7 @@ textarea, option, label, html body *::before, html body *::after {
         <article class="help-card numbered-card">
           <span class="step-number">04</span>
           <h2>Record and export</h2>
-          <p>Select YouTube, vertical, or square output, then press <strong>RECORD</strong>. The downloaded video contains the visual, logo, and connected audio. MP4 is used when supported; Firefox can export WebM automatically.</p>
+          <p>Select YouTube, vertical, or square output, then press <strong>RECORD</strong>. The downloaded video contains the visual, logo, and connected audio. MP4 is used when supported; WebM is used automatically when needed.</p>
         </article>
       </div>
 
@@ -238,7 +238,7 @@ textarea, option, label, html body *::before, html body *::after {
         <article class="help-card">
           <p class="eyebrow">RECORDING</p>
           <h2>Clean, watermark-free output</h2>
-          <p>SPECTRAVAULT adds no watermark. It checks the browser encoder at runtime: MP4 is preferred when available, with an automatic WebM fallback for Firefox and other browsers. For smoother recording, keep this tab visible, close heavy background apps, and use 720p when the computer struggles at 1080p.</p>
+          <p>SPECTRAVAULT adds no watermark. It checks the browser encoder at runtime: MP4 is preferred when available, with an automatic WebM fallback when needed. For smoother recording, keep this tab visible, close heavy background apps, and use 720p when the computer struggles at 1080p.</p>
           <div class="format-list"><span>16:9 YouTube</span><span>9:16 Shorts / TikTok</span><span>1:1 Square</span></div>
         </article>
 
@@ -260,7 +260,7 @@ textarea, option, label, html body *::before, html body *::after {
           <ul class="help-list">
             <li>Click the audio source again and approve browser permission.</li>
             <li>For desktop audio, select a browser tab or screen and enable audio sharing.</li>
-            <li>Try Chrome, Edge, or Firefox on desktop.</li>
+            <li>Use a current Chromium-based desktop browser for the best results.</li>
             <li>If local-file permissions fail, run <code>python -m http.server 8080</code> inside the folder.</li>
           </ul>
         </article>

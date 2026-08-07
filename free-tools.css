@@ -124,6 +124,5 @@
 .chrome-logo{position:relative;background:conic-gradient(#e94235 0 33.33%,#fabb05 0 66.66%,#34a853 0)}
 .chrome-logo:before{content:"";position:absolute;inset:4px;border-radius:50%;background:#4285f4;border:1px solid rgba(255,255,255,.85)}
 .chrome-logo i{display:none}
-.firefox-logo{color:#fff;background:radial-gradient(circle at 64% 64%,#4c32a3 0 32%,transparent 33%),conic-gradient(from 205deg,#ff7139,#ff9400 28%,#ff3d6e 55%,#7542e5 80%,#ff7139)}
-.firefox-launch{border-color:#ff7139!important}.chrome-launch{border-color:#4285f4!important}.zip-launch{font-weight:900}
+.chrome-launch{border-color:#4285f4!important}.zip-launch{font-weight:900}
 @media(max-width:520px){.free-tools-projects .project .browser-actions>a{flex:1 1 72px}}
