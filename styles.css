@@ -3644,17 +3644,3 @@ html body,html body *,html body [class],html body [id],button,input,select,texta
 @media(max-width:420px){
   .social-brand-logo-gif{height:54px;max-width:92px}
 }
-
-/* 0PTICBOX V23 — transparent animated header logo */
-.wordmark,
-.social-brand.social-brand-gif,
-.wordmark-logo-gif,
-.social-brand-logo-gif {
-  background: transparent !important;
-  background-color: transparent !important;
-}
-.wordmark-logo-gif,
-.social-brand-logo-gif {
-  mix-blend-mode: normal !important;
-  isolation: isolate;
-}

@@ -30,6 +30,42 @@ function cleanHandle(value) { return String(value || '').trim().replace(/^@+/, '
 function safeUrl(value) { const raw=String(value||'').trim(); if(!raw)return ''; try{const url=new URL(raw);return ['http:','https:'].includes(url.protocol)?url.href:''}catch{return ''} }
 function validEmail(value) { const raw=String(value||'').trim(); return !raw || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw); }
 
+const PROFILE_UPDATE_FIELDS = new Set([
+  'display_name','profile_handle','profile_tagline','status','bio','genre','occupation','here_for','interests',
+  'avatar_url','background_url','background_dim','background_mode','accent_color','instagram_url','youtube_url',
+  'soundcloud_url','github_url','website_url','contact_email','updated_at',
+]);
+
+function missingProfileColumn(error) {
+  const text = String(error?.message || error?.details || '');
+  const patterns = [
+    /Could not find the ['\"]([a-zA-Z0-9_]+)['\"] column of ['\"]?profiles['\"]?/i,
+    /column ['\"]?profiles\.([a-zA-Z0-9_]+)['\"]? does not exist/i,
+    /column ['\"]?([a-zA-Z0-9_]+)['\"]? of relation ['\"]?profiles['\"]? does not exist/i,
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match && PROFILE_UPDATE_FIELDS.has(match[1])) return match[1];
+  }
+  return '';
+}
+
+async function updateProfileCompat(changes) {
+  const pending = { ...changes };
+  const skipped = [];
+  // Older live databases can be a migration or two behind the website. Instead
+  // of failing the entire Save button, retry without only the unavailable field.
+  for (let attempt = 0; attempt < PROFILE_UPDATE_FIELDS.size; attempt += 1) {
+    const result = await supabase.from('profiles').update(pending).eq('id', user.id).select('*').single();
+    if (!result.error) return { data: result.data, skipped };
+    const missing = missingProfileColumn(result.error);
+    if (!missing || !(missing in pending)) throw result.error;
+    delete pending[missing];
+    skipped.push(missing);
+  }
+  throw new Error('Profile settings could not be saved. Please try again.');
+}
+
 async function uploadProfileImage(file, kind) {
   if (!file) return '';
   const allowed = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
@@ -214,20 +250,22 @@ form.addEventListener('submit', async (event) => {
       updated_at: new Date().toISOString(),
     };
     if (changes.display_name.length < 2) throw new Error('Display name must contain at least two characters.');
-    const { data, error } = await supabase.from('profiles').update(changes).eq('id', user.id).select('*').single();
-    if (error) {
-      if (/column|schema cache/i.test(error.message || '')) throw new Error('Run supabase/2026-08-profile-layout-wallpaper.sql in Supabase, then save again.');
-      throw error;
-    }
+    const { data, skipped } = await updateProfileCompat(changes);
     await supabase.auth.updateUser({ data: { display_name: changes.display_name } });
     profile = data;
     $('settings-avatar-file').value = '';
     $('settings-background-file').value = '';
     $('settings-remove-background').checked = false;
     fillForm();
-    setMessage('Profile, links, and wallpaper saved.');
+    if (skipped.length) {
+      setMessage('Profile saved. Some newer profile options are not available yet, but the rest of your changes were saved.');
+    } else {
+      setMessage('Profile, links, and wallpaper saved.');
+    }
   } catch (error) {
-    setMessage(error.message || 'Settings could not be saved.', true);
+    console.error('Profile settings save failed:', error);
+    const technicalSchemaError = /column|schema cache|relation .* does not exist/i.test(String(error?.message || ''));
+    setMessage(technicalSchemaError ? 'Some profile options are temporarily unavailable. Please try again shortly.' : (error.message || 'Settings could not be saved.'), true);
   } finally { submit.disabled = false; }
 });
 $('settings-signout').addEventListener('click', async () => { if (!supabase) return; await supabase.auth.signOut(); window.location.replace('signin.html'); });

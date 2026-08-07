@@ -8,3 +8,10 @@ Important:
 - Keep your existing supabase-config.js. This ZIP intentionally does not include it.
 - You may delete the accidental nested docs/ folder afterward; it is not needed when Pages publishes from root.
 - Wait for the Pages action to finish, then refresh the live site with Ctrl+Shift+R.
+
+PROFILE SETTINGS BUG FIX (v23):
+- The website no longer exposes the internal SQL filename/error to members.
+- Saving now keeps working when an older database is missing one of the newer optional profile fields.
+- For every profile option (including wallpaper modes/links) to save, run
+  supabase/2026-08-profile-layout-wallpaper.sql once in the Supabase SQL Editor.
+- The migration is safe to run again if you already ran an older copy.
