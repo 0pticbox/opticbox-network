@@ -33,7 +33,34 @@ addEventListener("resize",resize);resize();
 function status(live,text){$("statusDot").classList.toggle("live",live);$("statusText").textContent=text;$("stopButton").disabled=!live}
 async function prep(){if(!ac||ac.state==="closed")ac=new(AudioContext||webkitAudioContext)();if(ac.state==="suspended")await ac.resume();an=ac.createAnalyser();an.fftSize=2048;an.smoothingTimeConstant=.82;freq=new Uint8Array(an.frequencyBinCount);recordingDestination=ac.createMediaStreamDestination()}
 function stop(show=true){if(stream){stream.getTracks().forEach(q=>q.stop());stream=null}if(src)try{src.disconnect()}catch{}if(fileSrc)try{fileSrc.disconnect()}catch{}if(an)try{an.disconnect()}catch{}$("audioPlayer").pause();an=null;freq=null;energy=bass=treble=0;if(show)status(false,"No audio source connected")}
-async function mic(){try{stop(false);stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});await prep();src=ac.createMediaStreamSource(stream);src.connect(an);src.connect(recordingDestination);status(true,"Microphone connected")}catch(e){status(false,e.message)}}
+async function refreshFirefoxAudioDevices(requestPermission=false){
+  const select=$("firefoxAudioDevice");
+  if(!select||!navigator.mediaDevices?.enumerateDevices)return;
+  let probe=null;
+  try{
+    if(requestPermission){
+      probe=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+    }
+    const devices=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==="audioinput");
+    const previous=select.value;
+    select.innerHTML='<option value="">Default audio input</option>';
+    devices.forEach((d,i)=>{const o=document.createElement("option");o.value=d.deviceId;o.textContent=d.label||`Audio input ${i+1}`;select.appendChild(o)});
+    if([...select.options].some(o=>o.value===previous))select.value=previous;
+  }catch(e){
+    status(false,"Audio input permission is needed to list Firefox devices.");
+  }finally{probe?.getTracks().forEach(t=>t.stop())}
+}
+async function mic(){try{
+  stop(false);
+  const deviceId=$("firefoxAudioDevice")?.value||"";
+  const audio={echoCancellation:false,noiseSuppression:false,autoGainControl:false};
+  if(deviceId)audio.deviceId={exact:deviceId};
+  stream=await navigator.mediaDevices.getUserMedia({audio,video:false});
+  await prep();src=ac.createMediaStreamSource(stream);src.connect(an);src.connect(recordingDestination);
+  const label=stream.getAudioTracks()[0]?.label||"Audio input";
+  status(true,`${label} connected`);
+  refreshFirefoxAudioDevices(false);
+}catch(e){status(false,e.message)}}
 async function desktop(){
   try{
     stop(false);
@@ -43,7 +70,8 @@ async function desktop(){
     if(!tracks.length){
       stream.getTracks().forEach(q=>q.stop());
       stream=null;
-      throw Error("No shared audio track was provided. Firefox may share the screen without system audio; use Microphone or Audio File for audio-reactive visuals. Live Capture still works for screen/window video.");
+      await refreshFirefoxAudioDevices(false);
+      throw Error("Firefox did not provide a screen-audio track. Choose an Audio Input device below (Stereo Mix/loopback if your system exposes one), or use Audio File. Live Capture still works for screen/window video.");
     }
     await prep();
     src=ac.createMediaStreamSource(new MediaStream([tracks[0]]));
@@ -337,6 +365,9 @@ function render(frameTime=0){
   analyze();if(autoCrossfade.checked&&remixEnabled.checked){autoPhase+=+autoSpeed.value*+motion.value;crossfade.value=Math.round((Math.sin(autoPhase)*.5+.5)*100);updateFade(+crossfade.value)}ambient();if(remixEnabled.checked){drawTo(remixModeA.value,ctxA);drawTo(remixModeB.value,ctxB);const mix=+crossfade.value/100;mainCtx.save();mainCtx.globalCompositeOperation="screen";mainCtx.globalAlpha=1-mix;mainCtx.drawImage(layerA,0,0,w,h);mainCtx.globalAlpha=mix;mainCtx.drawImage(layerB,0,0,w,h);mainCtx.restore();$("overlayMode").textContent=`REMIX · ${remixModeA.options[remixModeA.selectedIndex].text.toUpperCase()} + ${remixModeB.options[remixModeB.selectedIndex].text.toUpperCase()}`}else{drawTo(mode.value,ctxA);mainCtx.save();mainCtx.globalCompositeOperation="screen";mainCtx.drawImage(layerA,0,0,w,h);mainCtx.restore();$("overlayMode").textContent=mode.options[mode.selectedIndex].text.toUpperCase()}$("overlayTitle").textContent=$("titleInput").value.trim()||"OPTICBOX";document.querySelector(".now-playing").style.display=$("showTitle").checked?"flex":"none";}
 
 $("micButton").addEventListener("click",mic);$("desktopButton").addEventListener("click",desktop);$("fileButton").addEventListener("click",()=>$("audioFileInput").click());$("stopButton").addEventListener("click",()=>stop());$("audioFileInput").addEventListener("change",e=>{file(e.target.files[0]);e.target.value=""});
+$("refreshAudioDevices")?.addEventListener("click",()=>refreshFirefoxAudioDevices(true));
+navigator.mediaDevices?.addEventListener?.("devicechange",()=>refreshFirefoxAudioDevices(false));
+refreshFirefoxAudioDevices(false);
 $("collapseButton").addEventListener("click",()=>{$("controlDock").classList.toggle("collapsed");$("collapseButton").textContent=$("controlDock").classList.contains("collapsed")?"+":"−"});
 remixEnabled.addEventListener("change",()=>{remixControls.classList.toggle("active",remixEnabled.checked);remixControls.setAttribute("aria-hidden",String(!remixEnabled.checked));mode.disabled=remixEnabled.checked});
 crossfade.addEventListener("input",()=>updateFade(+crossfade.value));

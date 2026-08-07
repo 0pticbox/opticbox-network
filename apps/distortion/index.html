@@ -287,7 +287,7 @@ textarea, option, label, html body *::before, html body *::after {
         </section>
         <section data-help="record">
           <h2>RECORDING</h2>
-          <p>Select the frame shape, then choose any MP4 or WebM encoder supported by your browser. Unsupported choices are hidden automatically.</p>
+          <p>Select the frame shape, then choose any MP4 or WebM encoder supported by your browser. Unsupported choices are hidden automatically. Firefox normally records as WebM, which DISTORTION detects automatically.</p>
           <p>Maximum Quality keeps the full canvas resolution at 60 FPS and requests the highest recording bitrate. Browser recording still requires a video codec, so the result is minimally compressed rather than mathematically uncompressed.</p>
           <p>For reliable audio recording, press PLAY once before starting the recording so the browser can activate its audio engine.</p>
         </section>
@@ -310,6 +310,6 @@ textarea, option, label, html body *::before, html body *::after {
     </div>
   </dialog>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=30"></script>
 </body>
 </html>

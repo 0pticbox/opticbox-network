@@ -24,6 +24,10 @@ textarea, option, label, html body *::before, html body *::after {
   font-family: var(--opticbox-global-font) !important;
 }
 </style>
+
+<style>
+.firefox-audio-panel{margin:8px 0;padding:8px;border:1px solid #73518d;background:#1b1021;color:#ddd}.firefox-audio-panel>b{display:block;color:#ff9a45;margin-bottom:6px}.firefox-audio-panel label{display:block;margin-bottom:4px}.firefox-device-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.firefox-device-row select,.firefox-device-row button{min-width:0}.firefox-audio-panel small{display:block;margin-top:6px;line-height:1.35;opacity:.8}
+</style>
 </head>
 <body>
   <main class="instrument">
@@ -62,11 +66,20 @@ textarea, option, label, html body *::before, html body *::after {
         <section id="page-scope" class="page active">
           <fieldset><legend>INPUT</legend>
             <div class="button-grid">
-              <button id="micBtn" type="button">MIC</button>
-              <button id="desktopBtn" type="button">DESKTOP</button>
+              <button id="micBtn" type="button">AUDIO INPUT</button>
+              <button id="desktopBtn" type="button">TRY SCREEN AUDIO</button>
               <label class="file-button" for="audioFile">AUDIO FILE</label>
               <input id="audioFile" type="file" accept="audio/*">
               <button id="stopInputBtn" type="button">DISCONNECT</button>
+            </div>
+            <div class="firefox-audio-panel">
+              <b>FIREFOX AUDIO BUILD</b>
+              <label for="firefoxAudioDevice">INPUT DEVICE</label>
+              <div class="firefox-device-row">
+                <select id="firefoxAudioDevice"><option value="">DEFAULT AUDIO INPUT</option></select>
+                <button id="refreshAudioDevices" type="button">REFRESH</button>
+              </div>
+              <small>For system audio, choose Stereo Mix or a loopback/virtual input if Firefox/your OS exposes one. Audio File works directly.</small>
             </div>
             <audio id="audioElement" controls preload="metadata"></audio>
           </fieldset>
@@ -255,6 +268,6 @@ textarea, option, label, html body *::before, html body *::after {
       </aside>
     </div>
   </main>
-  <script src="script.js?v=30"></script>
+  <script src="script.js?v=31"></script>
 </body>
 </html>

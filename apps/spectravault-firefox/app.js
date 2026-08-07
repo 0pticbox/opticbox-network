@@ -257,20 +257,46 @@
     }
   }
 
+  async function refreshFirefoxAudioDevices(requestPermission = false) {
+    const select = document.getElementById('firefoxAudioDevice');
+    if (!select || !navigator.mediaDevices?.enumerateDevices) return;
+    let probe = null;
+    try {
+      if (requestPermission) probe = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      const devices = (await navigator.mediaDevices.enumerateDevices()).filter(device => device.kind === 'audioinput');
+      const previous = select.value;
+      select.innerHTML = '<option value="">DEFAULT AUDIO INPUT</option>';
+      devices.forEach((device, index) => {
+        const option = document.createElement('option');
+        option.value = device.deviceId;
+        option.textContent = (device.label || `AUDIO INPUT ${index + 1}`).toUpperCase();
+        select.appendChild(option);
+      });
+      if ([...select.options].some(option => option.value === previous)) select.value = previous;
+    } catch (error) {
+      console.error(error);
+      setStatus('INPUT LIST BLOCKED');
+    } finally {
+      probe?.getTracks().forEach(track => track.stop());
+    }
+  }
+
   async function startMic() {
     try {
       disconnectCurrentAudio();
       await ensureAudioGraph();
-      audioInputStream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
-        video: false
-      });
+      const deviceId = document.getElementById('firefoxAudioDevice')?.value || '';
+      const audio = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+      if (deviceId) audio.deviceId = { exact: deviceId };
+      audioInputStream = await navigator.mediaDevices.getUserMedia({ audio, video: false });
       connectSource(audioContext.createMediaStreamSource(audioInputStream), false);
-      setStatus('MIC LIVE');
+      const label = audioInputStream.getAudioTracks()[0]?.label || 'AUDIO INPUT';
+      setStatus(`${label.toUpperCase()} LIVE`);
+      refreshFirefoxAudioDevices(false);
     } catch (error) {
       console.error(error);
-      setStatus('MIC BLOCKED');
-      alert('Microphone access was not available. Check the browser permission and try again.');
+      setStatus('INPUT BLOCKED');
+      alert('Firefox could not open that audio input. Refresh the input list, choose another device, or use AUDIO FILE.');
     }
   }
 
@@ -284,7 +310,8 @@
         audioInputStream.getTracks().forEach(track => track.stop());
         audioInputStream = null;
         setStatus('NO SHARED AUDIO');
-        alert('No audio track was shared. Firefox may not provide system audio for this type of screen share. Use MIC or AUDIO FILE for audio-reactive visuals, or try another share source if an audio option is offered.');
+        await refreshFirefoxAudioDevices(false);
+        alert('Firefox did not provide a screen-audio track. Choose an AUDIO INPUT device (Stereo Mix/loopback if your system exposes one) or use AUDIO FILE.');
         return;
       }
       connectSource(audioContext.createMediaStreamSource(audioInputStream), false);
@@ -1565,6 +1592,9 @@
   document.getElementById('desktopBtn').addEventListener('click', startDesktopAudio);
   document.getElementById('stopAudioBtn').addEventListener('click', disconnectCurrentAudio);
   document.getElementById('audioFileInput').addEventListener('change', event => loadAudioFile(event.target.files[0]));
+  document.getElementById('refreshAudioDevices')?.addEventListener('click', () => refreshFirefoxAudioDevices(true));
+  navigator.mediaDevices?.addEventListener?.('devicechange', () => refreshFirefoxAudioDevices(false));
+  refreshFirefoxAudioDevices(false);
   document.getElementById('logoInput').addEventListener('change', event => loadLogo(event.target.files[0]));
   document.getElementById('removeLogoBtn').addEventListener('click', () => { logoImage = null; setStatus('LOGO REMOVED'); });
   flowToggleBtn.addEventListener('click', () => {

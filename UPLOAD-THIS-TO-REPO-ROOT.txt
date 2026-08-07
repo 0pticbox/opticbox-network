@@ -1,13 +1,17 @@
-OPTICBOX NETWORK v29 — COMBINED INSTAGRAM + YOUTUBE TOTAL
+OPTICBOX NETWORK v31 — FIREFOX COMPATIBILITY
 
-WHAT CHANGED
-1. TOTAL FOLLOWERS is explicitly calculated as Instagram followers + YouTube subscribers.
-2. Profile Settings now shows a live Combined Audience preview so artists can see the exact math before saving.
-3. The public profile tooltip/accessible label shows the exact Instagram + YouTube breakdown.
-4. Added compatibility aliases for older YouTube subscriber field names.
-5. No new Supabase SQL is required if you already ran the v27/v28 follower-count migration.
+Upload the CONTENTS of this ZIP to the repository root and replace matching files.
+Keep your existing supabase-config.js if it is stored separately / ignored.
 
-IMPORTANT
-A YouTube channel URL by itself does not contain a subscriber count. Enter the artist's current YouTube subscriber count in Profile Settings > YouTube subscribers. Once saved, it is added to Instagram automatically.
+No new Supabase SQL is required for the Firefox compatibility update.
 
-Upload the contents of this folder to the repository root, replacing matching files. Keep your existing supabase-config.js.
+Firefox behavior:
+- SPECTRAVAULT records MP4 when supported, otherwise WebM automatically.
+- 0PS3 / SPECTRAVAULT PiP falls back to a detachable floating window when standard web PiP is unavailable.
+- Screen/window VIDEO capture works where getDisplayMedia is supported.
+- Firefox may not provide SYSTEM AUDIO for every screen-share source; Mic and Audio File remain the reliable audio inputs.
+- DISTORTION and DJ Visual Studio select browser-supported recording encoders automatically.
+
+
+
+v31 adds separate Firefox browser builds for 0PTICSCOPE, 0PS3, and SPECTRAVAULT plus Chrome/Firefox launch buttons on FREE TOOLS. No Supabase change is required.
