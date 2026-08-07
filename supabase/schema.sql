@@ -915,3 +915,27 @@ alter table public.profiles drop constraint if exists profiles_background_mode_c
 alter table public.profiles add constraint profiles_background_mode_check check (background_mode in ('cover','contain','tile'));
 
 notify pgrst, 'reload schema';
+
+-- v24 shared member profile fields: same layout/features for every member
+alter table public.profiles add column if not exists meet_people text not null default '';
+alter table public.profiles add column if not exists instagram_embeds text not null default '';
+alter table public.profiles add column if not exists youtube_embeds text not null default '';
+alter table public.profiles add column if not exists featured_title text not null default '';
+alter table public.profiles add column if not exists featured_kicker text not null default '';
+alter table public.profiles add column if not exists featured_description text not null default '';
+alter table public.profiles add column if not exists featured_url text not null default '';
+alter table public.profiles drop constraint if exists profiles_meet_people_check;
+alter table public.profiles add constraint profiles_meet_people_check check (char_length(meet_people) <= 1200);
+alter table public.profiles drop constraint if exists profiles_instagram_embeds_check;
+alter table public.profiles add constraint profiles_instagram_embeds_check check (char_length(instagram_embeds) <= 6500);
+alter table public.profiles drop constraint if exists profiles_youtube_embeds_check;
+alter table public.profiles add constraint profiles_youtube_embeds_check check (char_length(youtube_embeds) <= 6500);
+alter table public.profiles drop constraint if exists profiles_featured_title_check;
+alter table public.profiles add constraint profiles_featured_title_check check (char_length(featured_title) <= 80);
+alter table public.profiles drop constraint if exists profiles_featured_kicker_check;
+alter table public.profiles add constraint profiles_featured_kicker_check check (char_length(featured_kicker) <= 120);
+alter table public.profiles drop constraint if exists profiles_featured_description_check;
+alter table public.profiles add constraint profiles_featured_description_check check (char_length(featured_description) <= 400);
+alter table public.profiles drop constraint if exists profiles_featured_url_check;
+alter table public.profiles add constraint profiles_featured_url_check check (char_length(featured_url) <= 2048);
+notify pgrst, 'reload schema';

@@ -5,12 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="description" content="0PTICBOX Network member profile."/>
 <meta name="theme-color" content="#080b13"/>
+<meta name="referrer" content="strict-origin-when-cross-origin"/>
 <title>Member Profile | 0PTICBOX Network</title>
-<link href="styles.css?v=22" rel="stylesheet"/>
-<link href="network-upgrade.css?v=20" rel="stylesheet"/>
-
-
-
+<link href="styles.css?v=24" rel="stylesheet"/>
+<link href="network-upgrade.css?v=24" rel="stylesheet"/>
 <link rel="preconnect" href="https://db.onlinewebfonts.com" crossorigin>
 <link rel="stylesheet" href="alsina-profile-fix-v20.css">
 </head>
@@ -18,75 +16,44 @@
 <canvas aria-hidden="true" id="page-particles"></canvas>
 <div class="member-profile-wallpaper" id="profile-background" aria-hidden="true"></div>
 <div class="member-profile-wallpaper-shade" id="profile-background-overlay" aria-hidden="true"></div>
+<a class="skip-link" href="#profile">Skip to profile</a>
 <div class="ticker"><div class="ticker-track"><span>★ 0PTICBOX NETWORK PROFILE ★ CONNECT ★ CREATE ★ SHARE ★</span><span aria-hidden="true">★ 0PTICBOX NETWORK PROFILE ★ CONNECT ★ CREATE ★ SHARE ★</span></div></div>
 <header class="topbar" id="top"><div class="shell topbar-inner">
-<a class="wordmark" href="index.html" aria-label="0PTICBOX Productions home"><img class="wordmark-logo-gif" src="assets/opticbox-spinning-logo.gif" alt="0PTICBOX Productions spinning logo"/></a>
+<a class="wordmark" href="index.html" aria-label="0PTICBOX Network home"><img class="wordmark-logo-gif" src="assets/opticbox-spinning-logo.gif" alt="0PTICBOX Network spinning logo"/></a>
 <button aria-controls="site-nav" aria-expanded="false" class="menu-toggle" type="button">Menu</button>
-<nav aria-label="Primary navigation" class="site-nav" id="site-nav"><a href="index.html">Home</a><a href="community.html">Community</a><a href="members.html">Members</a><a href="messages.html">Messages</a><a href="profile-settings.html">Settings</a></nav>
+<nav aria-label="Primary navigation" class="site-nav" id="site-nav"><a href="index.html">Feed</a><a href="#profile">Profile</a><a href="free-tools.html">FREE TOOLS</a><a href="#profile-media-section">Media</a><a href="#profile-instagram-section">Instagram</a><a href="community.html">Post</a><a href="members.html">Members</a><a href="messages.html">Messages</a><a href="profile-settings.html">Settings</a></nav>
 </div></header>
 <main class="shell profile-layout member-network-profile" id="member-profile-stage">
-<aside class="left-column">
-<section class="box profile-card">
-<h2 class="box-title" id="profile-card-title">Member's Profile</h2>
-<div class="box-body">
+<aside class="left-column" id="profile">
+<section class="box profile-card"><h2 class="box-title" id="profile-card-title">Member's Profile</h2><div class="box-body">
 <div class="avatar photo-avatar member-profile-avatar" id="profile-avatar"><span>?</span><i></i></div>
-<div class="name-line"><h1 id="profile-name">Loading member…</h1><span class="online"><i></i><span id="profile-online-label">Profile online</span></span></div>
-<p class="profile-handle" id="profile-handle">@member</p>
-<p id="profile-tagline">0PTICBOX member</p>
+<div class="name-line"><h1 id="profile-name">Loading member…</h1><span class="online"><i></i><span id="profile-online-label">Online</span></span></div>
+<p class="profile-handle" id="profile-handle">@member</p><p id="profile-tagline">0PTICBOX member</p>
 <div class="member-profile-actions"><a class="retro-button primary" hidden id="profile-edit-link" href="profile-settings.html">Edit profile</a><a class="retro-button" id="profile-message-link" href="members.html">Message</a></div>
-<div class="profile-stats member-profile-stats">
-<div><strong id="profile-activity-count">0 posts</strong><span>activity</span></div>
-<div><strong id="detail-reviews">0</strong><span>reviews</span></div>
-<div><strong id="profile-joined-short">—</strong><span>joined</span></div>
-</div>
-<dl class="facts">
-<div><dt>Status</dt><dd id="profile-status">Checking the network.</dd></div>
-<div><dt>Genre</dt><dd id="profile-genre">—</dd></div>
-<div><dt>Member since</dt><dd id="profile-joined">—</dd></div>
-</dl>
-</div>
-</section>
-<section class="box">
-<h2 class="box-title" id="profile-contact-title">Contacting Member</h2>
-<div class="contact-grid member-contact-grid" id="profile-contact-links"><p class="member-contact-empty">No public links yet.</p></div>
-</section>
-<section class="box">
-<h2 class="box-title">Interests</h2>
-<div class="tags" id="profile-interests"><span>0PTICBOX Network</span></div>
-</section>
-<section class="box details-box">
-<h2 class="box-title" id="profile-details-title">Member's Details</h2>
-<dl class="profile-details">
-<div><dt>Occupation</dt><dd id="profile-occupation">—</dd></div>
-<div><dt>Here for</dt><dd id="profile-here-for">Community, music, art, and projects</dd></div>
-<div><dt>Profile</dt><dd id="profile-public-handle">@member</dd></div>
-</dl>
-</section>
+<div class="profile-stats member-profile-stats"><div><strong id="profile-activity-count">0 posts</strong><span>activity</span></div><div><strong id="detail-reviews">0</strong><span>reviews</span></div><div><strong id="profile-joined-short">—</strong><span>joined</span></div></div>
+<dl class="facts"><div><dt>Status</dt><dd id="profile-status">Checking the network.</dd></div><div><dt>Genre</dt><dd id="profile-genre">—</dd></div><div><dt>Member since</dt><dd id="profile-joined">—</dd></div></dl>
+</div></section>
+<section class="box"><h2 class="box-title" id="profile-contact-title">Contacting Member</h2><div class="contact-grid member-contact-grid" id="profile-contact-links"><p class="member-contact-empty">No public links yet.</p></div></section>
+<section class="box"><h2 class="box-title">Interests</h2><div class="tags" id="profile-interests"><span>0PTICBOX Network</span></div></section>
+<section class="box details-box"><h2 class="box-title" id="profile-details-title">Member's Details</h2><dl class="profile-details"><div><dt>Profile</dt><dd id="profile-public-handle">@member</dd></div><div><dt>Contact</dt><dd id="profile-public-contact">—</dd></div><div><dt>Occupation</dt><dd id="profile-occupation">—</dd></div><div><dt>Here for</dt><dd id="profile-here-for">Community, music, art, and projects</dd></div></dl></section>
+<section class="box meet-box" id="profile-meet-section"><h2 class="box-title">Who I'd Like to Meet</h2><div class="box-body"><p class="meet-intro">People I'd love to connect with:</p><ul class="meet-list" id="profile-meet-list"><li><strong>Community</strong><span>Friends, artists, and collaborators</span></li></ul></div></section>
 </aside>
 <div class="right-column">
-<section class="box blurb-box">
-<div class="box-title split-title"><span id="profile-blurb-title">Member's Blurbs</span><small>about me</small></div>
-<div class="member-about-panel">
-<span class="mini-label">ABOUT ME</span>
-<h2 id="profile-about-heading">Welcome to my page</h2>
-<p class="member-about-copy" id="profile-bio">This member has not added an about section yet.</p>
-<div class="member-status-callout"><strong>Current status</strong><p id="detail-status">—</p></div>
-</div>
-</section>
-<section class="box" id="profile-posts">
-<div class="box-title split-title"><span>Community Posts</span><a href="community.html">Open feed</a></div>
-<div class="public-member-activity personal-activity-list member-profile-feed" id="profile-activity"><p class="review-empty">Loading posts…</p></div>
-</section>
-<section class="box" id="profile-reviews-section">
-<div class="box-title split-title"><span>Product Reviews</span><a href="members.html">Rate a product</a></div>
-<div class="public-member-reviews personal-review-list member-profile-feed" id="profile-reviews"><p class="review-empty">Loading reviews…</p></div>
-</section>
+<section aria-labelledby="profile-blurb-title" class="box blurb-box"><div class="box-title split-title"><span id="profile-blurb-title">Member's Blurbs</span><small>about me</small></div><div class="blurb-grid member-blurb-grid">
+<div class="blurb-copy" id="profile-featured-panel"><p class="feature-label"><span>★</span>Featured</p><h2 id="profile-featured-title">My page</h2><p class="hero-kicker" id="profile-featured-kicker">Featured link</p><p class="hero-description" id="profile-featured-description">This member has not featured a project yet.</p><div class="hero-actions"><a class="retro-button primary" id="profile-featured-link" hidden target="_blank" rel="noopener">Open featured link</a></div></div>
+<div class="blurb-note"><span class="mini-label" id="profile-about-label">ABOUT MEMBER</span><p id="profile-bio">This member has not added an about section yet.</p><ul id="profile-about-points"><li>Part of the 0PTICBOX Network</li></ul></div>
+</div></section>
+<section class="box status-box"><h2 class="box-title" id="profile-status-title">Member is...</h2><p id="detail-status">—</p></section>
+<section aria-labelledby="profile-instagram-title" class="box instagram-box member-social-section" id="profile-instagram-section" hidden><div class="box-title split-title"><span id="profile-instagram-title">Member on Instagram</span><small>connected by the member</small></div><div class="instagram-profile member-instagram-profile"><div class="member-instagram-feature" id="profile-instagram-feature"></div><div class="instagram-copy"><div class="instagram-heading"><div><h2 id="profile-instagram-name">INSTAGRAM</h2><p id="profile-instagram-handle">@member</p></div><span class="online"><i></i>Public</span></div><p class="instagram-bio" id="profile-instagram-copy">Public Instagram posts and reels can appear here when the member adds them in Profile Settings.</p><div class="instagram-tags" id="profile-instagram-tags"></div><div class="instagram-actions"><a class="retro-button primary" id="profile-instagram-link" target="_blank" rel="noopener">View Instagram</a></div><small>Instagram content stays controlled by the member's public links.</small></div></div><div class="member-instagram-grid" id="profile-instagram-grid"></div></section>
+<section aria-labelledby="profile-media-title" class="box media-box member-social-section" id="profile-media-section" hidden><div class="box-title split-title"><span id="profile-media-title">Member's Videos</span><small id="profile-media-count">YouTube</small></div><div class="media-grid" id="profile-media-grid"></div></section>
+<section class="box" id="profile-posts"><div class="box-title split-title"><span>Community Posts</span><a href="community.html">Open feed</a></div><div class="public-member-activity personal-activity-list member-profile-feed" id="profile-activity"><p class="review-empty">Loading posts…</p></div></section>
+<section class="box" id="profile-reviews-section"><div class="box-title split-title"><span>Product Reviews</span><a href="members.html">Rate a product</a></div><div class="public-member-reviews personal-review-list member-profile-feed" id="profile-reviews"><p class="review-empty">Loading reviews…</p></div></section>
 <p aria-live="polite" class="member-message" id="profile-message"></p>
 </div>
 </main>
-<footer><div class="shell footer-inner"><p>© <span id="year"></span> 0PTICBOX Productions</p><div><a href="index.html">Home</a><a href="opticbox.html">0PTICBOX profile</a><a href="members.html">Member area</a></div></div></footer>
-<script src="member-profile.js?v=20" type="module"></script>
-<script src="profile-activity.js?v=20" type="module"></script>
-<script src="site.js?v=20"></script>
+<footer><div class="shell footer-inner"><p>© <span id="year"></span> 0PTICBOX Productions</p><div><a href="free-tools.html">FREE TOOLS</a><a href="community.html">Post</a><a href="members.html">Members</a><a href="#top">Back to top</a></div></div></footer>
+<script src="member-profile.js?v=24" type="module"></script>
+<script src="profile-activity.js?v=24" type="module"></script>
+<script src="site.js?v=24"></script>
 </body>
 </html>

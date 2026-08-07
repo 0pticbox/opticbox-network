@@ -28,11 +28,37 @@ function fallbackName() {
 function safeFileName(name) { return name.toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'image'; }
 function cleanHandle(value) { return String(value || '').trim().replace(/^@+/, '').replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 32); }
 function safeUrl(value) { const raw=String(value||'').trim(); if(!raw)return ''; try{const url=new URL(raw);return ['http:','https:'].includes(url.protocol)?url.href:''}catch{return ''} }
+function safeFeaturedUrl(value) { const raw=String(value||'').trim(); if(!raw)return ''; try{const url=new URL(raw, window.location.href);return ['http:','https:'].includes(url.protocol)?url.href:''}catch{return ''} }
 function validEmail(value) { const raw=String(value||'').trim(); return !raw || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw); }
+function cleanSocialEmbeds(value, kind) {
+  const lines = String(value || '').split(/\n/).map((line) => line.trim()).filter(Boolean);
+  if (lines.length > 3) throw new Error(`Add no more than 3 ${kind === 'instagram' ? 'Instagram' : 'YouTube'} embeds.`);
+  const cleaned = [];
+  for (const line of lines) {
+    const safe = safeUrl(line);
+    if (!safe) throw new Error(`${kind === 'instagram' ? 'Instagram' : 'YouTube'} embed links must be full http:// or https:// URLs.`);
+    const url = new URL(safe);
+    const host = url.hostname.replace(/^www\./i, '').toLowerCase();
+    if (kind === 'instagram') {
+      if (host !== 'instagram.com' || !/^\/(p|reel|tv)\/[A-Za-z0-9_-]+/i.test(url.pathname)) throw new Error('Instagram embeds must be public post or reel links.');
+    } else {
+      const isYouTubeHost = host === 'youtu.be' || host === 'youtube.com' || host.endsWith('.youtube.com');
+      if (!isYouTubeHost) throw new Error('YouTube embeds must use a youtube.com or youtu.be link.');
+      const isShort = host === 'youtu.be' && url.pathname.split('/').filter(Boolean).length > 0;
+      const isWatch = url.pathname === '/watch' && Boolean(url.searchParams.get('v'));
+      const isPlaylist = url.pathname.includes('/playlist') && Boolean(url.searchParams.get('list'));
+      const isEmbedPath = /^\/(shorts|embed)\/[A-Za-z0-9_-]{6,}/i.test(url.pathname);
+      if (!(isShort || isWatch || isPlaylist || isEmbedPath)) throw new Error('YouTube embeds must be a video, Short, or playlist link.');
+    }
+    cleaned.push(safe);
+  }
+  return cleaned.join('\n');
+}
 
 const PROFILE_UPDATE_FIELDS = new Set([
-  'display_name','profile_handle','profile_tagline','status','bio','genre','occupation','here_for','interests',
+  'display_name','profile_handle','profile_tagline','status','bio','genre','occupation','here_for','interests','meet_people',
   'avatar_url','background_url','background_dim','background_mode','accent_color','instagram_url','youtube_url',
+  'instagram_embeds','youtube_embeds','featured_title','featured_kicker','featured_description','featured_url',
   'soundcloud_url','github_url','website_url','contact_email','updated_at',
 ]);
 
@@ -132,11 +158,18 @@ function fillForm() {
   $('settings-occupation').value = profile.occupation || '';
   $('settings-here-for').value = profile.here_for || '';
   $('settings-interests').value = profile.interests || '';
+  $('settings-meet-people').value = profile.meet_people || '';
+  $('settings-featured-title').value = profile.featured_title || '';
+  $('settings-featured-kicker').value = profile.featured_kicker || '';
+  $('settings-featured-description').value = profile.featured_description || '';
+  $('settings-featured-url').value = profile.featured_url || '';
   $('settings-accent-color').value = profile.accent_color || '#ff6b36';
   $('settings-background-dim').value = String(profile.background_dim ?? 62);
   $('settings-background-mode').value = ['cover','contain','tile'].includes(profile.background_mode) ? profile.background_mode : 'cover';
   $('settings-instagram-url').value = profile.instagram_url || '';
   $('settings-youtube-url').value = profile.youtube_url || '';
+  $('settings-instagram-embeds').value = profile.instagram_embeds || '';
+  $('settings-youtube-embeds').value = profile.youtube_embeds || '';
   $('settings-soundcloud-url').value = profile.soundcloud_url || '';
   $('settings-github-url').value = profile.github_url || '';
   $('settings-website-url').value = profile.website_url || '';
@@ -225,6 +258,11 @@ form.addEventListener('submit', async (event) => {
     }
     const contactEmail = $('settings-contact-email').value.trim();
     if (!validEmail(contactEmail)) throw new Error('Enter a valid public contact email or leave it blank.');
+    const featuredRaw = $('settings-featured-url').value.trim();
+    const featuredUrl = safeFeaturedUrl(featuredRaw);
+    if (featuredRaw && !featuredUrl) throw new Error('Featured link must be a full http:// or https:// URL.');
+    const instagramEmbeds = cleanSocialEmbeds($('settings-instagram-embeds').value, 'instagram');
+    const youtubeEmbeds = cleanSocialEmbeds($('settings-youtube-embeds').value, 'youtube');
 
     const changes = {
       display_name: $('settings-display-name').value.trim(),
@@ -236,6 +274,11 @@ form.addEventListener('submit', async (event) => {
       occupation: $('settings-occupation').value.trim(),
       here_for: $('settings-here-for').value.trim(),
       interests: $('settings-interests').value.trim(),
+      meet_people: $('settings-meet-people').value.trim(),
+      featured_title: $('settings-featured-title').value.trim(),
+      featured_kicker: $('settings-featured-kicker').value.trim(),
+      featured_description: $('settings-featured-description').value.trim(),
+      featured_url: featuredUrl,
       avatar_url: avatarUrl,
       background_url: backgroundUrl,
       background_dim: Number($('settings-background-dim').value || 62),
@@ -243,6 +286,8 @@ form.addEventListener('submit', async (event) => {
       accent_color: $('settings-accent-color').value,
       instagram_url: urls.instagram,
       youtube_url: urls.youtube,
+      instagram_embeds: instagramEmbeds,
+      youtube_embeds: youtubeEmbeds,
       soundcloud_url: urls.soundcloud,
       github_url: urls.github,
       website_url: urls.website,
@@ -260,7 +305,7 @@ form.addEventListener('submit', async (event) => {
     if (skipped.length) {
       setMessage('Profile saved. Some newer profile options are not available yet, but the rest of your changes were saved.');
     } else {
-      setMessage('Profile, links, and wallpaper saved.');
+      setMessage('Profile, featured item, social embeds, links, and wallpaper saved.');
     }
   } catch (error) {
     console.error('Profile settings save failed:', error);

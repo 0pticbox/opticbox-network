@@ -6,8 +6,8 @@
 <meta content="Edit your 0PTICBOX Network profile, links, appearance, and site cursor." name="description"/>
 <meta content="#080b13" name="theme-color"/>
 <title>Profile Settings | 0PTICBOX Network</title>
-<link href="styles.css?v=22" rel="stylesheet"/>
-<link href="network-upgrade.css?v=20" rel="stylesheet"/>
+<link href="styles.css?v=24" rel="stylesheet"/>
+<link href="network-upgrade.css?v=24" rel="stylesheet"/>
 
 
 
@@ -24,7 +24,7 @@
 <nav aria-label="Primary navigation" class="site-nav" id="site-nav"><a href="index.html">Home</a><a href="community.html">Community feed</a><a href="messages.html">Messages</a><a href="members.html">Member area</a><a class="is-active" href="profile-settings.html">Settings</a></nav>
 </div></header>
 <main class="shell settings-page" id="settings">
-<section class="box"><div class="box-title split-title"><span>Profile Settings</span><small>signed-in members only</small></div><div class="member-page-intro-body"><div><span class="mini-label">ACCOUNT PROFILE</span><h1>Build your page with the same profile layout as 0PTICBOX.</h1><p>Connect your own identity, links, interests, and wallpaper. Every member gets the same full profile structure with their own information.</p></div><a class="retro-button" href="members.html">Back to Member Area</a></div></section>
+<section class="box"><div class="box-title split-title"><span>Profile Settings</span><small>signed-in members only</small></div><div class="member-page-intro-body"><div><span class="mini-label">ACCOUNT PROFILE</span><h1>Everyone gets the same full profile layout — including 0PTICBOX.</h1><p>Connect your identity, wallpaper, featured item, Instagram, YouTube, interests, and links. 0PTICBOX uses the same member template as everyone else.</p></div><a class="retro-button" href="members.html">Back to Member Area</a></div></section>
 <p class="member-warning" hidden id="settings-config-warning">Connect Supabase and apply the latest schema before editing profiles.</p>
 <div class="settings-layout">
 <aside class="box settings-preview" aria-label="Live profile preview">
@@ -56,6 +56,9 @@
 <div class="settings-field"><label for="settings-here-for">Here for</label><input id="settings-here-for" maxlength="180" placeholder="Music, visuals, friends, collaboration…"/></div>
 </div>
 <div class="settings-field"><label for="settings-interests">Interests</label><textarea id="settings-interests" maxlength="600" rows="3" placeholder="EDM, DJing, visual art, PICO-8, web audio"></textarea><small>Separate interests with commas or new lines.</small></div>
+<div class="settings-field"><label for="settings-meet-people">Who I'd like to meet</label><textarea id="settings-meet-people" maxlength="1200" rows="5" placeholder="CloZee | artist
+Local VJs | visual collaborators
+Game developers | people making weird things"></textarea><small>One person or group per line. Optional: add a note after a | character.</small></div>
 <div class="settings-field"><label>Website cursor</label><div class="cursor-choice-grid" id="cursor-choices" role="group" aria-label="Website cursor">
 <button class="cursor-choice" data-cursor-style="default" type="button">↖ Normal</button>
 <button class="cursor-choice" data-cursor-style="cube" type="button">◇ Cube particle</button>
@@ -64,6 +67,15 @@
 <button class="cursor-choice" data-cursor-style="smile" type="button">☺ Smile</button>
 <button class="cursor-choice" data-cursor-style="rainbow" type="button">◒ Rainbow</button>
 </div><p class="cursor-note">Cursor effects appear on devices with a mouse or trackpad. Touchscreens keep the normal touch interface.</p></div>
+</fieldset>
+<fieldset class="settings-group"><legend>Featured item</legend>
+<div class="settings-field"><label for="settings-featured-title">Featured title</label><input id="settings-featured-title" maxlength="80" placeholder="My new track / project / app"/></div>
+<div class="settings-grid-2">
+<div class="settings-field"><label for="settings-featured-kicker">Short label</label><input id="settings-featured-kicker" maxlength="120" placeholder="New release · visual project · game"/></div>
+<div class="settings-field"><label for="settings-featured-url">Featured link</label><input id="settings-featured-url" type="text" maxlength="2048" placeholder="https://..."/></div>
+</div>
+<div class="settings-field"><label for="settings-featured-description">Featured description</label><textarea id="settings-featured-description" maxlength="400" rows="4" placeholder="Tell people what you want them to check out."></textarea></div>
+<small>This fills the same big featured panel that appears on the 0PTICBOX profile.</small>
 </fieldset>
 <fieldset class="settings-group"><legend>Profile look</legend>
 <div class="settings-grid-2">
@@ -80,10 +92,18 @@
 <fieldset class="settings-group"><legend>Privacy</legend>
 <div class="settings-field"><label>Blocked accounts</label><div class="request-list" id="settings-blocked-list"><p class="empty-state">No blocked accounts.</p></div><small>Blocked members stay out of your friends list, requests, and conversations.</small></div>
 </fieldset>
-<fieldset class="settings-group"><legend>Links and contact</legend>
+<fieldset class="settings-group"><legend>Social embeds, links, and contact</legend>
 <div class="settings-grid-2">
-<div class="settings-field"><label for="settings-instagram-url">Instagram URL</label><input id="settings-instagram-url" type="url" maxlength="2048" placeholder="https://instagram.com/..."/></div>
-<div class="settings-field"><label for="settings-youtube-url">YouTube URL</label><input id="settings-youtube-url" type="url" maxlength="2048" placeholder="https://youtube.com/..."/></div>
+<div class="settings-field"><label for="settings-instagram-url">Instagram profile URL</label><input id="settings-instagram-url" type="url" maxlength="2048" placeholder="https://instagram.com/yourname"/></div>
+<div class="settings-field"><label for="settings-youtube-url">YouTube channel / profile URL</label><input id="settings-youtube-url" type="url" maxlength="2048" placeholder="https://youtube.com/@yourname"/></div>
+</div>
+<div class="settings-grid-2">
+<div class="settings-field"><label for="settings-instagram-embeds">Instagram posts / reels to embed</label><textarea id="settings-instagram-embeds" maxlength="6500" rows="5" placeholder="https://www.instagram.com/p/.../
+https://www.instagram.com/reel/.../"></textarea><small>Up to 3 public post or reel links, one per line.</small></div>
+<div class="settings-field"><label for="settings-youtube-embeds">YouTube videos / playlists to embed</label><textarea id="settings-youtube-embeds" maxlength="6500" rows="5" placeholder="https://youtu.be/...
+https://youtube.com/playlist?list=..."></textarea><small>Up to 3 video or playlist links, one per line.</small></div>
+</div>
+<div class="settings-grid-2">
 <div class="settings-field"><label for="settings-soundcloud-url">SoundCloud URL</label><input id="settings-soundcloud-url" type="url" maxlength="2048" placeholder="https://soundcloud.com/..."/></div>
 <div class="settings-field"><label for="settings-github-url">GitHub URL</label><input id="settings-github-url" type="url" maxlength="2048" placeholder="https://github.com/..."/></div>
 <div class="settings-field"><label for="settings-website-url">Website URL</label><input id="settings-website-url" type="url" maxlength="2048" placeholder="https://..."/></div>
@@ -98,7 +118,7 @@
 </main>
 <footer><div class="shell footer-inner"><p>© <span id="year"></span> 0PTICBOX Productions</p><div><a href="members.html">Member area</a><a href="messages.html">Messages</a><a href="community.html">Create post</a></div></div></footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="profile-settings.js?v=23" type="module"></script>
-<script src="site.js?v=20"></script>
+<script src="profile-settings.js?v=24" type="module"></script>
+<script src="site.js?v=24"></script>
 </body>
 </html>

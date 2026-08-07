@@ -1,17 +1,28 @@
-OPTICBOX NETWORK v22 — ROOT-READY GITHUB FIX
+0PTICBOX NETWORK v24 — EQUAL MEMBER PROFILE LAYOUT + SOCIAL EMBEDS
 
-The earlier ZIP placed the updated website inside a nested docs/ folder, while your GitHub Pages site is currently publishing from the repository root.
+UPLOAD
+1. Upload the CONTENTS of this folder/ZIP directly into the ROOT of your GitHub repo.
+2. Replace matching files when GitHub asks.
+3. Keep your existing supabase-config.js. This package intentionally does not include it.
+4. Wait for GitHub Pages to finish deploying, then hard-refresh the site.
 
-Upload the CONTENTS of this ZIP directly into the root of the opticbox-network repository and replace matching files.
+SUPABASE — ONE QUERY
+Run this file once in the Supabase SQL Editor:
+  supabase/2026-08-profile-equal-layout-social.sql
 
-Important:
-- Keep your existing supabase-config.js. This ZIP intentionally does not include it.
-- You may delete the accidental nested docs/ folder afterward; it is not needed when Pages publishes from root.
-- Wait for the Pages action to finish, then refresh the live site with Ctrl+Shift+R.
+It is safe to run more than once and includes the earlier v23 profile/wallpaper fix.
+You can paste it into the SAME SQL Editor tab you used before or a new query tab.
 
-PROFILE SETTINGS BUG FIX (v23):
-- The website no longer exposes the internal SQL filename/error to members.
-- Saving now keeps working when an older database is missing one of the newer optional profile fields.
-- For every profile option (including wallpaper modes/links) to save, run
-  supabase/2026-08-profile-layout-wallpaper.sql once in the Supabase SQL Editor.
-- The migration is safe to run again if you already ran an older copy.
+WHAT CHANGED
+- Every member now gets the same full two-column profile layout that 0PTICBOX uses.
+- opticbox.html now opens the same shared member-profile template instead of a special page.
+- Members can add a featured project/song/app/link.
+- Members can add "Who I'd Like to Meet" entries.
+- Members can connect an Instagram profile and embed up to 3 public posts/reels.
+- Members can connect YouTube and embed up to 3 videos/playlists.
+- Existing wallpaper, avatar, accent color, interests, links, messages, posts, and reviews stay in place.
+- The v23 friendly database-error fallback remains.
+
+IMPORTANT
+Instagram/YouTube embeds only display content that those services allow to be embedded publicly.
+Private/deleted posts or videos with embedding disabled will not render.

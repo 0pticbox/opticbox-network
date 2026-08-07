@@ -16,10 +16,57 @@ const PRODUCTS = Object.freeze({
 });
 
 const $ = (id) => document.getElementById(id);
-const profileId = new URLSearchParams(window.location.search).get('id');
+const params = new URLSearchParams(window.location.search);
+const requestedId = params.get('id');
+const requestedHandle = cleanHandle(params.get('handle') || '', '');
 const editLink = $('profile-edit-link');
 const messageLink = $('profile-message-link');
 const message = $('profile-message');
+
+const OPTICBOX_FALLBACK = Object.freeze({
+  id: '',
+  display_name: '0PTICBOX',
+  profile_handle: '0pticbox',
+  profile_tagline: 'DJ, producer, and visual-tool maker',
+  status: 'Things are getting W€!RD',
+  bio: 'Electronic music, live visuals, browser experiments, and tiny games.',
+  genre: 'EDM · House · Dubstep',
+  occupation: 'DJ / producer / creative coder',
+  here_for: 'Music, visuals, and weird internet projects',
+  interests: 'EDM, Music, DJ, House music, Rave, Dance, Electronic music, Dubstep, VJ tools, Glitch art, Web audio, PICO-8',
+  avatar_url: 'assets/profile/0pticbox-avatar.jpg',
+  background_url: '',
+  background_dim: 62,
+  background_mode: 'cover',
+  accent_color: '#ff6b36',
+  instagram_url: 'https://www.instagram.com/0pticbox/',
+  instagram_embeds: 'https://www.instagram.com/p/CIQsKb5loyL/',
+  youtube_url: 'https://www.youtube.com/playlist?list=PLey2Gllwi6MQN1PMlx25zVkTHuVnQKVxR',
+  youtube_embeds: 'https://www.youtube.com/playlist?list=PLey2Gllwi6MQN1PMlx25zVkTHuVnQKVxR\nhttps://www.youtube.com/playlist?list=PLey2Gllwi6MQF7k3X_ptILi6WKp6DJCdH\nhttps://www.youtube.com/watch?v=x3szoFCz8SM&t=972s',
+  soundcloud_url: '',
+  github_url: 'https://github.com/0pticbox/opticbox-network',
+  website_url: '',
+  contact_email: '0pticboxsound@gmail.com',
+  meet_people: 'Zedd | Anton Zaslavski\nLSDREAM | Sami Diament\nCloZee | Chloé Herry\nChampagne Drip | Samuel “Sam” Pool\nGRiZ | Grant Richard Kwiecinski\nLiquid Stranger | Martin Johan Stääf',
+  featured_title: '0PTICSCOPE',
+  featured_kicker: 'Oscilloscope art lab',
+  featured_description: 'Turn audio, images, and generated signals into live motion. The full visualizer opens when you launch it.',
+  featured_url: 'apps/opticscope/index.html',
+  created_at: '2026-08-05T00:00:00Z',
+});
+
+function mergeOpticboxFallback(profile) {
+  if (!profile) return { ...OPTICBOX_FALLBACK };
+  const isOpticbox = cleanHandle(profile.profile_handle || '', '').toLowerCase() === '0pticbox' || String(profile.display_name || '').trim().toLowerCase() === '0pticbox';
+  if (!isOpticbox) return profile;
+  const merged = { ...OPTICBOX_FALLBACK, ...profile };
+  for (const [key, fallback] of Object.entries(OPTICBOX_FALLBACK)) {
+    if (typeof fallback === 'string' && String(profile[key] ?? '').trim() === '') merged[key] = fallback;
+  }
+  if (profile.id) merged.id = profile.id;
+  if (profile.created_at) merged.created_at = profile.created_at;
+  return merged;
+}
 
 function say(text, error = false) {
   if (!message) return;
@@ -36,11 +83,20 @@ function safeHttpUrl(value) {
   }
 }
 
+function safeLinkUrl(value) {
+  try {
+    const url = new URL(String(value || '').trim(), window.location.href);
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+  } catch {
+    return '';
+  }
+}
+
 function cleanHandle(value, fallback = 'member') {
   const raw = String(value || '').trim().replace(/^@+/, '');
   const cleaned = raw.replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 32);
   if (cleaned) return cleaned;
-  return String(fallback || 'member').toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 32) || 'member';
+  return String(fallback || '').toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 32) || (fallback ? 'member' : '');
 }
 
 function dateText(value, short = false) {
@@ -52,6 +108,14 @@ function dateText(value, short = false) {
 function starText(value) {
   const number = Math.max(0, Math.min(5, Math.round(Number(value) || 0)));
   return `${'★'.repeat(number)}${'☆'.repeat(5 - number)}`;
+}
+
+function listLines(value, max = 3) {
+  return String(value || '')
+    .split(/[\n,]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, max);
 }
 
 function renderAvatar(profile) {
@@ -67,8 +131,7 @@ function renderAvatar(profile) {
     letter.textContent = (profile.display_name || '?').slice(0, 1).toUpperCase();
     root.append(letter);
   }
-  const scan = document.createElement('i');
-  root.append(scan);
+  root.append(document.createElement('i'));
 }
 
 function applyWallpaper(profile) {
@@ -91,11 +154,7 @@ function applyWallpaper(profile) {
 function renderInterests(profile) {
   const root = $('profile-interests');
   root.replaceChildren();
-  const interests = String(profile.interests || '')
-    .split(/[,\n]/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .slice(0, 30);
+  const interests = listLines(profile.interests, 30);
   if (!interests.length) interests.push('0PTICBOX Network');
   for (const item of interests) {
     const tag = document.createElement('span');
@@ -139,6 +198,246 @@ function renderContactLinks(profile) {
   }
 }
 
+function renderMeet(profile) {
+  const root = $('profile-meet-list');
+  root.replaceChildren();
+  const rows = String(profile.meet_people || '')
+    .split(/\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 20);
+  if (!rows.length) {
+    const item = document.createElement('li');
+    const strong = document.createElement('strong');
+    strong.textContent = 'Community';
+    const span = document.createElement('span');
+    span.textContent = 'Friends, artists, and collaborators';
+    item.append(strong, span);
+    root.append(item);
+    return;
+  }
+  for (const row of rows) {
+    const [name, ...detailParts] = row.split('|');
+    const item = document.createElement('li');
+    const strong = document.createElement('strong');
+    strong.textContent = name.trim();
+    const span = document.createElement('span');
+    span.textContent = detailParts.join('|').trim() || 'Would love to connect';
+    item.append(strong, span);
+    root.append(item);
+  }
+}
+
+function renderPublicContact(profile) {
+  const root = $('profile-public-contact');
+  root.replaceChildren();
+  const email = String(profile.contact_email || '').trim();
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const link = document.createElement('a');
+    link.href = `mailto:${email}`;
+    link.textContent = email;
+    root.append(link);
+    return;
+  }
+  const website = safeHttpUrl(profile.website_url);
+  if (website) {
+    const link = document.createElement('a');
+    link.href = website;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = 'Website';
+    root.append(link);
+    return;
+  }
+  root.textContent = '—';
+}
+
+function renderFeatured(profile, name) {
+  const title = String(profile.featured_title || '').trim();
+  const kicker = String(profile.featured_kicker || '').trim();
+  const description = String(profile.featured_description || '').trim();
+  const url = safeLinkUrl(profile.featured_url);
+  $('profile-featured-title').textContent = title || `${name}'s page`;
+  $('profile-featured-kicker').textContent = kicker || 'Featured link';
+  $('profile-featured-description').textContent = description || 'This member has not featured a project, track, video, or page yet.';
+  const link = $('profile-featured-link');
+  link.hidden = !url;
+  if (url) link.href = url;
+}
+
+function renderAboutPoints(profile) {
+  const root = $('profile-about-points');
+  root.replaceChildren();
+  const points = [profile.occupation, profile.genre, profile.here_for].map((v) => String(v || '').trim()).filter(Boolean);
+  if (!points.length) points.push('Part of the 0PTICBOX Network');
+  for (const point of points.slice(0, 3)) {
+    const li = document.createElement('li');
+    li.textContent = point;
+    root.append(li);
+  }
+}
+
+function instagramEmbedUrl(value) {
+  const url = safeHttpUrl(value);
+  if (!url) return '';
+  try {
+    const parsed = new URL(url);
+    if (!/(^|\.)instagram\.com$/i.test(parsed.hostname.replace(/^www\./i, ''))) return '';
+    const match = parsed.pathname.match(/^\/(p|reel|tv)\/([A-Za-z0-9_-]+)/i);
+    if (!match) return '';
+    return `https://www.instagram.com/${match[1]}/${match[2]}/embed/`;
+  } catch {
+    return '';
+  }
+}
+
+function instagramHandle(value, fallback) {
+  const url = safeHttpUrl(value);
+  if (!url) return cleanHandle(fallback, 'member');
+  try {
+    const parsed = new URL(url);
+    const segment = parsed.pathname.split('/').filter(Boolean)[0] || '';
+    if (['p', 'reel', 'tv', 'explore'].includes(segment.toLowerCase())) return cleanHandle(fallback, 'member');
+    return cleanHandle(segment, fallback);
+  } catch {
+    return cleanHandle(fallback, 'member');
+  }
+}
+
+function createInstagramFrame(src, title) {
+  const wrap = document.createElement('div');
+  wrap.className = 'member-instagram-embed';
+  const frame = document.createElement('iframe');
+  frame.src = src;
+  frame.title = title;
+  frame.loading = 'lazy';
+  frame.allow = 'encrypted-media; picture-in-picture; web-share';
+  frame.referrerPolicy = 'strict-origin-when-cross-origin';
+  frame.setAttribute('scrolling', 'no');
+  wrap.append(frame);
+  return wrap;
+}
+
+function renderInstagram(profile, name, handle) {
+  const section = $('profile-instagram-section');
+  const instagramUrl = safeHttpUrl(profile.instagram_url);
+  const embeds = listLines(profile.instagram_embeds, 3).map(instagramEmbedUrl).filter(Boolean);
+  if (!instagramUrl && !embeds.length) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+  $('profile-instagram-title').textContent = `${name} on Instagram`;
+  const igHandle = instagramHandle(instagramUrl, handle);
+  $('profile-instagram-name').textContent = name;
+  $('profile-instagram-handle').textContent = `@${igHandle}`;
+  $('profile-instagram-copy').textContent = embeds.length
+    ? `${name} connected public Instagram posts or reels to this profile.`
+    : `${name} connected an Instagram profile. Public posts or reels can also be embedded from Profile Settings.`;
+
+  const tags = $('profile-instagram-tags');
+  tags.replaceChildren();
+  listLines(profile.interests, 8).forEach((item) => {
+    const tag = document.createElement('span');
+    tag.textContent = `#${item.replace(/\s+/g, '').replace(/[^a-zA-Z0-9_]/g, '').slice(0, 24)}`;
+    if (tag.textContent.length > 1) tags.append(tag);
+  });
+
+  const link = $('profile-instagram-link');
+  link.hidden = !instagramUrl;
+  if (instagramUrl) link.href = instagramUrl;
+
+  const feature = $('profile-instagram-feature');
+  const grid = $('profile-instagram-grid');
+  feature.replaceChildren();
+  grid.replaceChildren();
+  if (embeds.length) {
+    feature.append(createInstagramFrame(embeds[0], `${name} Instagram post`));
+    embeds.slice(1).forEach((embed, index) => grid.append(createInstagramFrame(embed, `${name} Instagram post ${index + 2}`)));
+  } else {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'member-social-placeholder';
+    placeholder.innerHTML = '<span>◎</span><strong>Instagram connected</strong><small>Add up to 3 public post or reel links in Profile Settings.</small>';
+    feature.append(placeholder);
+  }
+}
+
+function youtubeEmbed(value) {
+  const url = safeHttpUrl(value);
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace(/^www\./i, '').toLowerCase();
+    let videoId = '';
+    let listId = parsed.searchParams.get('list') || '';
+    let start = 0;
+    const timeRaw = parsed.searchParams.get('t') || parsed.searchParams.get('start') || '';
+    if (/^\d+$/.test(timeRaw)) start = Number(timeRaw);
+    else {
+      const m = String(timeRaw).match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/);
+      if (m && m[0]) start = (Number(m[1] || 0) * 3600) + (Number(m[2] || 0) * 60) + Number(m[3] || 0);
+    }
+    if (host === 'youtu.be') videoId = parsed.pathname.split('/').filter(Boolean)[0] || '';
+    if (host.endsWith('youtube.com')) {
+      if (parsed.pathname === '/watch') videoId = parsed.searchParams.get('v') || '';
+      const pathMatch = parsed.pathname.match(/^\/(shorts|embed)\/([A-Za-z0-9_-]{6,})/);
+      if (pathMatch) videoId = pathMatch[2];
+    }
+    if (parsed.pathname.includes('/playlist') && listId) {
+      return { src: `https://www.youtube.com/embed/videoseries?list=${encodeURIComponent(listId)}&playsinline=1&rel=0`, label: 'Playlist' };
+    }
+    if (videoId) {
+      const query = new URLSearchParams({ playsinline: '1', rel: '0' });
+      if (start > 0) query.set('start', String(start));
+      if (listId) query.set('list', listId);
+      return { src: `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?${query.toString()}`, label: 'Video' };
+    }
+    if (listId) return { src: `https://www.youtube.com/embed/videoseries?list=${encodeURIComponent(listId)}&playsinline=1&rel=0`, label: 'Playlist' };
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function renderYouTube(profile, name) {
+  const section = $('profile-media-section');
+  let rawLinks = listLines(profile.youtube_embeds, 3);
+  if (!rawLinks.length && youtubeEmbed(profile.youtube_url)) rawLinks = [profile.youtube_url];
+  const embeds = rawLinks.map(youtubeEmbed).filter(Boolean).slice(0, 3);
+  if (!embeds.length) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+  $('profile-media-title').textContent = `${name}'s Videos`;
+  $('profile-media-count').textContent = `${embeds.length} YouTube ${embeds.length === 1 ? 'embed' : 'embeds'}`;
+  const grid = $('profile-media-grid');
+  grid.replaceChildren();
+  embeds.forEach((embed, index) => {
+    const article = document.createElement('article');
+    article.className = `media-card${embeds.length === 3 && index === 2 ? ' featured-video' : ''}`;
+    const frameWrap = document.createElement('div');
+    frameWrap.className = 'video-frame';
+    const frame = document.createElement('iframe');
+    frame.src = embed.src;
+    frame.title = `${name} YouTube ${embed.label.toLowerCase()} ${index + 1}`;
+    frame.loading = 'lazy';
+    frame.allowFullscreen = true;
+    frame.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share';
+    frame.referrerPolicy = 'origin-when-cross-origin';
+    frameWrap.append(frame);
+    const copy = document.createElement('div');
+    copy.className = 'media-copy';
+    const label = document.createElement('span');
+    label.textContent = `${embed.label} ${String(index + 1).padStart(2, '0')}`;
+    const p = document.createElement('p');
+    p.textContent = 'Watch without leaving this profile page.';
+    copy.append(label, p);
+    article.append(frameWrap, copy);
+    grid.append(article);
+  });
+}
+
 function renderReviews(reviews) {
   const root = $('profile-reviews');
   root.replaceChildren();
@@ -168,68 +467,114 @@ function renderReviews(reviews) {
   }
 }
 
-if (!profileId) {
-  say('That profile link is missing a member ID.', true);
-} else if (!isSupabaseConfigured()) {
-  say('Member profiles need Supabase connected before they can load.', true);
-} else {
+function restoreHashTarget() {
+  if (!window.location.hash) return;
+  const target = document.querySelector(window.location.hash);
+  if (!target || target.hidden) return;
+  requestAnimationFrame(() => target.scrollIntoView({ block: 'start' }));
+}
+
+function renderProfile(profile, reviews = []) {
+  const name = profile.display_name || 'Member';
+  const handle = cleanHandle(profile.profile_handle, name);
+  const joined = dateText(profile.created_at);
+  document.title = `${name} | 0PTICBOX Network`;
+  applyWallpaper(profile);
+  renderAvatar(profile);
+  renderInterests(profile);
+  renderContactLinks(profile);
+  renderMeet(profile);
+  renderPublicContact(profile);
+  renderFeatured(profile, name);
+  renderAboutPoints(profile);
+  renderInstagram(profile, name, handle);
+  renderYouTube(profile, name);
+  renderReviews(reviews);
+
+  $('profile-card-title').textContent = `${name}'s Profile`;
+  $('profile-name').textContent = name;
+  $('profile-handle').textContent = `@${handle}`;
+  $('profile-public-handle').textContent = `@${handle}`;
+  $('profile-tagline').textContent = profile.profile_tagline || '0PTICBOX community member';
+  $('profile-status').textContent = profile.status || 'Checking out the 0PTICBOX network.';
+  $('detail-status').textContent = profile.status || '—';
+  $('profile-genre').textContent = profile.genre || '—';
+  $('profile-occupation').textContent = profile.occupation || '—';
+  $('profile-here-for').textContent = profile.here_for || 'Community, music, art, and projects';
+  $('profile-joined').textContent = joined;
+  $('profile-joined-short').textContent = dateText(profile.created_at, true);
+  $('profile-contact-title').textContent = `Contacting ${name}`;
+  $('profile-details-title').textContent = `${name}'s Details`;
+  $('profile-blurb-title').textContent = `${name}'s Blurbs`;
+  $('profile-about-label').textContent = `ABOUT ${name}`;
+  $('profile-bio').textContent = profile.bio || 'This member has not added an about section yet.';
+  $('profile-status-title').textContent = `${name} is...`;
+}
+
+async function run() {
+  if (!requestedId && !requestedHandle) {
+    say('That profile link is missing a member ID or handle.', true);
+    return;
+  }
+
+  if (!isSupabaseConfigured()) {
+    if (requestedHandle.toLowerCase() === '0pticbox') {
+      renderProfile(OPTICBOX_FALLBACK, []);
+      restoreHashTarget();
+      if (messageLink) messageLink.hidden = true;
+      say('');
+      return;
+    }
+    say('Member profiles need Supabase connected before they can load.', true);
+    return;
+  }
+
   const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.1/+esm');
   const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
   const viewer = (await supabase.auth.getSession()).data.session?.user || null;
 
-  if (editLink) editLink.hidden = viewer?.id !== profileId;
+  let profileQuery = supabase.from('profiles').select('*');
+  if (requestedId) profileQuery = profileQuery.eq('id', requestedId);
+  else profileQuery = profileQuery.ilike('profile_handle', requestedHandle);
+  const profileResult = await profileQuery.limit(1).maybeSingle();
+
+  let profile = profileResult.data;
+  if (!profile && requestedHandle.toLowerCase() === '0pticbox') profile = { ...OPTICBOX_FALLBACK };
+  profile = mergeOpticboxFallback(profile);
+
+  if (profileResult.error && !profile) {
+    say(profileResult.error.message, true);
+    return;
+  }
+  if (!profile) {
+    say('This member profile could not be found.', true);
+    return;
+  }
+
+  const actualId = profile.id || '';
+  let reviews = [];
+  if (actualId) {
+    const reviewResult = await supabase.from('product_reviews').select('product_slug,rating,comment,created_at,updated_at').eq('user_id', actualId).eq('visible', true).order('updated_at', { ascending: false }).limit(20);
+    if (!reviewResult.error) reviews = reviewResult.data || [];
+  }
+
+  if (editLink) editLink.hidden = !actualId || viewer?.id !== actualId;
   if (messageLink) {
-    if (!viewer) {
-      messageLink.href = 'signin.html?next=members.html';
+    if (!actualId) {
+      messageLink.hidden = true;
+    } else if (!viewer) {
+      messageLink.href = `signin.html?next=${encodeURIComponent(`profile.html?id=${actualId}`)}`;
       messageLink.textContent = 'Sign in to message';
-    } else if (viewer.id === profileId) {
+    } else if (viewer.id === actualId) {
       messageLink.hidden = true;
     } else {
-      messageLink.href = `messages.html?with=${encodeURIComponent(profileId)}`;
+      messageLink.href = `messages.html?with=${encodeURIComponent(actualId)}`;
     }
   }
 
-  const [profileResult, reviewResult] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', profileId).maybeSingle(),
-    supabase.from('product_reviews').select('product_slug,rating,comment,created_at,updated_at').eq('user_id', profileId).eq('visible', true).order('updated_at', { ascending: false }).limit(20),
-  ]);
-
-  const error = profileResult.error || reviewResult.error;
-  const profile = profileResult.data;
-  const reviews = reviewResult.data || [];
-
-  if (error) {
-    say(error.message, true);
-  } else if (!profile) {
-    say('This member profile could not be found.', true);
-  } else {
-    const name = profile.display_name || 'Member';
-    const handle = cleanHandle(profile.profile_handle, name);
-    const joined = dateText(profile.created_at);
-    document.title = `${name} | 0PTICBOX Network`;
-    applyWallpaper(profile);
-    renderAvatar(profile);
-    renderInterests(profile);
-    renderContactLinks(profile);
-    renderReviews(reviews);
-
-    $('profile-card-title').textContent = `${name}'s Profile`;
-    $('profile-name').textContent = name;
-    $('profile-handle').textContent = `@${handle}`;
-    $('profile-public-handle').textContent = `@${handle}`;
-    $('profile-tagline').textContent = profile.profile_tagline || '0PTICBOX community member';
-    $('profile-status').textContent = profile.status || 'Checking out the 0PTICBOX network.';
-    $('detail-status').textContent = profile.status || '—';
-    $('profile-genre').textContent = profile.genre || '—';
-    $('profile-occupation').textContent = profile.occupation || '—';
-    $('profile-here-for').textContent = profile.here_for || 'Community, music, art, and projects';
-    $('profile-joined').textContent = joined;
-    $('profile-joined-short').textContent = dateText(profile.created_at, true);
-    $('profile-contact-title').textContent = `Contacting ${name}`;
-    $('profile-details-title').textContent = `${name}'s Details`;
-    $('profile-blurb-title').textContent = `${name}'s Blurbs`;
-    $('profile-about-heading').textContent = profile.profile_tagline || `Welcome to ${name}'s page`;
-    $('profile-bio').textContent = profile.bio || 'This member has not added an about section yet.';
-    say('');
-  }
+  renderProfile(profile, reviews);
+  restoreHashTarget();
+  say('');
 }
+
+run().catch((error) => say(error?.message || 'This profile could not load.', true));

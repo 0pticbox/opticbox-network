@@ -1,14 +1,17 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, isSupabaseConfigured } from './supabase-config.js';
 const root = document.getElementById('profile-activity');
 const count = document.getElementById('profile-activity-count');
-const profileId = new URLSearchParams(location.search).get('id');
+const params = new URLSearchParams(location.search);
+let profileId = params.get('id');
+const requestedHandle = String(params.get('handle') || '').trim().replace(/^@+/, '').replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 32);
 function safeUrl(value){try{const u=new URL(String(value||'').trim());return ['http:','https:'].includes(u.protocol)?u.href:''}catch{return''}}
 function dateText(value){const d=new Date(value);return Number.isNaN(d.getTime())?'':new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric'}).format(d)}
 function eventDate(value){if(!value)return'';const d=new Date(`${value}T12:00:00`);return Number.isNaN(d.getTime())?'':new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric'}).format(d)}
+function empty(text='No community posts yet.'){root.replaceChildren();const p=document.createElement('p');p.className='review-empty';p.textContent=text;root.append(p);if(count)count.textContent='0 posts'}
 function render(rows){
   root.replaceChildren();
   if(count) count.textContent=`${rows.length} ${rows.length===1?'post':'posts'}`;
-  if(!rows.length){const p=document.createElement('p');p.className='review-empty';p.textContent='No community posts yet.';root.append(p);return;}
+  if(!rows.length){empty();return;}
   for(const post of rows){
     const article=document.createElement('article');article.className='profile-activity-card';
     const badge=document.createElement('span');badge.className='activity-post-badge';badge.textContent=post.post_type==='event'?'GOING TO':post.post_type==='listening'?'NOW LISTENING':'POST';article.append(badge);
@@ -21,5 +24,13 @@ function render(rows){
     const small=document.createElement('small');small.textContent=dateText(post.created_at);article.append(small);root.append(article);
   }
 }
-if(!root||!profileId||!isSupabaseConfigured()){if(root)root.innerHTML='<p class="review-empty">Community activity is unavailable.</p>'}
-else{const{createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.1/+esm');const supabase=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);const result=await supabase.from('activity_posts').select('id,post_type,title,subtitle,caption,media_url,image_url,event_date,city,created_at').eq('user_id',profileId).eq('visible',true).order('created_at',{ascending:false}).limit(20);if(result.error)root.innerHTML='<p class="review-empty">Activity could not load.</p>';else render(result.data||[])}
+async function run(){
+  if(!root)return;
+  if(!isSupabaseConfigured()){empty();return;}
+  const{createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.1/+esm');const supabase=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+  if(!profileId&&requestedHandle){const lookup=await supabase.from('profiles').select('id').ilike('profile_handle',requestedHandle).limit(1).maybeSingle();if(!lookup.error)profileId=lookup.data?.id||''}
+  if(!profileId){empty();return;}
+  const result=await supabase.from('activity_posts').select('id,post_type,title,subtitle,caption,media_url,image_url,event_date,city,created_at').eq('user_id',profileId).eq('visible',true).order('created_at',{ascending:false}).limit(20);
+  if(result.error)empty('Activity could not load.');else render(result.data||[]);
+}
+run().catch(()=>empty('Activity could not load.'));

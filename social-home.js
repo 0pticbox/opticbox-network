@@ -288,7 +288,7 @@ function makeThreadCard(thread) {
   const profileHref = profile?.id
     ? `profile.html?id=${encodeURIComponent(profile.id)}`
     : thread.type === 'official'
-      ? 'opticbox.html'
+      ? 'profile.html?handle=0pticbox'
       : 'members.html';
 
   const identity = document.createElement('a');
