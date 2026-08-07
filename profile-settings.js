@@ -176,6 +176,35 @@ function updateInstagramHighlightPreview() {
   root.hidden = !image;
   root.style.backgroundImage = image ? `url("${String(image).replaceAll('"', '%22')}")` : '';
 }
+function updateSocialTotalPreview() {
+  const totalRoot = $('settings-social-total-value');
+  const breakdownRoot = $('settings-social-total-breakdown');
+  if (!totalRoot || !breakdownRoot) return;
+
+  const read = (id) => {
+    const raw = String($(id)?.value || '').trim();
+    if (!raw || !/^\d+$/.test(raw)) return null;
+    const value = Number(raw);
+    return Number.isSafeInteger(value) && value >= 0 ? value : null;
+  };
+
+  const instagram = read('settings-instagram-followers');
+  const youtube = read('settings-youtube-subscribers');
+  if (instagram === null && youtube === null) {
+    totalRoot.textContent = '—';
+    breakdownRoot.textContent = 'Instagram — + YouTube —';
+    return;
+  }
+
+  const instagramCount = instagram ?? 0;
+  const youtubeCount = youtube ?? 0;
+  const total = instagramCount + youtubeCount;
+  const compact = new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short', maximumFractionDigits: total >= 1000 ? 1 : 0 });
+  const exact = new Intl.NumberFormat('en-US');
+  totalRoot.textContent = compact.format(total);
+  breakdownRoot.textContent = `Instagram ${exact.format(instagramCount)} + YouTube ${exact.format(youtubeCount)} = ${exact.format(total)}`;
+}
+
 function fillForm() {
   $('settings-display-name').value = profile.display_name || fallbackName();
   $('settings-profile-tagline').value = profile.profile_tagline || '';
@@ -198,6 +227,7 @@ function fillForm() {
   $('settings-youtube-url').value = profile.youtube_url || '';
   $('settings-instagram-followers').value = profile.instagram_followers ?? '';
   $('settings-youtube-subscribers').value = profile.youtube_subscribers ?? '';
+  updateSocialTotalPreview();
   const legacyInstagramPost = String(profile.instagram_embeds || '').split(/\n/).map((line) => line.trim()).filter(Boolean)[0] || '';
   $('settings-instagram-highlight-post-url').value = profile.instagram_highlight_post_url || legacyInstagramPost;
   $('settings-youtube-embeds').value = profile.youtube_embeds || '';
@@ -262,7 +292,10 @@ async function bootstrap() {
   await loadBlockedAccounts();
 }
 
-form.addEventListener('input', updatePreview);
+form.addEventListener('input', () => {
+  updatePreview();
+  updateSocialTotalPreview();
+});
 document.querySelectorAll('[data-cursor-style]').forEach((button) => button.addEventListener('click', () => chooseCursor(button.dataset.cursorStyle)));
 $('settings-avatar-file').addEventListener('change', () => { const file=$('settings-avatar-file').files?.[0];previewAvatarUrl=file?URL.createObjectURL(file):'';updatePreview(); });
 $('settings-background-file').addEventListener('change', () => { const file=$('settings-background-file').files?.[0];previewWallpaperUrl=file?URL.createObjectURL(file):'';if(file)$('settings-remove-background').checked=false;updatePreview(); });

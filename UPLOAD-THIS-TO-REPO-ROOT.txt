@@ -1,15 +1,13 @@
-0PTICBOX NETWORK v28 — FOLLOWER TOTAL NULL-FALLBACK FIX
-
-Upload the CONTENTS of this folder to the root of your GitHub repository, replacing matching files.
-Keep your existing supabase-config.js if GitHub already has your working Supabase URL and publishable key.
+OPTICBOX NETWORK v29 — COMBINED INSTAGRAM + YOUTUBE TOTAL
 
 WHAT CHANGED
-1. Fixed the Total Followers dash on the existing 0PTICBOX profile.
-2. v27 only applied string fallbacks; numeric social-count fallbacks were ignored when the new Supabase columns were NULL.
-3. The existing public Instagram snapshot already present in the project (957 followers, Aug 5 2026) is now used as the 0PTICBOX fallback until a newer count is saved in Profile Settings.
-4. Any Instagram/YouTube numbers saved by the member still win over the fallback.
-5. Total Followers remains Instagram followers + YouTube subscribers.
-6. Other members are never given invented counts; they set their own public counts in Profile Settings.
+1. TOTAL FOLLOWERS is explicitly calculated as Instagram followers + YouTube subscribers.
+2. Profile Settings now shows a live Combined Audience preview so artists can see the exact math before saving.
+3. The public profile tooltip/accessible label shows the exact Instagram + YouTube breakdown.
+4. Added compatibility aliases for older YouTube subscriber field names.
+5. No new Supabase SQL is required if you already ran the v27/v28 follower-count migration.
 
-SUPABASE
-Run supabase/2026-08-profile-follower-counts-v28.sql once. It safely adds the count columns and backfills only the known 0PTICBOX Instagram snapshot when that value is still NULL.
+IMPORTANT
+A YouTube channel URL by itself does not contain a subscriber count. Enter the artist's current YouTube subscriber count in Profile Settings > YouTube subscribers. Once saved, it is added to Instagram automatically.
+
+Upload the contents of this folder to the repository root, replacing matching files. Keep your existing supabase-config.js.

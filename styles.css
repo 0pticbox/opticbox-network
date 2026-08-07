@@ -3724,3 +3724,14 @@ body.member-profile-page > .topbar { z-index: 40; }
 .settings-social-total-note strong{color:var(--cyan);letter-spacing:.06em;text-transform:uppercase}
 .social-count-settings input[type="number"]{font-variant-numeric:tabular-nums}
 @media(max-width:420px){.member-profile-stats strong{font-size:11px}.member-profile-stats span{font-size:7px}}
+
+
+/* ==========================================================================
+   v29 — COMBINED INSTAGRAM + YOUTUBE AUDIENCE TOTAL
+   ========================================================================== */
+.settings-social-total-preview{display:grid;grid-template-columns:1fr auto;gap:2px 14px;align-items:center;margin:-5px 0 18px;padding:11px 12px;border:1px solid rgba(157,174,207,.28);background:rgba(5,8,18,.55);box-shadow:4px 4px 0 rgba(0,0,0,.22)}
+.settings-social-total-preview span{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#9fb0cc}
+.settings-social-total-preview strong{grid-row:1 / span 2;grid-column:2;font-size:22px;color:var(--cyan);font-variant-numeric:tabular-nums}
+.settings-social-total-preview small{font-size:9px;color:#d5def0;font-variant-numeric:tabular-nums}
+.member-followers-stat strong::after{content:''}
+@media(max-width:520px){.settings-social-total-preview{grid-template-columns:1fr}.settings-social-total-preview strong{grid-row:auto;grid-column:auto;font-size:20px}}

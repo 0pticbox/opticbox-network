@@ -134,23 +134,41 @@ function compactCount(value) {
 function renderFollowerTotal(profile) {
   const root = $('profile-followers-total');
   if (!root) return;
+
+  // TOTAL FOLLOWERS is always the combined audience:
+  // Instagram followers + YouTube subscribers.
+  // The alias fallbacks keep older profile rows working if a previous build
+  // used a slightly different YouTube field name.
   const instagram = socialCount(profile.instagram_followers);
-  const youtube = socialCount(profile.youtube_subscribers);
+  const youtube = socialCount(
+    profile.youtube_subscribers ??
+    profile.youtube_subscriber_count ??
+    profile.youtube_subscriptions ??
+    profile.youtube_followers
+  );
   const hasInstagram = instagram !== null;
   const hasYouTube = youtube !== null;
+
   if (!hasInstagram && !hasYouTube) {
     root.textContent = '—';
-    root.title = 'This member has not added social audience counts yet.';
+    root.title = 'Add Instagram followers and/or YouTube subscribers in Profile Settings.';
     root.removeAttribute('aria-label');
+    root.dataset.instagram = '';
+    root.dataset.youtube = '';
     return;
   }
-  const total = (instagram || 0) + (youtube || 0);
+
+  const instagramCount = hasInstagram ? instagram : 0;
+  const youtubeCount = hasYouTube ? youtube : 0;
+  const total = instagramCount + youtubeCount;
+
   root.textContent = compactCount(total);
+  root.dataset.instagram = String(instagramCount);
+  root.dataset.youtube = String(youtubeCount);
+  root.dataset.total = String(total);
+
   const exact = new Intl.NumberFormat('en-US');
-  const parts = [];
-  if (hasInstagram) parts.push(`Instagram ${exact.format(instagram)}`);
-  if (hasYouTube) parts.push(`YouTube ${exact.format(youtube)}`);
-  const breakdown = `${parts.join(' + ')} = ${exact.format(total)} total followers`;
+  const breakdown = `Instagram ${exact.format(instagramCount)} + YouTube ${exact.format(youtubeCount)} = ${exact.format(total)} total followers`;
   root.title = breakdown;
   root.setAttribute('aria-label', breakdown);
 }
