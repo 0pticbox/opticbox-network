@@ -44,7 +44,10 @@ const OPTICBOX_FALLBACK = Object.freeze({
   instagram_highlight_post_url: 'https://www.instagram.com/p/CIQsKb5loyL/',
   instagram_embeds: 'https://www.instagram.com/p/CIQsKb5loyL/',
   youtube_url: 'https://www.youtube.com/playlist?list=PLey2Gllwi6MQN1PMlx25zVkTHuVnQKVxR',
-  instagram_followers: null,
+  // Existing public Instagram snapshot from the original 0PTICBOX profile (Aug 5, 2026).
+  // This prevents the owner profile from showing an empty audience total before the
+  // new editable social-count fields have been saved in Supabase.
+  instagram_followers: 957,
   youtube_subscribers: null,
   youtube_embeds: 'https://www.youtube.com/playlist?list=PLey2Gllwi6MQN1PMlx25zVkTHuVnQKVxR\nhttps://www.youtube.com/playlist?list=PLey2Gllwi6MQF7k3X_ptILi6WKp6DJCdH\nhttps://www.youtube.com/watch?v=x3szoFCz8SM&t=972s',
   soundcloud_url: '',
@@ -66,6 +69,10 @@ function mergeOpticboxFallback(profile) {
   const merged = { ...OPTICBOX_FALLBACK, ...profile };
   for (const [key, fallback] of Object.entries(OPTICBOX_FALLBACK)) {
     if (typeof fallback === 'string' && String(profile[key] ?? '').trim() === '') merged[key] = fallback;
+    // Numeric profile fallbacks (such as the known social snapshot) must also
+    // survive a database row whose newly-added column is still NULL. v27 only
+    // restored strings, which is why Total Followers rendered as a dash.
+    if (typeof fallback === 'number' && (profile[key] === null || profile[key] === undefined || profile[key] === '')) merged[key] = fallback;
   }
   if (profile.id) merged.id = profile.id;
   if (profile.created_at) merged.created_at = profile.created_at;

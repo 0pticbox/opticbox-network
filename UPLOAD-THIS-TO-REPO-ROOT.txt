@@ -1,24 +1,15 @@
-0PTICBOX NETWORK v27 — ARTIST TOTAL FOLLOWERS
+0PTICBOX NETWORK v28 — FOLLOWER TOTAL NULL-FALLBACK FIX
 
-UPLOAD
-======
-Upload the CONTENTS of this ZIP to the ROOT of the opticbox-network GitHub repository.
-Replace matching files. Keep your existing supabase-config.js.
+Upload the CONTENTS of this folder to the root of your GitHub repository, replacing matching files.
+Keep your existing supabase-config.js if GitHub already has your working Supabase URL and publishable key.
 
 WHAT CHANGED
-============
-1. Every member profile now has a Total Followers stat beside the Joined stat.
-2. Total Followers = Instagram followers + YouTube subscribers.
-3. Artists can enter both public counts from Profile Settings.
-4. The profile formats large totals cleanly (for example 16.7K) while the hover/title keeps the exact Instagram + YouTube breakdown.
-5. If both counts are blank, the profile shows a dash instead of pretending the member has zero followers.
-6. 0PTICBOX uses the exact same follower-count system as every other member.
-
-WHY COUNTS ARE ENTERED BY THE MEMBER
-=====================================
-The site is static-hosted and Instagram does not provide a reliable no-login public follower-count endpoint. YouTube's live count also requires API credentials. Manual public counts avoid fragile scraping and keep API keys out of the browser.
+1. Fixed the Total Followers dash on the existing 0PTICBOX profile.
+2. v27 only applied string fallbacks; numeric social-count fallbacks were ignored when the new Supabase columns were NULL.
+3. The existing public Instagram snapshot already present in the project (957 followers, Aug 5 2026) is now used as the 0PTICBOX fallback until a newer count is saved in Profile Settings.
+4. Any Instagram/YouTube numbers saved by the member still win over the fallback.
+5. Total Followers remains Instagram followers + YouTube subscribers.
+6. Other members are never given invented counts; they set their own public counts in Profile Settings.
 
 SUPABASE
-========
-Run supabase/2026-08-profile-follower-counts.sql once in the Supabase SQL Editor.
-It is safe to run more than once.
+Run supabase/2026-08-profile-follower-counts-v28.sql once. It safely adds the count columns and backfills only the known 0PTICBOX Instagram snapshot when that value is still NULL.

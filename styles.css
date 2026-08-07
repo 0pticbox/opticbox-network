@@ -3715,7 +3715,7 @@ body.member-profile-page > .topbar { z-index: 40; }
 
 
 /* ==========================================================================
-   v27 — ARTIST LANDING PAGE SOCIAL AUDIENCE TOTAL
+   v28 — FOLLOWER TOTAL NULL-FALLBACK FIX
    ========================================================================== */
 .member-profile-stats{grid-template-columns:repeat(4,minmax(0,1fr))}
 .member-followers-stat strong{color:var(--member-accent,var(--orange));font-size:14px}

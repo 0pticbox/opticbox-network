@@ -957,3 +957,9 @@ alter table public.profiles add constraint profiles_youtube_subscribers_check ch
 grant select on public.profiles to anon, authenticated;
 grant insert, update on public.profiles to authenticated;
 notify pgrst, 'reload schema';
+
+
+-- v28 follower total null-fallback fix
+alter table public.profiles add column if not exists instagram_followers bigint;
+alter table public.profiles add column if not exists youtube_subscribers bigint;
+update public.profiles set instagram_followers = 957 where lower(coalesce(profile_handle,'')) = '0pticbox' and instagram_followers is null;
