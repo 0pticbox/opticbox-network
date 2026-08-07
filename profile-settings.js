@@ -42,6 +42,14 @@ function safeInstagramPostUrl(value) {
   } catch { return ''; }
 }
 function validEmail(value) { const raw=String(value||'').trim(); return !raw || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw); }
+function optionalAudienceCount(id, label) {
+  const raw = String($(id)?.value || '').trim();
+  if (!raw) return null;
+  if (!/^\d+$/.test(raw)) throw new Error(`${label} must be a whole number or left blank.`);
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value < 0 || value > 1000000000000) throw new Error(`${label} is outside the supported range.`);
+  return value;
+}
 function cleanSocialEmbeds(value, kind) {
   const lines = String(value || '').split(/\n/).map((line) => line.trim()).filter(Boolean);
   if (lines.length > 3) throw new Error(`Add no more than 3 ${kind === 'instagram' ? 'Instagram' : 'YouTube'} embeds.`);
@@ -69,7 +77,7 @@ function cleanSocialEmbeds(value, kind) {
 
 const PROFILE_UPDATE_FIELDS = new Set([
   'display_name','profile_handle','profile_tagline','status','bio','genre','occupation','here_for','interests','meet_people',
-  'avatar_url','background_url','background_dim','background_mode','accent_color','instagram_url','youtube_url',
+  'avatar_url','background_url','background_dim','background_mode','accent_color','instagram_url','youtube_url','instagram_followers','youtube_subscribers',
   'instagram_highlight_image_url','instagram_highlight_post_url','instagram_embeds','youtube_embeds','featured_title','featured_kicker','featured_description','featured_url',
   'soundcloud_url','github_url','website_url','contact_email','updated_at',
 ]);
@@ -188,6 +196,8 @@ function fillForm() {
   $('settings-background-mode').value = ['cover','contain','tile'].includes(profile.background_mode) ? profile.background_mode : 'cover';
   $('settings-instagram-url').value = profile.instagram_url || '';
   $('settings-youtube-url').value = profile.youtube_url || '';
+  $('settings-instagram-followers').value = profile.instagram_followers ?? '';
+  $('settings-youtube-subscribers').value = profile.youtube_subscribers ?? '';
   const legacyInstagramPost = String(profile.instagram_embeds || '').split(/\n/).map((line) => line.trim()).filter(Boolean)[0] || '';
   $('settings-instagram-highlight-post-url').value = profile.instagram_highlight_post_url || legacyInstagramPost;
   $('settings-youtube-embeds').value = profile.youtube_embeds || '';
@@ -300,6 +310,8 @@ form.addEventListener('submit', async (event) => {
     const instagramHighlightPostUrl = safeInstagramPostUrl(instagramHighlightPostRaw);
     if (instagramHighlightPostRaw && !instagramHighlightPostUrl) throw new Error('Instagram highlight link must be a public Instagram post or reel URL.');
     const youtubeEmbeds = cleanSocialEmbeds($('settings-youtube-embeds').value, 'youtube');
+    const instagramFollowers = optionalAudienceCount('settings-instagram-followers', 'Instagram followers');
+    const youtubeSubscribers = optionalAudienceCount('settings-youtube-subscribers', 'YouTube subscribers');
 
     const changes = {
       display_name: $('settings-display-name').value.trim(),
@@ -323,6 +335,8 @@ form.addEventListener('submit', async (event) => {
       accent_color: $('settings-accent-color').value,
       instagram_url: urls.instagram,
       youtube_url: urls.youtube,
+      instagram_followers: instagramFollowers,
+      youtube_subscribers: youtubeSubscribers,
       instagram_highlight_image_url: instagramHighlightImageUrl,
       instagram_highlight_post_url: instagramHighlightPostUrl,
       youtube_embeds: youtubeEmbeds,
@@ -345,7 +359,7 @@ form.addEventListener('submit', async (event) => {
     if (skipped.length) {
       setMessage('Profile saved. Some newer profile options are not available yet, but the rest of your changes were saved.');
     } else {
-      setMessage('Profile, favorite Instagram photo, YouTube embeds, links, and wallpaper saved.');
+      setMessage('Profile, social follower total, Instagram highlight, YouTube embeds, links, and wallpaper saved.');
     }
   } catch (error) {
     console.error('Profile settings save failed:', error);

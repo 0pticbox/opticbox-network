@@ -3712,3 +3712,15 @@ body.member-profile-page > .topbar { z-index: 40; }
     background-position: center top, center top !important;
   }
 }
+
+
+/* ==========================================================================
+   v27 — ARTIST LANDING PAGE SOCIAL AUDIENCE TOTAL
+   ========================================================================== */
+.member-profile-stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+.member-followers-stat strong{color:var(--member-accent,var(--orange));font-size:14px}
+.member-followers-stat span{line-height:1.05}
+.settings-social-total-note{margin:-2px 0 14px;padding:10px 12px;border-left:3px solid var(--cyan);background:rgba(20,211,255,.07);color:#c8d6ef;font-size:10px;line-height:1.55}
+.settings-social-total-note strong{color:var(--cyan);letter-spacing:.06em;text-transform:uppercase}
+.social-count-settings input[type="number"]{font-variant-numeric:tabular-nums}
+@media(max-width:420px){.member-profile-stats strong{font-size:11px}.member-profile-stats span{font-size:7px}}

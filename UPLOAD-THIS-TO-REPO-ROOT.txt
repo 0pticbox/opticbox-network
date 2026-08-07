@@ -1,4 +1,4 @@
-0PTICBOX NETWORK v26 — BACKGROUND OWNERSHIP FIX
+0PTICBOX NETWORK v27 — ARTIST TOTAL FOLLOWERS
 
 UPLOAD
 ======
@@ -7,16 +7,18 @@ Replace matching files. Keep your existing supabase-config.js.
 
 WHAT CHANGED
 ============
-1. The main Opinion Hub / feed (index.html) now reads background_gif_url from the existing Admin Site Background setting.
-2. The Admin-selected GIF/image is therefore the default background whenever someone is on the main feed.
-3. Member profile pages ignore the Admin/feed background and render that member's own background_url GIF/image instead.
-4. Going Back/Home to the feed restores the Admin-selected background automatically.
-5. Members who have not selected a personal wallpaper still use the neutral built-in profile fallback.
+1. Every member profile now has a Total Followers stat beside the Joined stat.
+2. Total Followers = Instagram followers + YouTube subscribers.
+3. Artists can enter both public counts from Profile Settings.
+4. The profile formats large totals cleanly (for example 16.7K) while the hover/title keeps the exact Instagram + YouTube breakdown.
+5. If both counts are blank, the profile shows a dash instead of pretending the member has zero followers.
+6. 0PTICBOX uses the exact same follower-count system as every other member.
+
+WHY COUNTS ARE ENTERED BY THE MEMBER
+=====================================
+The site is static-hosted and Instagram does not provide a reliable no-login public follower-count endpoint. YouTube's live count also requires API credentials. Manual public counts avoid fragile scraping and keep API keys out of the browser.
 
 SUPABASE
 ========
-No new SQL migration is required for v26. It uses the existing site_content.background_gif_url Admin setting and the existing profile wallpaper fields from v25.
-
-ADMIN
-=====
-Use Admin Dashboard > Site background GIF to choose the feed background. Save it, then refresh the feed.
+Run supabase/2026-08-profile-follower-counts.sql once in the Supabase SQL Editor.
+It is safe to run more than once.

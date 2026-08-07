@@ -44,6 +44,8 @@ const OPTICBOX_FALLBACK = Object.freeze({
   instagram_highlight_post_url: 'https://www.instagram.com/p/CIQsKb5loyL/',
   instagram_embeds: 'https://www.instagram.com/p/CIQsKb5loyL/',
   youtube_url: 'https://www.youtube.com/playlist?list=PLey2Gllwi6MQN1PMlx25zVkTHuVnQKVxR',
+  instagram_followers: null,
+  youtube_subscribers: null,
   youtube_embeds: 'https://www.youtube.com/playlist?list=PLey2Gllwi6MQN1PMlx25zVkTHuVnQKVxR\nhttps://www.youtube.com/playlist?list=PLey2Gllwi6MQF7k3X_ptILi6WKp6DJCdH\nhttps://www.youtube.com/watch?v=x3szoFCz8SM&t=972s',
   soundcloud_url: '',
   github_url: 'https://github.com/0pticbox/opticbox-network',
@@ -105,6 +107,45 @@ function dateText(value, short = false) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
   return new Intl.DateTimeFormat('en-US', short ? { year: 'numeric' } : { month: 'long', year: 'numeric' }).format(date);
+}
+
+function socialCount(value) {
+  if (value === null || value === undefined || String(value).trim() === '') return null;
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) return null;
+  return Math.floor(number);
+}
+
+function compactCount(value) {
+  return new Intl.NumberFormat('en-US', {
+    notation: 'compact',
+    compactDisplay: 'short',
+    maximumFractionDigits: value >= 1000 ? 1 : 0,
+  }).format(value);
+}
+
+function renderFollowerTotal(profile) {
+  const root = $('profile-followers-total');
+  if (!root) return;
+  const instagram = socialCount(profile.instagram_followers);
+  const youtube = socialCount(profile.youtube_subscribers);
+  const hasInstagram = instagram !== null;
+  const hasYouTube = youtube !== null;
+  if (!hasInstagram && !hasYouTube) {
+    root.textContent = '—';
+    root.title = 'This member has not added social audience counts yet.';
+    root.removeAttribute('aria-label');
+    return;
+  }
+  const total = (instagram || 0) + (youtube || 0);
+  root.textContent = compactCount(total);
+  const exact = new Intl.NumberFormat('en-US');
+  const parts = [];
+  if (hasInstagram) parts.push(`Instagram ${exact.format(instagram)}`);
+  if (hasYouTube) parts.push(`YouTube ${exact.format(youtube)}`);
+  const breakdown = `${parts.join(' + ')} = ${exact.format(total)} total followers`;
+  root.title = breakdown;
+  root.setAttribute('aria-label', breakdown);
 }
 
 function starText(value) {
@@ -500,6 +541,7 @@ function renderProfile(profile, reviews = []) {
   renderInstagram(profile, name, handle);
   renderYouTube(profile, name);
   renderReviews(reviews);
+  renderFollowerTotal(profile);
 
   $('profile-card-title').textContent = `${name}'s Profile`;
   $('profile-name').textContent = name;

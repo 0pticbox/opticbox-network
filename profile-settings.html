@@ -6,8 +6,8 @@
 <meta content="Edit your 0PTICBOX Network profile, links, appearance, and site cursor." name="description"/>
 <meta content="#080b13" name="theme-color"/>
 <title>Profile Settings | 0PTICBOX Network</title>
-<link href="styles.css?v=25" rel="stylesheet"/>
-<link href="network-upgrade.css?v=25" rel="stylesheet"/>
+<link href="styles.css?v=27" rel="stylesheet"/>
+<link href="network-upgrade.css?v=27" rel="stylesheet"/>
 
 
 
@@ -97,6 +97,11 @@ Game developers | people making weird things"></textarea><small>One person or gr
 <div class="settings-field"><label for="settings-instagram-url">Instagram profile URL</label><input id="settings-instagram-url" type="url" maxlength="2048" placeholder="https://instagram.com/yourname"/></div>
 <div class="settings-field"><label for="settings-youtube-url">YouTube channel / profile URL</label><input id="settings-youtube-url" type="url" maxlength="2048" placeholder="https://youtube.com/@yourname"/></div>
 </div>
+<div class="settings-grid-2 social-count-settings">
+<div class="settings-field"><label for="settings-instagram-followers">Instagram followers <span class="settings-optional">(optional)</span></label><input id="settings-instagram-followers" type="number" min="0" max="1000000000000" step="1" inputmode="numeric" placeholder="12500"/><small>Enter the public follower count shown on your Instagram.</small></div>
+<div class="settings-field"><label for="settings-youtube-subscribers">YouTube subscribers <span class="settings-optional">(optional)</span></label><input id="settings-youtube-subscribers" type="number" min="0" max="1000000000000" step="1" inputmode="numeric" placeholder="4200"/><small>Enter the public subscriber count shown on your YouTube channel.</small></div>
+</div>
+<p class="settings-social-total-note">Your profile adds these together as <strong>Total Followers</strong> beside your join date. Leave both blank if you do not want to show a total.</p>
 <div class="settings-grid-2">
 <div class="settings-field instagram-highlight-settings"><label for="settings-instagram-highlight-file">Favorite Instagram photo</label><input id="settings-instagram-highlight-file" accept="image/png,image/jpeg,image/webp,image/gif" type="file"/><small>Choose one favorite image to highlight. The public profile shows only the photo, not the full Instagram post.</small><div class="settings-instagram-highlight-preview" id="settings-instagram-highlight-preview" hidden></div><label class="settings-inline-check"><input id="settings-remove-instagram-highlight" type="checkbox"/> Remove the current highlighted photo</label></div>
 <div class="settings-field"><label for="settings-youtube-embeds">YouTube videos / playlists to embed</label><textarea id="settings-youtube-embeds" maxlength="6500" rows="5" placeholder="https://youtu.be/...
@@ -118,7 +123,7 @@ https://youtube.com/playlist?list=..."></textarea><small>Up to 3 video or playli
 </main>
 <footer><div class="shell footer-inner"><p>© <span id="year"></span> 0PTICBOX Productions</p><div><a href="members.html">Member area</a><a href="messages.html">Messages</a><a href="community.html">Create post</a></div></div></footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="profile-settings.js?v=25" type="module"></script>
+<script src="profile-settings.js?v=27" type="module"></script>
 <script src="site.js?v=25"></script>
 </body>
 </html>
