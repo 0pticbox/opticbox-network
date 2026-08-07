@@ -6,7 +6,6 @@ import {
 
 const PRODUCTS = Object.freeze({
   opticscope: '0PTICSCOPE',
-  '0ps3': '0PS3 Visualizer',
   spectravault: 'SPECTRAVAULT',
   distortion: 'DISTORTION',
   'dj-visual-studio': 'DJ Visual Studio',
@@ -632,7 +631,7 @@ async function run() {
   let reviews = [];
   if (actualId) {
     const reviewResult = await supabase.from('product_reviews').select('product_slug,rating,comment,created_at,updated_at').eq('user_id', actualId).eq('visible', true).order('updated_at', { ascending: false }).limit(20);
-    if (!reviewResult.error) reviews = reviewResult.data || [];
+    if (!reviewResult.error) reviews = (reviewResult.data || []).filter((review) => Boolean(PRODUCTS[review.product_slug]));
   }
 
   if (editLink) editLink.hidden = !actualId || viewer?.id !== actualId;

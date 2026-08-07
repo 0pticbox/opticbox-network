@@ -1,13 +1,8 @@
-OPTICBOX NETWORK v32 — ROOT READY
-================================
-Upload the CONTENTS of this ZIP to the root of the opticbox-network GitHub repository.
-Replace matching files.
+0PTICBOX NETWORK v34 — 0PS3 REMOVED
 
-v32 FIREFOX AUDIO CHANGE
-- Firefox versions of 0PTICSCOPE, 0PS3, and SPECTRAVAULT default to 0PTIC'S AUDIO BRIDGE.
-- Bridge download: downloads/0ptics-audio-bridge-windows.zip
-- Bridge listens only on 127.0.0.1:17491 and reads the Windows default output meter.
-- Audio Input / Audio File / Screen Audio remain available as fallback sources.
-- No new Supabase SQL is required.
+Upload the CONTENTS of this folder to the root of the GitHub repository and replace matching files.
 
-Keep your existing supabase-config.js. It is intentionally not included here.
+0PS3 has been retired from FREE TOOLS, browser builds, downloads, review UI, and public review surfaces.
+0PTICSCOPE and SPECTRAVAULT keep the Firefox + 0PTIC'S AUDIO BRIDGE workflow.
+
+No Supabase migration is required for this removal. Existing historical 0PS3 review rows are left in the database but are no longer shown by the site.

@@ -6,7 +6,6 @@ import {
 
 const PRODUCTS = Object.freeze({
   opticscope: '0PTICSCOPE',
-  '0ps3': '0PS3 Visualizer',
   spectravault: 'SPECTRAVAULT',
   distortion: 'DISTORTION',
   'dj-visual-studio': 'DJ Visual Studio',

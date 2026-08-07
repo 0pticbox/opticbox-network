@@ -287,20 +287,23 @@
     const box = document.getElementById('bridgeStatus');
     const text = document.getElementById('bridgeStatusText');
     if (!box || !text) return;
-    const connected = Boolean(bridge?.connected);
+    const connected = Boolean(bridge?.connected), phase = bridge?.phase || 'idle';
     box.classList.toggle('connected', connected);
-    text.textContent = connected ? 'BRIDGE CONNECTED · WINDOWS OUTPUT' : "LOOKING FOR 0PTIC'S AUDIO BRIDGE";
+    if (connected) text.textContent = 'BRIDGE CONNECTED · WINDOWS OUTPUT';
+    else if (phase === 'connecting') text.textContent = 'FIREFOX PERMISSION · ALLOW DEVICE APPS & SERVICES';
+    else if (phase === 'blocked') text.textContent = 'BRIDGE BLOCKED · ALLOW DEVICE APPS & SERVICES, THEN CONNECT AGAIN';
+    else text.textContent = 'BRIDGE READY · START BRIDGE, THEN PRESS CONNECT';
     if (bridgeMode) {
-      setStatus(connected ? "0PTIC'S AUDIO BRIDGE LIVE" : "START 0PTIC'S AUDIO BRIDGE");
+      setStatus(connected ? "0PTIC'S AUDIO BRIDGE LIVE" : phase === 'blocked' ? 'FIREFOX LOCAL ACCESS BLOCKED' : 'PRESS CONNECT BRIDGE');
       stageHint.style.display = connected ? 'none' : 'block';
-      stageHint.textContent = connected ? '' : "START 0PTIC'S AUDIO BRIDGE";
+      stageHint.textContent = connected ? '' : phase === 'blocked' ? 'ALLOW DEVICE APPS & SERVICES, THEN CONNECT AGAIN' : 'START BRIDGE, THEN PRESS CONNECT';
     }
   }
 
   function useBridge() {
     disconnectCurrentAudio();
     bridgeMode = true;
-    window.OpticsAudioBridge?.reconnect?.();
+    window.OpticsAudioBridge?.connect?.();
     updateBridgeUi();
   }
   window.addEventListener('opticbridgechange', updateBridgeUi);
@@ -1642,7 +1645,7 @@
   document.getElementById('refreshAudioDevices')?.addEventListener('click', () => refreshFirefoxAudioDevices(true));
   navigator.mediaDevices?.addEventListener?.('devicechange', () => refreshFirefoxAudioDevices(false));
   refreshFirefoxAudioDevices(false);
-  useBridge();
+  updateBridgeUi();
   document.getElementById('logoInput').addEventListener('change', event => loadLogo(event.target.files[0]));
   document.getElementById('removeLogoBtn').addEventListener('click', () => { logoImage = null; setStatus('LOGO REMOVED'); });
   flowToggleBtn.addEventListener('click', () => {

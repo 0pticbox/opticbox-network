@@ -210,7 +210,7 @@ namespace OpticsAudioBridge {
                     string html = "<!doctype html><meta charset='utf-8'><title>0PTIC'S AUDIO BRIDGE</title>" +
                         "<style>body{background:#070707;color:#eee;font:16px Consolas,monospace;padding:32px}b{color:#ff914d}code{color:#9ee7ff}</style>" +
                         "<h1>0PTIC'S AUDIO BRIDGE</h1><p><b>RUNNING</b> — reading the Windows default speaker/headphone output meter.</p>" +
-                        "<p>Keep this window open, then open an OPTICBOX Firefox build. The browser app connects automatically.</p>" +
+                        "<p>Keep this bridge running. In the OPTICBOX Firefox build, press <b>CONNECT 0PTIC'S AUDIO BRIDGE</b> once and allow Firefox's <b>Device apps &amp; services</b> permission if prompted.</p><p><b>Do not select this bridge window in Screen Audio.</b> The browser connects directly to the bridge over localhost.</p>" +
                         "<p>Bridge endpoint: <code>http://127.0.0.1:17491/status</code></p>";
                     WriteResponse(stream, "200 OK", "text/html; charset=utf-8", html);
                 }
@@ -226,6 +226,7 @@ namespace OpticsAudioBridge {
                 "Access-Control-Allow-Origin: *\r\n" +
                 "Access-Control-Allow-Methods: GET, OPTIONS\r\n" +
                 "Access-Control-Allow-Headers: Content-Type\r\n" +
+                "Access-Control-Allow-Private-Network: true\r\n" +
                 "Connection: close\r\n\r\n";
             byte[] hb = Encoding.ASCII.GetBytes(headers);
             stream.Write(hb, 0, hb.Length);
@@ -247,7 +248,7 @@ try {
     Write-Host "  PORT   : 127.0.0.1:17491"
     Write-Host ""
     Write-Host "  Keep this window open while using the Firefox versions of"
-    Write-Host "  0PTICSCOPE, 0PS3, or SPECTRAVAULT."
+    Write-Host "  0PTICSCOPE or SPECTRAVAULT."
     Write-Host ""
     Write-Host "  Press ENTER to stop the bridge."
     [void][Console]::ReadLine()

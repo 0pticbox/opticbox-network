@@ -6,7 +6,6 @@ import {
 
 const PRODUCTS = Object.freeze({
   opticscope: '0PTICSCOPE',
-  '0ps3': '0PS3 Visualizer',
   spectravault: 'SPECTRAVAULT',
   distortion: 'DISTORTION',
   'dj-visual-studio': 'DJ Visual Studio',
@@ -252,7 +251,7 @@ async function loadReviews() {
     .order('updated_at', { ascending: false })
     .limit(250);
   if (error) throw error;
-  reviews = data || [];
+  reviews = (data || []).filter((review) => Boolean(PRODUCTS[review.product_slug]));
   renderReviews();
 }
 

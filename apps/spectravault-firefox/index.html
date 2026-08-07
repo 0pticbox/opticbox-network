@@ -69,7 +69,7 @@ textarea, option, label, html body *::before, html body *::after {
           <h2>AUDIO</h2>
           <div class="button-grid two">
             <button id="micBtn">AUDIO INPUT</button>
-            <button id="desktopBtn">SCREEN AUDIO (FALLBACK)</button>
+            <button id="desktopBtn">SCREEN AUDIO (SEPARATE FALLBACK)</button>
             <label class="file-button">
               AUDIO FILE
               <input id="audioFileInput" type="file" accept="audio/*" />
@@ -80,10 +80,10 @@ textarea, option, label, html body *::before, html body *::after {
             <strong>0PTIC'S AUDIO BRIDGE · DEFAULT</strong>
             <div id="bridgeStatus" class="bridge-status"><span class="bridge-dot"></span><b id="bridgeStatusText">LOOKING FOR BRIDGE</b></div>
             <div class="bridge-actions">
-              <button id="bridgeBtn" type="button">USE COMPUTER OUTPUT</button>
+              <button id="bridgeBtn" type="button">CONNECT 0PTIC'S AUDIO BRIDGE</button>
               <a href="../../downloads/0ptics-audio-bridge-windows.zip" download>DOWNLOAD BRIDGE</a>
             </div>
-            <p>Start 0PTIC'S AUDIO BRIDGE and leave it open. SPECTRAVAULT will use the Windows speaker/headphone output before trying Firefox capture.</p>
+            <p>Start 0PTIC'S AUDIO BRIDGE and leave it open, then press CONNECT once. If Firefox asks for DEVICE APPS & SERVICES access, choose Allow. Do not select the bridge as a screen/window capture.</p>
             <label for="firefoxAudioDevice">FALLBACK AUDIO INPUT DEVICE</label>
             <div class="firefox-device-row">
               <select id="firefoxAudioDevice"><option value="">DEFAULT AUDIO INPUT</option></select>

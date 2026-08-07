@@ -8,7 +8,6 @@ console.info('0PTICBOX opinion hub v26 loaded');
 
 const PRODUCTS = Object.freeze({
   opticscope: '0PTICSCOPE',
-  '0ps3': '0PS3 Visualizer',
   spectravault: 'SPECTRAVAULT',
   distortion: 'DISTORTION',
   'dj-visual-studio': 'DJ Visual Studio',
@@ -693,10 +692,11 @@ async function loadHub({ quiet = false } = {}) {
     applyAdminFeedBackground('');
   }
 
+  const activeReviews = reviews.filter((review) => Boolean(PRODUCTS[review.product_slug]));
   activityPosts = activity;
   await loadProfiles([
     ...activity.map((post) => post.user_id),
-    ...reviews.map((review) => review.user_id),
+    ...activeReviews.map((review) => review.user_id),
   ]);
 
   try {
@@ -711,7 +711,7 @@ async function loadHub({ quiet = false } = {}) {
   threads = [
     ...activity.map(normalizeActivity),
     ...official.map(normalizeOfficial),
-    ...reviews.map(normalizeReview),
+    ...activeReviews.map(normalizeReview),
   ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   renderFeed();

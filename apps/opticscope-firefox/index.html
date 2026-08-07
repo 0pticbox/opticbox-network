@@ -67,7 +67,7 @@ textarea, option, label, html body *::before, html body *::after {
           <fieldset><legend>INPUT</legend>
             <div class="button-grid">
               <button id="micBtn" type="button">AUDIO INPUT</button>
-              <button id="desktopBtn" type="button">SCREEN AUDIO (FALLBACK)</button>
+              <button id="desktopBtn" type="button">SCREEN AUDIO (SEPARATE FALLBACK)</button>
               <label class="file-button" for="audioFile">AUDIO FILE</label>
               <input id="audioFile" type="file" accept="audio/*">
               <button id="stopInputBtn" type="button">DISCONNECT</button>
@@ -76,10 +76,10 @@ textarea, option, label, html body *::before, html body *::after {
               <b>0PTIC'S AUDIO BRIDGE · DEFAULT</b>
               <div id="bridgeStatus" class="bridge-status"><span class="bridge-dot"></span><strong id="bridgeStatusText">LOOKING FOR BRIDGE</strong></div>
               <div class="bridge-actions">
-                <button id="bridgeBtn" type="button">USE COMPUTER OUTPUT</button>
+                <button id="bridgeBtn" type="button">CONNECT 0PTIC'S AUDIO BRIDGE</button>
                 <a href="../../downloads/0ptics-audio-bridge-windows.zip" download>DOWNLOAD BRIDGE</a>
               </div>
-              <small>Firefox mode now looks for 0PTIC'S AUDIO BRIDGE first. Start the Windows bridge, leave it open, then play music through your normal speakers/headphones.</small>
+              <small>Start 0PTIC'S AUDIO BRIDGE, leave it open, then press CONNECT once. Firefox may ask to allow DEVICE APPS & SERVICES. Allow it. Do not select the bridge window in Screen Audio — the bridge connects directly.</small>
               <label for="firefoxAudioDevice">FALLBACK AUDIO INPUT</label>
               <div class="firefox-device-row">
                 <select id="firefoxAudioDevice"><option value="">DEFAULT AUDIO INPUT</option></select>

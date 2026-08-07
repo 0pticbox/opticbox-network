@@ -1,0 +1,12 @@
+0PTIC'S AUDIO BRIDGE v33 — FIREFOX LOCAL ACCESS FIX
+
+WHAT CHANGED
+- Fixed the Firefox permission popup loop caused by the v32 bridge polling localhost every 50 ms.
+- Firefox 153+ protects access from public websites to apps/services running on your computer.
+- The Firefox apps now make NO bridge requests on page load.
+- Press CONNECT 0PTIC'S AUDIO BRIDGE once. Firefox can then show one stable Device apps & services permission prompt.
+- If access is blocked/cancelled, the app stops retrying instead of reopening/flickering the prompt.
+- Once connected, bridge data polls normally.
+
+IMPORTANT
+Do NOT select 0PTIC'S AUDIO BRIDGE in the Screen Audio/window-share picker. The bridge is not a captured window. It connects directly over http://127.0.0.1:17491 and reads the Windows default speaker/headphone output.
