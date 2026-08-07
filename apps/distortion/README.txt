@@ -102,3 +102,10 @@ V1.12 UNIVERSAL FX STACK UPDATE
 - Effect combinations mix consistently regardless of key-press order.
 - Mirror, negative, color, tear, split, block, strobe, and datamosh effects can all be stacked together.
 - Existing hot cues, transition mapping, recording formats, themes, help page, and resizable panels remain unchanged.
+
+V1.13 ALSINA GLOBAL FONT UPDATE
+- Alsina is now the default font across every theme, menu, button, label, help page, detached-control window, and timeline canvas label.
+- The exact webfont loads from CDN Fonts through index.html; no font binary is bundled in the project.
+- Impact / Arial Narrow remain as automatic fallbacks if the CDN is unavailable.
+- All v1.12 effects, transitions, hot cues, recording controls, themes, and stacking behavior remain unchanged.
+

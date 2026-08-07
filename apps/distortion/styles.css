@@ -858,3 +858,36 @@ html[data-theme="corrupted"] .output-frame { box-shadow: 0 0 0 1px #2c0000, 0 0 
 @media (max-width: 650px) {
   .help-key-grid { grid-template-columns: 1fr; }
 }
+
+/* ==========================================================================\n   v1.13 — ALSINA GLOBAL TYPOGRAPHY\n   The font is loaded from the CDN link in index.html, so no font file needs\n   to be stored in the repository. All themes now share the same typeface.\n   ========================================================================== */
+:root {
+  --font-alsina: "Alsina", "Alsina Ultrajada", Impact, "Arial Narrow", sans-serif;
+  --font-display: var(--font-alsina);
+  --font-ui: var(--font-alsina);
+}
+
+html,
+body,
+button,
+input,
+select,
+textarea,
+option,
+dialog,
+kbd,
+label,
+.brand,
+.subtitle,
+.btn,
+.cue-pad,
+.fx-btn,
+.statusbar,
+.help-content {
+  font-family: var(--font-alsina) !important;
+}
+
+/* Pseudo-element theme lettering used an explicit theme font before v1.13. */
+html[data-theme="punk"] body::after {
+  font-family: var(--font-alsina) !important;
+}
+

@@ -783,7 +783,7 @@
     tctx.fillStyle = '#080b0d'; tctx.fillRect(0,0,w,h);
     const rec = activeVideoRecord();
     if (!rec || !Number.isFinite(sourceVideo.duration)) {
-      tctx.fillStyle = '#58636b'; tctx.font = '12px Consolas'; tctx.fillText('NO ACTIVE VIDEO', 12, 52); return;
+      tctx.fillStyle = '#58636b'; tctx.font = '12px Alsina, Impact, sans-serif'; tctx.fillText('NO ACTIVE VIDEO', 12, 52); return;
     }
     const grad = tctx.createLinearGradient(0,0,w,0);
     grad.addColorStop(0,'#182229'); grad.addColorStop(.5,'#26333b'); grad.addColorStop(1,'#11191e');
@@ -799,7 +799,7 @@
       const x = (cue.time/sourceVideo.duration)*w;
       tctx.fillStyle = '#00ef9a'; tctx.fillRect(x-1,0,2,h);
       tctx.fillStyle = '#00170e'; tctx.fillRect(x-10,6,20,18);
-      tctx.fillStyle = '#00ef9a'; tctx.font = 'bold 12px Consolas'; tctx.fillText(key.toUpperCase(),x-4,20);
+      tctx.fillStyle = '#00ef9a'; tctx.font = 'bold 12px Alsina, Impact, sans-serif'; tctx.fillText(key.toUpperCase(),x-4,20);
     }
   }
 
@@ -1161,7 +1161,7 @@
     const cueMarkup = cueKeys.map(k=>`<button data-command="cue" data-value="${k}">${k.toUpperCase()}<small>HOT CUE</small></button>`).join('');
     win.document.open();
     win.document.write(`<!doctype html><html><head><title>DISTORTION Controls</title><style>
-      body{margin:0;background:#090b0d;color:#e9f0f3;font-family:Consolas,monospace;padding:12px}h1{letter-spacing:.14em;margin:0 0 4px}p{color:#8e9ba3;margin:0 0 14px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}button{min-height:58px;background:#11171b;color:#e9f0f3;border:1px solid #3d4850;font:inherit}button:hover{border-color:#00ef9a}small{display:block;color:#8e9ba3;font-size:8px;margin-top:5px}.wide{width:100%;margin-bottom:6px}.status{border:1px solid #313b43;padding:9px;color:#00ef9a;margin:8px 0 12px}</style></head><body>
+      @import url('https://fonts.cdnfonts.com/css/alsina');body{margin:0;background:#090b0d;color:#e9f0f3;font-family:'Alsina',Impact,sans-serif;padding:12px}h1{letter-spacing:.14em;margin:0 0 4px}p{color:#8e9ba3;margin:0 0 14px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}button{min-height:58px;background:#11171b;color:#e9f0f3;border:1px solid #3d4850;font:inherit}button:hover{border-color:#00ef9a}small{display:block;color:#8e9ba3;font-size:8px;margin-top:5px}.wide{width:100%;margin-bottom:6px}.status{border:1px solid #313b43;padding:9px;color:#00ef9a;margin:8px 0 12px}</style></head><body>
       <h1>DISTORTION</h1><p>DETACHED PERFORMANCE CONTROL</p><div id="status" class="status">CONNECTED</div>
       <h3>HOT CUES</h3><div class="grid">${cueMarkup}</div>
       <h3>DISTORTION</h3><div class="grid">${fxMarkup}</div>
