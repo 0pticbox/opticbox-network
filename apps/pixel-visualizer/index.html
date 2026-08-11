@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="theme-color" content="#080b13" />
+<title>Pixel Visualizer | 0PTICBOX Productions</title>
+<style>
+:root{--bg:#080b13;--panel:#101625;--line:#27324d;--text:#fff1e8;--muted:#9ca9c6;--blue:#29adff;--pink:#ff77a8;--green:#00e436;--yellow:#ffec27;--red:#ff004d;--purple:#7e2553}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:radial-gradient(circle at top,#121a30 0,#080b13 48%,#04060b 100%);color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}body{padding:24px}.shell{width:min(1180px,100%);margin:auto}.top{display:flex;gap:18px;align-items:center;justify-content:space-between;margin-bottom:18px}.brand{font-weight:900;letter-spacing:.08em}.brand a{color:var(--text);text-decoration:none}.badge{border:2px solid var(--line);padding:8px 12px;font-weight:900;color:var(--muted);box-shadow:4px 4px 0 #000}.badge.connected{color:#001306;background:var(--green);border-color:var(--green)}.grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px}.panel{background:linear-gradient(180deg,rgba(16,22,37,.96),rgba(8,11,19,.96));border:2px solid var(--line);box-shadow:8px 8px 0 #000}.viewer{padding:14px}.canvas-wrap{aspect-ratio:4/3;background:#000;border:2px solid #000;overflow:hidden}.canvas-wrap canvas{display:block;width:100%;height:100%;image-rendering:pixelated}.controls{padding:18px}.eyebrow{font-size:12px;color:var(--pink);font-weight:900;letter-spacing:.14em;margin:0 0 6px}.controls h1{font-size:28px;line-height:1;margin:0 0 10px}.controls>p{color:var(--muted);line-height:1.45;font-size:13px;margin:0 0 18px}.status{border:1px solid var(--line);padding:12px;margin-bottom:16px;background:#070a11}.status-head{display:flex;gap:9px;align-items:center;font-weight:900;font-size:13px}.light{width:10px;height:10px;background:var(--muted);box-shadow:0 0 0 2px #000}.light.connected{background:var(--green)}.light.warning{background:var(--yellow)}#statusText{font-size:11px;color:var(--muted);line-height:1.35;margin-top:7px}.meter-row{display:flex;align-items:center;gap:10px;margin-top:10px}.meter{height:10px;flex:1;border:1px solid var(--line);background:#020308;overflow:hidden}.meter-fill{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--pink),var(--yellow))}.meter-row span{width:38px;text-align:right;font-size:11px}.field{margin:14px 0}.field label{display:flex;justify-content:space-between;gap:12px;font-size:12px;font-weight:900;margin-bottom:7px}.field output{color:var(--blue)}input[type=range]{width:100%;accent-color:var(--pink)}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.btn{appearance:none;border:2px solid var(--line);background:#151e32;color:var(--text);font:900 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:12px 10px;cursor:pointer;box-shadow:4px 4px 0 #000}.btn.primary{background:var(--blue);border-color:var(--blue);color:#00111f}.btn:hover:not(:disabled){transform:translate(1px,1px);box-shadow:3px 3px 0 #000}.btn:disabled{opacity:.42;cursor:not-allowed}.tip{margin-top:14px;padding-top:13px;border-top:1px dashed var(--line);font-size:11px;line-height:1.45;color:var(--muted)}.tip strong{color:var(--yellow)}.footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:18px;font-size:11px;color:var(--muted)}.footer a{color:var(--blue)}
+@media(max-width:850px){body{padding:12px}.grid{grid-template-columns:1fr}.controls{order:-1}.top{align-items:flex-start}.actions{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="top">
+    <div class="brand"><a href="../../free-tools.html">0PTICBOX PRODUCTIONS</a> // FREE TOOLS</div>
+    <div id="connectionBadge" class="badge">OFFLINE</div>
+  </div>
+
+  <main class="grid">
+    <section class="panel viewer" aria-label="Pixel Visualizer display">
+      <div class="canvas-wrap"><canvas id="visualizer" width="768" height="576"></canvas></div>
+    </section>
+
+    <aside class="panel controls">
+      <p class="eyebrow">AUDIO-REACTIVE // PIXEL MODE</p>
+      <h1>PIXEL VISUALIZER</h1>
+      <p>A retro desktop-audio spectrum visualizer. Share a screen or tab with audio, then tune the response live.</p>
+
+      <div class="status" aria-live="polite">
+        <div class="status-head"><span id="statusLight" class="light"></span><span id="statusTitle">READY TO CONNECT</span></div>
+        <div id="statusText">Press Connect Desktop Audio, then choose a source with audio sharing enabled.</div>
+        <div class="meter-row"><div class="meter"><div id="levelMeter" class="meter-fill"></div></div><span id="levelNumber">0%</span></div>
+      </div>
+
+      <div class="field"><label for="sensitivity">SENSITIVITY <output id="sensitivityValue">1.6×</output></label><input id="sensitivity" type="range" min="0.5" max="4" step="0.1" value="1.6" /></div>
+      <div class="field"><label for="fallSpeed">FALL SPEED <output id="fallValue">0.91</output></label><input id="fallSpeed" type="range" min="0.75" max="0.99" step="0.01" value="0.91" /></div>
+      <div class="field"><label for="bassBoost">BASS BOOST <output id="bassValue">1.5×</output></label><input id="bassBoost" type="range" min="1" max="3" step="0.1" value="1.5" /></div>
+      <div class="field"><label for="barCount">BAR COUNT <output id="barValue">32</output></label><input id="barCount" type="range" min="12" max="64" step="1" value="32" /></div>
+
+      <div class="actions">
+        <button id="connectButton" class="btn primary" type="button">CONNECT DESKTOP AUDIO</button>
+        <button id="stopButton" class="btn" type="button" disabled>STOP AUDIO</button>
+      </div>
+      <div class="tip"><strong>Best on desktop Chrome or Edge.</strong> When prompted, select a source and make sure audio sharing is enabled. The visualizer does not upload your audio.</div>
+    </aside>
+  </main>
+
+  <div class="footer"><span>Pixel Visualizer // 0PTICBOX Productions</span><a href="../../free-tools.html">← Back to Free Tools</a></div>
+</div>
+<script src="app.js?v=1"></script>
+</body>
+</html>
