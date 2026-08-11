@@ -182,7 +182,7 @@ function rotate3D(point,ax,ay,az) {
   let cy=Math.cos(ay),sy=Math.sin(ay);
   [x,z]=[x*cy-z*sy,x*sy+z*cy];
   let cx=Math.cos(ax),sx=Math.sin(ax);
-  [y,z]=[y*cx-z*sx,y*cx+z*sx];
+  [y,z]=[y*cx-z*sx,y*sx+z*cx];
   let cz=Math.cos(az),sz=Math.sin(az);
   [x,y]=[x*cz-y*sz,x*sz+y*cz];
   return {x,y,z};
