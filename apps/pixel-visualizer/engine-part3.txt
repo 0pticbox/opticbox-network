@@ -1,0 +1,342 @@
+}
+
+function nearestPicoColor(r,g,b) {
+  let best=PICO_RGB[0],bestDistance=Infinity;
+  for (const color of PICO_RGB) {
+    const dr=r-color.r,dg=g-color.g,db=b-color.b;
+    const distance=dr*dr+dg*dg+db*db;
+    if (distance<bestDistance) {
+      bestDistance=distance;
+      best=color;
+    }
+  }
+  return best;
+}
+
+function processLogo() {
+  if (!logoImage) {
+    processedLogoCanvas=null;
+    return;
+  }
+
+  const pixelSize=Math.max(1,logoState.pixelSize);
+  const maxDimension=180;
+  const ratio=Math.min(1,maxDimension/Math.max(logoImage.width,logoImage.height));
+  const tinyW=Math.max(1,Math.round(logoImage.width*ratio/pixelSize));
+  const tinyH=Math.max(1,Math.round(logoImage.height*ratio/pixelSize));
+
+  const tiny=document.createElement("canvas");
+  tiny.width=tinyW;
+  tiny.height=tinyH;
+  const tctx=tiny.getContext("2d",{willReadFrequently:true});
+  tctx.drawImage(logoImage,0,0,tinyW,tinyH);
+
+  if (logoState.picoFilter) {
+    const imageData=tctx.getImageData(0,0,tinyW,tinyH);
+    const data=imageData.data;
+    for (let i=0;i<data.length;i+=4) {
+      if (data[i+3]<15) continue;
+      const c=nearestPicoColor(data[i],data[i+1],data[i+2]);
+      data[i]=c.r; data[i+1]=c.g; data[i+2]=c.b;
+    }
+    tctx.putImageData(imageData,0,0);
+  }
+
+  const output=document.createElement("canvas");
+  output.width=tinyW*pixelSize;
+  output.height=tinyH*pixelSize;
+  const octx=output.getContext("2d");
+  octx.imageSmoothingEnabled=false;
+  octx.drawImage(tiny,0,0,output.width,output.height);
+  processedLogoCanvas=output;
+}
+
+function loadLogoFile(file) {
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    setStatus("warning","LOGO FAILED","Choose a PNG, JPG, or WEBP file.");
+    return;
+  }
+
+  const reader=new FileReader();
+  reader.onload=event=>{
+    const image=new Image();
+    image.onload=()=>{
+      logoImage=image;
+      logoState.fileName=file.name;
+      logoFileName.textContent=file.name;
+      logoState.x=WIDTH/2;
+      logoState.y=180;
+      logoState.visible=true;
+      logoVisibleCheckbox.checked=true;
+      selectedObject={type:"logo",id:null};
+      processLogo();
+      setStatus("connected","LOGO LOADED","Drag the logo directly on the visualizer.");
+    };
+    image.src=event.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function getSelectedTextLayer() {
+  return textLayers.find(layer=>layer.id===selectedTextId)||null;
+}
+
+function refreshTextSelect() {
+  textLayerSelect.innerHTML="";
+  textLayers.forEach((layer,index)=>{
+    const option=document.createElement("option");
+    option.value=layer.id;
+    option.textContent=`TEXT ${index+1}: ${layer.text||"(EMPTY)"}`;
+    textLayerSelect.appendChild(option);
+  });
+  textLayerSelect.value=selectedTextId;
+}
+
+function syncTextControls() {
+  const layer=getSelectedTextLayer();
+  if (!layer) return;
+  customTextInput.value=layer.text;
+  textSizeSlider.value=layer.size;
+  textSizeValue.textContent=layer.size;
+  textColorSelect.value=layer.color;
+  textPulseCheckbox.checked=layer.pulse;
+  textVisibleCheckbox.checked=layer.visible;
+}
+
+function addTextLayer() {
+  const layer={
+    id:crypto.randomUUID(),
+    text:"NEW TEXT",
+    x:WIDTH/2,
+    y:110+textLayers.length*45,
+    size:30,
+    color:COLORS.white,
+    pulse:false,
+    visible:true
+  };
+  textLayers.push(layer);
+  selectedTextId=layer.id;
+  selectedObject={type:"text",id:layer.id};
+  refreshTextSelect();
+  syncTextControls();
+}
+
+function removeSelectedTextLayer() {
+  if (textLayers.length<=1) {
+    setStatus("warning","KEEP ONE TEXT LAYER","At least one text layer must remain.");
+    return;
+  }
+  textLayers=textLayers.filter(layer=>layer.id!==selectedTextId);
+  selectedTextId=textLayers[0].id;
+  selectedObject={type:"text",id:selectedTextId};
+  refreshTextSelect();
+  syncTextControls();
+}
+
+function getCanvasPoint(event) {
+  const rect=canvas.getBoundingClientRect();
+  return {
+    x:(event.clientX-rect.left)*(WIDTH/rect.width),
+    y:(event.clientY-rect.top)*(HEIGHT/rect.height)
+  };
+}
+
+function hitTest(point) {
+  for (let i=textLayers.length-1;i>=0;i--) {
+    const layer=textLayers[i];
+    if (!layer.visible) continue;
+    ctx.font=`bold ${layer.size}px monospace`;
+    const width=ctx.measureText(layer.text||" ").width;
+    const height=layer.size;
+    if (
+      point.x>=layer.x-width/2-8 &&
+      point.x<=layer.x+width/2+8 &&
+      point.y>=layer.y-height/2-8 &&
+      point.y<=layer.y+height/2+8
+    ) return {type:"text",id:layer.id};
+  }
+
+  if (processedLogoCanvas&&logoState.visible) {
+    const width=processedLogoCanvas.width*logoState.scale;
+    const height=processedLogoCanvas.height*logoState.scale;
+    if (
+      point.x>=logoState.x-width/2 &&
+      point.x<=logoState.x+width/2 &&
+      point.y>=logoState.y-height/2 &&
+      point.y<=logoState.y+height/2
+    ) return {type:"logo",id:null};
+  }
+
+  return null;
+}
+
+function beginDrag(event) {
+  const point=getCanvasPoint(event);
+  const hit=hitTest(point);
+  if (!hit) return;
+
+  selectedObject=hit;
+  canvas.classList.add("dragging");
+
+  if (hit.type==="text") {
+    selectedTextId=hit.id;
+    refreshTextSelect();
+    syncTextControls();
+    const layer=getSelectedTextLayer();
+    dragState={
+      type:"text",id:hit.id,
+      offsetX:point.x-layer.x,
+      offsetY:point.y-layer.y
+    };
+  } else {
+    dragState={
+      type:"logo",
+      offsetX:point.x-logoState.x,
+      offsetY:point.y-logoState.y
+    };
+  }
+
+  canvas.setPointerCapture(event.pointerId);
+}
+
+function moveDrag(event) {
+  if (!dragState) return;
+  const point=getCanvasPoint(event);
+
+  if (dragState.type==="text") {
+    const layer=textLayers.find(item=>item.id===dragState.id);
+    if (!layer) return;
+    layer.x=Math.max(0,Math.min(WIDTH,point.x-dragState.offsetX));
+    layer.y=Math.max(0,Math.min(HEIGHT,point.y-dragState.offsetY));
+  } else {
+    logoState.x=Math.max(0,Math.min(WIDTH,point.x-dragState.offsetX));
+    logoState.y=Math.max(0,Math.min(HEIGHT,point.y-dragState.offsetY));
+  }
+}
+
+function endDrag(event) {
+  dragState=null;
+  canvas.classList.remove("dragging");
+  try { canvas.releasePointerCapture(event.pointerId); } catch (_) {}
+}
+
+function saveLayout() {
+  const layout={
+    scene:visualModeSelect.value,
+    textLayers,
+    selectedTextId,
+    logoState,
+    controls:{
+      sensitivity:sensitivitySlider.value,
+      fallSpeed:fallSpeedSlider.value,
+      bassBoost:bassBoostSlider.value,
+      barCount:barCountSlider.value,
+      sceneSpeed:sceneSpeedSlider.value,
+      trailAmount:trailAmountSlider.value,
+      autoCycle:autoCycleCheckbox.checked,
+      cycleSeconds:cycleSecondsSlider.value
+    }
+  };
+  localStorage.setItem("picoVisualizerMultiSceneLayout",JSON.stringify(layout));
+  setStatus("connected","LAYOUT SAVED","Scene, text positions, and settings were saved.");
+}
+
+function loadSavedLayout() {
+  const raw=localStorage.getItem("picoVisualizerMultiSceneLayout");
+  if (!raw) return;
+
+  try {
+    const layout=JSON.parse(raw);
+    if (SCENES.includes(layout.scene)) visualModeSelect.value=layout.scene;
+
+    if (Array.isArray(layout.textLayers)&&layout.textLayers.length) {
+      textLayers=layout.textLayers;
+      selectedTextId=layout.selectedTextId||textLayers[0].id;
+      selectedObject={type:"text",id:selectedTextId};
+    }
+
+    if (layout.logoState) logoState={...logoState,...layout.logoState};
+
+    const c=layout.controls||{};
+    sensitivitySlider.value=c.sensitivity??sensitivitySlider.value;
+    fallSpeedSlider.value=c.fallSpeed??fallSpeedSlider.value;
+    bassBoostSlider.value=c.bassBoost??bassBoostSlider.value;
+    barCountSlider.value=c.barCount??barCountSlider.value;
+    sceneSpeedSlider.value=c.sceneSpeed??sceneSpeedSlider.value;
+    trailAmountSlider.value=c.trailAmount??trailAmountSlider.value;
+    autoCycleCheckbox.checked=Boolean(c.autoCycle);
+    cycleSecondsSlider.value=c.cycleSeconds??cycleSecondsSlider.value;
+  } catch (error) {
+    console.warn("Could not load layout:",error);
+  }
+}
+
+function resetLayout() {
+  localStorage.removeItem("picoVisualizerMultiSceneLayout");
+  visualModeSelect.value="spectrum";
+  sceneSpeedSlider.value=1;
+  trailAmountSlider.value=.18;
+  autoCycleCheckbox.checked=false;
+  cycleSecondsSlider.value=20;
+
+  textLayers=[{
+    id:crypto.randomUUID(),
+    text:"YOUR TEXT",
+    x:WIDTH/2,
+    y:58,
+    size:40,
+    color:COLORS.white,
+    pulse:true,
+    visible:true
+  }];
+
+  selectedTextId=textLayers[0].id;
+  selectedObject={type:"text",id:selectedTextId};
+
+  logoImage=null;
+  processedLogoCanvas=null;
+  logoState={
+    x:WIDTH/2,y:180,scale:1,pixelSize:4,
+    picoFilter:true,pulse:false,visible:true,fileName:""
+  };
+
+  logoFileName.textContent="Transparent PNG works best";
+  logoScaleSlider.value=100;
+  pixelSizeSlider.value=4;
+  picoFilterCheckbox.checked=true;
+  logoPulseCheckbox.checked=false;
+  logoVisibleCheckbox.checked=true;
+
+  refreshTextSelect();
+  syncTextControls();
+  updateLabels();
+  setScene("spectrum");
+  setStatus("offline","LAYOUT RESET","The default scene has been restored.");
+}
+
+async function prepareAudioAnalyser() {
+  if (!audioContext||audioContext.state==="closed") {
+    audioContext=new (window.AudioContext||window.webkitAudioContext)();
+  }
+  if (audioContext.state==="suspended") await audioContext.resume();
+
+  if (analyser) {
+    try { analyser.disconnect(); } catch (_) {}
+  }
+
+  analyser=audioContext.createAnalyser();
+  analyser.fftSize=2048;
+  analyser.smoothingTimeConstant=.68;
+  analyser.minDecibels=-110;
+  analyser.maxDecibels=-10;
+  frequencyData=new Uint8Array(analyser.frequencyBinCount);
+  timeData=new Uint8Array(analyser.fftSize);
+}
+
+function finishConnection(mode,name) {
+  connected=true;
+  connectButton.disabled=true;
+  micButton.disabled=true;
+  fileButton.disabled=true;
+  stopButton.disabled=false;
