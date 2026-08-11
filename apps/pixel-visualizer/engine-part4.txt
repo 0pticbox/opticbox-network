@@ -1,0 +1,308 @@
+  connectionBadge.textContent="LIVE";
+  connectionBadge.classList.add("connected");
+  setStatus("connected",`${mode.toUpperCase()} CONNECTED`,`Source: ${name}`);
+}
+
+async function connectDesktopAudio() {
+  try {
+    stopAudio(false);
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      throw new Error("Desktop audio capture is not supported in this browser.");
+    }
+
+    setStatus("warning","SELECT AN AUDIO SOURCE","Choose a music tab and enable Share tab audio.");
+
+    captureStream=await navigator.mediaDevices.getDisplayMedia({
+      video:true,
+      audio:true,
+      preferCurrentTab:false,
+      selfBrowserSurface:"exclude",
+      surfaceSwitching:"include",
+      systemAudio:"include"
+    });
+
+    const audioTracks=captureStream.getAudioTracks();
+    if (!audioTracks.length) {
+      throw new Error("No audio track was received. Use microphone or audio-file mode in Firefox.");
+    }
+
+    await prepareAudioAnalyser();
+    const audioTrack=audioTracks[0];
+    const audioOnly=new MediaStream([audioTrack]);
+    sourceNode=audioContext.createMediaStreamSource(audioOnly);
+    sourceNode.connect(analyser);
+
+    captureStream.getTracks().forEach(track=>{
+      track.addEventListener("ended",()=>stopAudio());
+    });
+
+    finishConnection("desktop audio",audioTrack.label||"shared browser audio");
+  } catch (error) {
+    console.error(error);
+    stopAudio(false);
+    connectionBadge.textContent="ERROR";
+    setStatus("warning","DESKTOP AUDIO FAILED",`${error.name||"Error"}: ${error.message}`);
+  }
+}
+
+async function connectMicrophone() {
+  try {
+    stopAudio(false);
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error("Microphone input is not supported.");
+    }
+
+    setStatus("warning","MICROPHONE PERMISSION","Allow microphone access.");
+
+    captureStream=await navigator.mediaDevices.getUserMedia({
+      audio:{
+        echoCancellation:false,
+        noiseSuppression:false,
+        autoGainControl:false
+      },
+      video:false
+    });
+
+    await prepareAudioAnalyser();
+    sourceNode=audioContext.createMediaStreamSource(captureStream);
+    sourceNode.connect(analyser);
+
+    const track=captureStream.getAudioTracks()[0];
+    if (!track) throw new Error("No microphone track was received.");
+    track.addEventListener("ended",()=>stopAudio());
+
+    finishConnection("microphone",track.label||"microphone");
+  } catch (error) {
+    console.error(error);
+    stopAudio(false);
+    connectionBadge.textContent="ERROR";
+    setStatus("warning","MICROPHONE FAILED",`${error.name||"Error"}: ${error.message}`);
+  }
+}
+
+async function loadAudioFile(file) {
+  try {
+    if (!file) return;
+    if (!file.type.startsWith("audio/")&&!/\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(file.name)) {
+      throw new Error("Choose a supported audio file.");
+    }
+
+    stopAudio(false);
+    if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+    currentObjectUrl=URL.createObjectURL(file);
+
+    audioPlayer.src=currentObjectUrl;
+    audioPlayer.classList.add("has-file");
+    fileName.textContent=file.name;
+
+    await prepareAudioAnalyser();
+
+    if (!mediaElementSource) {
+      mediaElementSource=audioContext.createMediaElementSource(audioPlayer);
+    }
+
+    try { mediaElementSource.disconnect(); } catch (_) {}
+    mediaElementSource.connect(analyser);
+    analyser.connect(audioContext.destination);
+
+    finishConnection("audio file",file.name);
+    await audioPlayer.play();
+  } catch (error) {
+    console.error(error);
+    stopAudio(false);
+    connectionBadge.textContent="ERROR";
+    setStatus("warning","FILE FAILED",`${error.name||"Error"}: ${error.message}`);
+  }
+}
+
+function stopAudio(showMessage=true) {
+  connected=false;
+
+  if (captureStream) {
+    captureStream.getTracks().forEach(track=>track.stop());
+    captureStream=null;
+  }
+
+  if (sourceNode) {
+    try { sourceNode.disconnect(); } catch (_) {}
+    sourceNode=null;
+  }
+
+  if (mediaElementSource) {
+    try { mediaElementSource.disconnect(); } catch (_) {}
+  }
+
+  if (analyser) {
+    try { analyser.disconnect(); } catch (_) {}
+  }
+
+  audioPlayer.pause();
+  analyser=null;
+  frequencyData=null;
+  timeData=null;
+  detectedLevel=0;
+  bassLevel=0;
+  trebleLevel=0;
+
+  levelMeter.style.width="0%";
+  levelNumber.textContent="0%";
+
+  connectButton.disabled=false;
+  micButton.disabled=false;
+  fileButton.disabled=false;
+  stopButton.disabled=true;
+  connectionBadge.textContent="OFFLINE";
+  connectionBadge.classList.remove("connected");
+
+  if (showMessage) {
+    setStatus("offline","AUDIO DISCONNECTED","Choose an audio source and visual mode.");
+  }
+}
+
+document.querySelectorAll(".tab-button").forEach(button=>{
+  button.addEventListener("click",()=>{
+    document.querySelectorAll(".tab-button").forEach(item=>{
+      item.classList.toggle("active",item===button);
+    });
+    document.querySelectorAll(".tab-panel").forEach(panel=>{
+      panel.classList.toggle("active",panel.id===button.dataset.tab);
+    });
+  });
+});
+
+visualModeSelect.addEventListener("change",()=>setScene(visualModeSelect.value));
+previousSceneButton.addEventListener("click",()=>cycleScene(-1));
+nextSceneButton.addEventListener("click",()=>cycleScene(1));
+randomSceneButton.addEventListener("click",randomizeScene);
+
+[
+  sceneSpeedSlider,trailAmountSlider,cycleSecondsSlider,
+  sensitivitySlider,fallSpeedSlider,bassBoostSlider,barCountSlider
+].forEach(control=>control.addEventListener("input",updateLabels));
+
+connectButton.addEventListener("click",connectDesktopAudio);
+micButton.addEventListener("click",connectMicrophone);
+fileButton.addEventListener("click",()=>audioFileInput.click());
+stopButton.addEventListener("click",()=>stopAudio());
+
+dropZone.addEventListener("click",()=>audioFileInput.click());
+dropZone.addEventListener("keydown",event=>{
+  if (event.key==="Enter"||event.key===" ") {
+    event.preventDefault();
+    audioFileInput.click();
+  }
+});
+audioFileInput.addEventListener("change",event=>{
+  loadAudioFile(event.target.files[0]);
+  event.target.value="";
+});
+dropZone.addEventListener("dragover",event=>{
+  event.preventDefault();
+  dropZone.classList.add("dragging");
+});
+dropZone.addEventListener("dragleave",()=>dropZone.classList.remove("dragging"));
+dropZone.addEventListener("drop",event=>{
+  event.preventDefault();
+  dropZone.classList.remove("dragging");
+  loadAudioFile(event.dataTransfer.files[0]);
+});
+
+logoButton.addEventListener("click",()=>logoFileInput.click());
+logoDropZone.addEventListener("click",()=>logoFileInput.click());
+logoFileInput.addEventListener("change",event=>{
+  loadLogoFile(event.target.files[0]);
+  event.target.value="";
+});
+logoDropZone.addEventListener("dragover",event=>{
+  event.preventDefault();
+  logoDropZone.classList.add("dragging");
+});
+logoDropZone.addEventListener("dragleave",()=>logoDropZone.classList.remove("dragging"));
+logoDropZone.addEventListener("drop",event=>{
+  event.preventDefault();
+  logoDropZone.classList.remove("dragging");
+  loadLogoFile(event.dataTransfer.files[0]);
+});
+
+logoScaleSlider.addEventListener("input",()=>{
+  logoState.scale=Number(logoScaleSlider.value)/100;
+  updateLabels();
+});
+pixelSizeSlider.addEventListener("input",()=>{
+  logoState.pixelSize=Number(pixelSizeSlider.value);
+  updateLabels();
+  processLogo();
+});
+picoFilterCheckbox.addEventListener("change",()=>{
+  logoState.picoFilter=picoFilterCheckbox.checked;
+  processLogo();
+});
+logoPulseCheckbox.addEventListener("change",()=>logoState.pulse=logoPulseCheckbox.checked);
+logoVisibleCheckbox.addEventListener("change",()=>logoState.visible=logoVisibleCheckbox.checked);
+removeLogoButton.addEventListener("click",()=>{
+  logoImage=null;
+  processedLogoCanvas=null;
+  logoFileName.textContent="Transparent PNG works best";
+});
+
+addTextButton.addEventListener("click",addTextLayer);
+removeTextButton.addEventListener("click",removeSelectedTextLayer);
+textLayerSelect.addEventListener("change",()=>{
+  selectedTextId=textLayerSelect.value;
+  selectedObject={type:"text",id:selectedTextId};
+  syncTextControls();
+});
+customTextInput.addEventListener("input",()=>{
+  const layer=getSelectedTextLayer();
+  if (!layer) return;
+  layer.text=customTextInput.value;
+  refreshTextSelect();
+});
+textSizeSlider.addEventListener("input",()=>{
+  const layer=getSelectedTextLayer();
+  if (!layer) return;
+  layer.size=Number(textSizeSlider.value);
+  textSizeValue.textContent=layer.size;
+});
+textColorSelect.addEventListener("change",()=>{
+  const layer=getSelectedTextLayer();
+  if (layer) layer.color=textColorSelect.value;
+});
+textPulseCheckbox.addEventListener("change",()=>{
+  const layer=getSelectedTextLayer();
+  if (layer) layer.pulse=textPulseCheckbox.checked;
+});
+textVisibleCheckbox.addEventListener("change",()=>{
+  const layer=getSelectedTextLayer();
+  if (layer) layer.visible=textVisibleCheckbox.checked;
+});
+
+canvas.addEventListener("pointerdown",beginDrag);
+canvas.addEventListener("pointermove",moveDrag);
+canvas.addEventListener("pointerup",endDrag);
+canvas.addEventListener("pointercancel",endDrag);
+
+saveLayoutButton.addEventListener("click",saveLayout);
+resetLayoutButton.addEventListener("click",resetLayout);
+
+audioPlayer.addEventListener("play",async()=>{
+  if (audioContext&&audioContext.state==="suspended") await audioContext.resume();
+});
+
+window.addEventListener("beforeunload",()=>{
+  if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+});
+
+loadSavedLayout();
+
+logoScaleSlider.value=Math.round(logoState.scale*100);
+pixelSizeSlider.value=logoState.pixelSize;
+picoFilterCheckbox.checked=logoState.picoFilter;
+logoPulseCheckbox.checked=logoState.pulse;
+logoVisibleCheckbox.checked=logoState.visible;
+
+refreshTextSelect();
+syncTextControls();
+updateLabels();
+setScene(visualModeSelect.value);
+requestAnimationFrame(animate);
