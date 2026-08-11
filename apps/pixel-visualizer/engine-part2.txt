@@ -1,0 +1,350 @@
+  }
+}
+
+function drawDream() {
+  const trail = Number(trailAmountSlider.value);
+  fadeBackground(Math.max(.04,trail*.65), COLORS.darkBlue);
+
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+
+  for (let ribbon=0;ribbon<5;ribbon++) {
+    ctx.beginPath();
+    const baseY = 80 + ribbon*82;
+    const color = [COLORS.blue,COLORS.pink,COLORS.lavender,COLORS.green,COLORS.peach][ribbon];
+
+    for (let x=0;x<=WIDTH;x+=6) {
+      const wave =
+        Math.sin(x*.018 + visualTime*.012*sceneSpeed() + ribbon*1.6)*34 +
+        Math.sin(x*.041 - visualTime*.007 + ribbon)*16;
+      const y = baseY + wave*(.7+bassLevel*.8);
+
+      if (x===0) ctx.moveTo(x,y);
+      else ctx.lineTo(x,y);
+    }
+
+    ctx.strokeStyle = hexWithAlpha(color,.35+.35*detectedLevel);
+    ctx.lineWidth = 12 + bassLevel*14;
+    ctx.stroke();
+
+    ctx.strokeStyle = hexWithAlpha(COLORS.white,.22);
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  for (let i=0;i<24;i++) {
+    const angle = i*.9 + visualTime*.006*sceneSpeed();
+    const radius = 60 + (i%6)*32 + Math.sin(visualTime*.01+i)*15;
+    const x = WIDTH/2 + Math.cos(angle)*radius;
+    const y = HEIGHT/2 + Math.sin(angle*.7)*radius*.55;
+    const size = 2 + (i%4) + trebleLevel*5;
+    ctx.fillStyle = hexWithAlpha(i%2?COLORS.blue:COLORS.pink,.6);
+    ctx.fillRect(x,y,size,size);
+  }
+
+  ctx.restore();
+}
+
+function drawMedia() {
+  fadeBackground(Number(trailAmountSlider.value), COLORS.black);
+  ctx.save();
+  ctx.translate(WIDTH/2,HEIGHT/2);
+  ctx.globalCompositeOperation = "lighter";
+
+  const rings = 18;
+  for (let r=0;r<rings;r++) {
+    const points = 90;
+    const baseRadius = 25+r*13;
+    ctx.beginPath();
+
+    for (let i=0;i<=points;i++) {
+      const a = i/points*Math.PI*2;
+      const freq = getFreqValue(i/points);
+      const pulse = freq*55 + Math.sin(a*3+visualTime*.015*sceneSpeed()+r*.35)*10;
+      const radius = baseRadius + pulse*(1-r/rings*.45);
+      const wobble = Math.sin(visualTime*.006+r)*18;
+      const x = Math.cos(a)*radius + Math.sin(a*2+visualTime*.01)*wobble;
+      const y = Math.sin(a)*radius*.65;
+
+      if (i===0) ctx.moveTo(x,y);
+      else ctx.lineTo(x,y);
+    }
+
+    const color = palette[(r+Math.floor(visualTime/20))%palette.length];
+    ctx.strokeStyle = hexWithAlpha(color,.16+.25*detectedLevel);
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawTunnel() {
+  ctx.fillStyle = COLORS.black;
+  ctx.fillRect(0,0,WIDTH,HEIGHT);
+
+  const cx = WIDTH/2 + Math.sin(visualTime*.008*sceneSpeed())*50;
+  const cy = HEIGHT/2 + Math.cos(visualTime*.006*sceneSpeed())*35;
+  const speed = visualTime*.018*sceneSpeed();
+
+  for (let ring=0;ring<28;ring++) {
+    const z = ((ring/28 + speed)%1);
+    const scale = Math.pow(z,2.1);
+    const radius = 18 + scale*430*(1+bassLevel*.25);
+    const sides = 12;
+    ctx.beginPath();
+
+    for (let i=0;i<=sides;i++) {
+      const angle = i/sides*Math.PI*2 + speed*.8 + ring*.04;
+      const audio = getFreqValue(i/sides);
+      const r = radius*(1+audio*.15);
+      const x = cx + Math.cos(angle)*r;
+      const y = cy + Math.sin(angle)*r;
+      if (i===0) ctx.moveTo(x,y);
+      else ctx.lineTo(x,y);
+    }
+
+    const color = palette[(ring+Math.floor(visualTime/8))%palette.length];
+    ctx.strokeStyle = hexWithAlpha(color,.15+z*.75);
+    ctx.lineWidth = 1+z*4;
+    ctx.stroke();
+  }
+}
+
+function drawPlasma() {
+  const block = 8;
+  const t = visualTime*.025*sceneSpeed();
+
+  for (let y=0;y<HEIGHT;y+=block) {
+    for (let x=0;x<WIDTH;x+=block) {
+      const v =
+        Math.sin(x*.028+t) +
+        Math.sin(y*.035-t*.8) +
+        Math.sin((x+y)*.018+t*.6) +
+        Math.sin(Math.hypot(x-WIDTH/2,y-HEIGHT/2)*.03-t*1.2);
+
+      const shifted = (v+4)/8;
+      const audioShift = bassLevel*.22 + trebleLevel*.12;
+      const index = Math.floor(((shifted+audioShift)%1)*palette.length);
+      ctx.fillStyle = palette[index];
+      ctx.fillRect(x,y,block,block);
+    }
+  }
+
+  if (bassLevel>.45) {
+    ctx.fillStyle = hexWithAlpha(COLORS.white,(bassLevel-.45)*.3);
+    ctx.fillRect(0,0,WIDTH,HEIGHT);
+  }
+}
+
+function ensureStars() {
+  while (stars.length<220) {
+    stars.push({
+      x:(Math.random()-.5)*WIDTH,
+      y:(Math.random()-.5)*HEIGHT,
+      z:Math.random()*WIDTH+1
+    });
+  }
+}
+
+function drawStarfield() {
+  ctx.fillStyle = COLORS.black;
+  ctx.fillRect(0,0,WIDTH,HEIGHT);
+  ensureStars();
+
+  const speed = (2.5+bassLevel*10)*sceneSpeed();
+
+  for (const star of stars) {
+    star.z -= speed;
+    if (star.z<1) {
+      star.x=(Math.random()-.5)*WIDTH;
+      star.y=(Math.random()-.5)*HEIGHT;
+      star.z=WIDTH;
+    }
+
+    const sx = WIDTH/2 + star.x/star.z*WIDTH;
+    const sy = HEIGHT/2 + star.y/star.z*WIDTH;
+    const px = WIDTH/2 + star.x/(star.z+speed*4)*WIDTH;
+    const py = HEIGHT/2 + star.y/(star.z+speed*4)*WIDTH;
+
+    const size = Math.max(1,(1-star.z/WIDTH)*5);
+    ctx.strokeStyle = trebleLevel>.3?COLORS.pink:COLORS.white;
+    ctx.lineWidth = size;
+    ctx.beginPath();
+    ctx.moveTo(px,py);
+    ctx.lineTo(sx,sy);
+    ctx.stroke();
+  }
+}
+
+function rotate3D(point,ax,ay,az) {
+  let {x,y,z}=point;
+  let cy=Math.cos(ay),sy=Math.sin(ay);
+  [x,z]=[x*cy-z*sy,x*sy+z*cy];
+  let cx=Math.cos(ax),sx=Math.sin(ax);
+  [y,z]=[y*cx-z*sx,y*cx+z*sx];
+  let cz=Math.cos(az),sz=Math.sin(az);
+  [x,y]=[x*cz-y*sz,x*sz+y*cz];
+  return {x,y,z};
+}
+
+function drawWireframe() {
+  ctx.fillStyle = COLORS.black;
+  ctx.fillRect(0,0,WIDTH,HEIGHT);
+
+  const t = visualTime*.012*sceneSpeed();
+  const size = 115*(1+bassLevel*.22);
+  const verts = [
+    [-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],
+    [-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]
+  ].map(v=>rotate3D({x:v[0]*size,y:v[1]*size,z:v[2]*size},t*.7,t,t*.35));
+
+  const edges = [
+    [0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],
+    [0,4],[1,5],[2,6],[3,7]
+  ];
+
+  const project = p => {
+    const depth = 420/(420+p.z);
+    return {x:WIDTH/2+p.x*depth,y:HEIGHT/2+p.y*depth};
+  };
+
+  const projected = verts.map(project);
+
+  for (let i=0;i<edges.length;i++) {
+    const [a,b]=edges[i];
+    ctx.strokeStyle = palette[(i+Math.floor(visualTime/10))%palette.length];
+    ctx.lineWidth = 2+detectedLevel*3;
+    ctx.beginPath();
+    ctx.moveTo(projected[a].x,projected[a].y);
+    ctx.lineTo(projected[b].x,projected[b].y);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = COLORS.lavender;
+  ctx.lineWidth = 1;
+
+  for (let y=360;y<HEIGHT;y+=18) {
+    ctx.beginPath();
+    ctx.moveTo(0,y);
+    ctx.lineTo(WIDTH,y);
+    ctx.stroke();
+  }
+  for (let x=-WIDTH;x<WIDTH*2;x+=34) {
+    ctx.beginPath();
+    ctx.moveTo(WIDTH/2,330);
+    ctx.lineTo(x,HEIGHT);
+    ctx.stroke();
+  }
+}
+
+function ensureRain() {
+  while (rainDrops.length<110) {
+    rainDrops.push({
+      x:Math.floor(Math.random()*64)*8,
+      y:Math.random()*HEIGHT,
+      speed:1+Math.random()*4,
+      length:1+Math.floor(Math.random()*7),
+      char:String.fromCharCode(33+Math.floor(Math.random()*90))
+    });
+  }
+}
+
+function drawRain() {
+  fadeBackground(Math.max(.08,Number(trailAmountSlider.value)),COLORS.black);
+  ensureRain();
+
+  ctx.font = "bold 12px monospace";
+  ctx.textAlign = "center";
+
+  for (const drop of rainDrops) {
+    drop.y += drop.speed*sceneSpeed()*(1+bassLevel*1.8);
+    if (drop.y>HEIGHT+40) {
+      drop.y=-Math.random()*120;
+      drop.x=Math.floor(Math.random()*64)*8;
+      drop.speed=1+Math.random()*4;
+      drop.char=String.fromCharCode(33+Math.floor(Math.random()*90));
+    }
+
+    for (let i=0;i<drop.length;i++) {
+      const y = drop.y-i*13;
+      ctx.fillStyle = i===0?COLORS.white:hexWithAlpha(i%2?COLORS.green:COLORS.blue,Math.max(.12,1-i/drop.length));
+      ctx.fillText(drop.char,drop.x,y);
+    }
+  }
+}
+
+function drawScene() {
+  const mode = visualModeSelect.value;
+  if (mode==="spectrum") drawSpectrum();
+  else if (mode==="dream") drawDream();
+  else if (mode==="media") drawMedia();
+  else if (mode==="tunnel") drawTunnel();
+  else if (mode==="plasma") drawPlasma();
+  else if (mode==="starfield") drawStarfield();
+  else if (mode==="wireframe") drawWireframe();
+  else if (mode==="rain") drawRain();
+}
+
+function drawPixelText(layer,selected=false) {
+  if (!layer.visible) return;
+
+  const size = Math.max(8,Math.round(layer.size*(layer.pulse?1+detectedLevel*.16:1)));
+  ctx.save();
+  ctx.font = `bold ${size}px monospace`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const width = ctx.measureText(layer.text||" ").width;
+
+  if (selected) {
+    ctx.strokeStyle = COLORS.yellow;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5,4]);
+    ctx.strokeRect(layer.x-width/2-6,layer.y-size/2-6,width+12,size+12);
+    ctx.setLineDash([]);
+  }
+
+  ctx.fillStyle = COLORS.black;
+  ctx.fillText(layer.text,layer.x+3,layer.y+3);
+  ctx.fillStyle = layer.color;
+  ctx.fillText(layer.text,layer.x,layer.y);
+  ctx.restore();
+}
+
+function drawLogo() {
+  if (!processedLogoCanvas || !logoState.visible) return;
+
+  const pulseScale = logoState.pulse?1+detectedLevel*.18:1;
+  const scale = logoState.scale*pulseScale;
+  const width = processedLogoCanvas.width*scale;
+  const height = processedLogoCanvas.height*scale;
+  const x = logoState.x-width/2;
+  const y = logoState.y-height/2;
+
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(processedLogoCanvas,x,y,width,height);
+
+  if (selectedObject.type==="logo") {
+    ctx.save();
+    ctx.strokeStyle = COLORS.yellow;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5,4]);
+    ctx.strokeRect(x-5,y-5,width+10,height+10);
+    ctx.restore();
+  }
+}
+
+function drawOverlays() {
+  drawLogo();
+  for (const layer of textLayers) {
+    drawPixelText(layer,selectedObject.type==="text"&&selectedObject.id===layer.id);
+  }
+}
+
+function animate(now) {
+  visualTime += sceneSpeed();
+  maybeAutoCycle(now);
+  analyzeAudio();
+  drawScene();
+  drawOverlays();
+  requestAnimationFrame(animate);
