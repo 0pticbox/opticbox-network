@@ -1,0 +1,321 @@
+const canvas = document.getElementById("visualizer");
+const ctx = canvas.getContext("2d", { alpha: false });
+
+const $ = id => document.getElementById(id);
+
+const connectButton = $("connectButton");
+const micButton = $("micButton");
+const fileButton = $("fileButton");
+const stopButton = $("stopButton");
+const audioFileInput = $("audioFileInput");
+const dropZone = $("dropZone");
+const fileName = $("fileName");
+const audioPlayer = $("audioPlayer");
+
+const visualModeSelect = $("visualMode");
+const previousSceneButton = $("previousSceneButton");
+const nextSceneButton = $("nextSceneButton");
+const randomSceneButton = $("randomSceneButton");
+const sceneSpeedSlider = $("sceneSpeed");
+const trailAmountSlider = $("trailAmount");
+const autoCycleCheckbox = $("autoCycle");
+const cycleSecondsSlider = $("cycleSeconds");
+const sceneSpeedValue = $("sceneSpeedValue");
+const trailValue = $("trailValue");
+const cycleValue = $("cycleValue");
+
+const logoButton = $("logoButton");
+const logoFileInput = $("logoFileInput");
+const logoDropZone = $("logoDropZone");
+const logoFileName = $("logoFileName");
+const logoScaleSlider = $("logoScale");
+const logoScaleValue = $("logoScaleValue");
+const pixelSizeSlider = $("pixelSize");
+const pixelSizeValue = $("pixelSizeValue");
+const picoFilterCheckbox = $("picoFilter");
+const logoPulseCheckbox = $("logoPulse");
+const logoVisibleCheckbox = $("logoVisible");
+const removeLogoButton = $("removeLogoButton");
+
+const addTextButton = $("addTextButton");
+const removeTextButton = $("removeTextButton");
+const textLayerSelect = $("textLayerSelect");
+const customTextInput = $("customText");
+const textSizeSlider = $("textSize");
+const textSizeValue = $("textSizeValue");
+const textColorSelect = $("textColor");
+const textPulseCheckbox = $("textPulse");
+const textVisibleCheckbox = $("textVisible");
+
+const sensitivitySlider = $("sensitivity");
+const fallSpeedSlider = $("fallSpeed");
+const bassBoostSlider = $("bassBoost");
+const barCountSlider = $("barCount");
+const sensitivityValue = $("sensitivityValue");
+const fallValue = $("fallValue");
+const bassValue = $("bassValue");
+const barValue = $("barValue");
+
+const saveLayoutButton = $("saveLayoutButton");
+const resetLayoutButton = $("resetLayoutButton");
+
+const statusTitle = $("statusTitle");
+const statusText = $("statusText");
+const statusLight = $("statusLight");
+const connectionBadge = $("connectionBadge");
+const levelMeter = $("levelMeter");
+const levelNumber = $("levelNumber");
+
+const WIDTH = canvas.width;
+const HEIGHT = canvas.height;
+
+const COLORS = {
+  black:"#000000", darkBlue:"#1d2b53", purple:"#7e2553",
+  darkGreen:"#008751", brown:"#ab5236", darkGray:"#5f574f",
+  lightGray:"#c2c3c7", white:"#fff1e8", red:"#ff004d",
+  orange:"#ffa300", yellow:"#ffec27", green:"#00e436",
+  blue:"#29adff", lavender:"#83769c", pink:"#ff77a8", peach:"#ffccaa"
+};
+
+const palette = [
+  COLORS.black,COLORS.darkBlue,COLORS.purple,COLORS.darkGreen,
+  COLORS.brown,COLORS.darkGray,COLORS.lightGray,COLORS.white,
+  COLORS.red,COLORS.orange,COLORS.yellow,COLORS.green,
+  COLORS.blue,COLORS.lavender,COLORS.pink,COLORS.peach
+];
+
+const PICO_RGB = palette.map(hex => {
+  const v = hex.slice(1);
+  return {
+    r:parseInt(v.slice(0,2),16),
+    g:parseInt(v.slice(2,4),16),
+    b:parseInt(v.slice(4,6),16)
+  };
+});
+
+const SCENES = ["spectrum","dream","media","tunnel","plasma","starfield","wireframe","rain"];
+
+let audioContext = null;
+let analyser = null;
+let captureStream = null;
+let sourceNode = null;
+let mediaElementSource = null;
+let currentObjectUrl = null;
+let frequencyData = null;
+let timeData = null;
+let connected = false;
+let detectedLevel = 0;
+let bassLevel = 0;
+let trebleLevel = 0;
+
+let visualTime = 0;
+let lastSceneChange = performance.now();
+let displayedBars = [];
+let peakBars = [];
+let stars = [];
+let rainDrops = [];
+let particles = [];
+
+let textLayers = [{
+  id: crypto.randomUUID(),
+  text:"YOUR TEXT",
+  x:WIDTH/2,
+  y:58,
+  size:40,
+  color:COLORS.white,
+  pulse:true,
+  visible:true
+}];
+
+let selectedTextId = textLayers[0].id;
+let selectedObject = { type:"text", id:selectedTextId };
+let dragState = null;
+
+let logoImage = null;
+let processedLogoCanvas = null;
+let logoState = {
+  x:WIDTH/2, y:180, scale:1, pixelSize:4,
+  picoFilter:true, pulse:false, visible:true, fileName:""
+};
+
+function setStatus(type,title,message) {
+  statusTitle.textContent = title;
+  statusText.textContent = message;
+  statusLight.classList.remove("connected","warning");
+  if (type === "connected") statusLight.classList.add("connected");
+  if (type === "warning") statusLight.classList.add("warning");
+}
+
+function updateLabels() {
+  sensitivityValue.textContent = `${Number(sensitivitySlider.value).toFixed(1)}×`;
+  fallValue.textContent = Number(fallSpeedSlider.value).toFixed(2);
+  bassValue.textContent = `${Number(bassBoostSlider.value).toFixed(1)}×`;
+  barValue.textContent = barCountSlider.value;
+  sceneSpeedValue.textContent = `${Number(sceneSpeedSlider.value).toFixed(1)}×`;
+  trailValue.textContent = Number(trailAmountSlider.value).toFixed(2);
+  cycleValue.textContent = cycleSecondsSlider.value;
+  logoScaleValue.textContent = `${logoScaleSlider.value}%`;
+  pixelSizeValue.textContent = pixelSizeSlider.value;
+}
+
+function sceneSpeed() {
+  return Number(sceneSpeedSlider.value);
+}
+
+function setScene(scene) {
+  visualModeSelect.value = scene;
+  lastSceneChange = performance.now();
+  displayedBars = [];
+  peakBars = [];
+  ctx.fillStyle = COLORS.black;
+  ctx.fillRect(0,0,WIDTH,HEIGHT);
+}
+
+function cycleScene(direction=1) {
+  const index = SCENES.indexOf(visualModeSelect.value);
+  setScene(SCENES[(index + direction + SCENES.length) % SCENES.length]);
+}
+
+function randomizeScene() {
+  let next = visualModeSelect.value;
+  while (next === visualModeSelect.value && SCENES.length > 1) {
+    next = SCENES[Math.floor(Math.random() * SCENES.length)];
+  }
+  setScene(next);
+  sceneSpeedSlider.value = (0.6 + Math.random() * 1.8).toFixed(1);
+  trailAmountSlider.value = (0.08 + Math.random() * 0.28).toFixed(2);
+  updateLabels();
+}
+
+function maybeAutoCycle(now) {
+  if (!autoCycleCheckbox.checked) return;
+  const wait = Number(cycleSecondsSlider.value) * 1000;
+  if (now - lastSceneChange >= wait) cycleScene(1);
+}
+
+function analyzeAudio() {
+  if (!analyser || !frequencyData || !timeData) {
+    detectedLevel = 0;
+    bassLevel = 0;
+    trebleLevel = 0;
+    levelMeter.style.width = "0%";
+    levelNumber.textContent = "0%";
+    return;
+  }
+
+  analyser.getByteFrequencyData(frequencyData);
+  analyser.getByteTimeDomainData(timeData);
+
+  let rmsSum = 0;
+  for (let i=0;i<timeData.length;i++) {
+    const n = (timeData[i]-128)/128;
+    rmsSum += n*n;
+  }
+
+  detectedLevel = Math.min(
+    1,
+    Math.sqrt(rmsSum/timeData.length) * Number(sensitivitySlider.value) * 4.5
+  );
+
+  const bassEnd = Math.max(3, Math.floor(frequencyData.length*0.04));
+  const trebleStart = Math.floor(frequencyData.length*0.28);
+  const trebleEnd = Math.floor(frequencyData.length*0.68);
+
+  let bassSum = 0;
+  for (let i=0;i<bassEnd;i++) bassSum += frequencyData[i];
+  bassLevel = Math.min(1, (bassSum/bassEnd/255) * Number(bassBoostSlider.value));
+
+  let trebleSum = 0;
+  let trebleCount = 0;
+  for (let i=trebleStart;i<trebleEnd;i++) {
+    trebleSum += frequencyData[i];
+    trebleCount++;
+  }
+  trebleLevel = trebleCount ? trebleSum/trebleCount/255 : 0;
+
+  const percent = Math.round(detectedLevel*100);
+  levelMeter.style.width = `${percent}%`;
+  levelNumber.textContent = `${percent}%`;
+}
+
+function fadeBackground(alpha=0.18,color=COLORS.black) {
+  ctx.fillStyle = hexWithAlpha(color,alpha);
+  ctx.fillRect(0,0,WIDTH,HEIGHT);
+}
+
+function hexWithAlpha(hex,alpha) {
+  const a = Math.round(Math.max(0,Math.min(1,alpha))*255).toString(16).padStart(2,"0");
+  return `${hex}${a}`;
+}
+
+function getFreqValue(ratio) {
+  if (!frequencyData) return 0;
+  const index = Math.min(
+    frequencyData.length-1,
+    Math.floor(Math.pow(ratio,1.8)*frequencyData.length*0.72)
+  );
+  return frequencyData[index]/255;
+}
+
+function drawSpectrum() {
+  ctx.fillStyle = COLORS.black;
+  ctx.fillRect(0,0,WIDTH,HEIGHT);
+
+  for (let i=0;i<40;i++) {
+    const x = (i*83 + visualTime*0.35) % WIDTH;
+    const y = (i*47) % 330;
+    ctx.fillStyle = i%3 ? COLORS.darkBlue : COLORS.purple;
+    ctx.fillRect(x,y,i%7===0?4:2,i%7===0?4:2);
+  }
+
+  ctx.strokeStyle = COLORS.lavender;
+  ctx.lineWidth = 2;
+
+  for (let y=400;y<HEIGHT;y+=22) {
+    ctx.beginPath();
+    ctx.moveTo(0,y);
+    ctx.lineTo(WIDTH,y);
+    ctx.stroke();
+  }
+
+  for (let x=-WIDTH;x<WIDTH*2;x+=42) {
+    ctx.beginPath();
+    ctx.moveTo(WIDTH/2,390);
+    ctx.lineTo(x+(visualTime*1.5)%42,HEIGHT);
+    ctx.stroke();
+  }
+
+  const count = Number(barCountSlider.value);
+  while (displayedBars.length<count) {
+    displayedBars.push(0);
+    peakBars.push(0);
+  }
+  displayedBars.length = count;
+  peakBars.length = count;
+
+  const margin = 24;
+  const gap = count>=48?2:4;
+  const width = (WIDTH-margin*2-gap*(count-1))/count;
+  const floorY = 380;
+
+  for (let i=0;i<count;i++) {
+    const target = getFreqValue(i/count)*285*Number(sensitivitySlider.value);
+    if (target>displayedBars[i]) displayedBars[i] += (target-displayedBars[i])*.7;
+    else displayedBars[i] *= Number(fallSpeedSlider.value);
+
+    const h = Math.max(3,displayedBars[i]);
+    peakBars[i] = h>peakBars[i]?h:Math.max(0,peakBars[i]-1.5);
+
+    const x = margin+i*(width+gap);
+    let color = COLORS.blue;
+    if (h>230) color=COLORS.red;
+    else if (h>170) color=COLORS.orange;
+    else if (h>105) color=COLORS.yellow;
+    else if (h>50) color=COLORS.green;
+
+    ctx.fillStyle = color;
+    ctx.fillRect(x,floorY-h,Math.max(1,width),h);
+    ctx.fillStyle = COLORS.white;
+    ctx.fillRect(x,floorY-h,Math.max(1,width),3);
+    ctx.fillStyle = COLORS.pink;
+    ctx.fillRect(x,floorY-peakBars[i],Math.max(1,width),4);
