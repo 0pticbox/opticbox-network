@@ -4,16 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101020">
-<title>BOXED ARP v47</title>
+<title>BOXED ARP v48</title>
 <style>
 html,body{margin:0;min-height:100%;background:#101020;color:#fff1e8;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}body{display:grid;place-items:center;min-height:100vh;padding:16px;box-sizing:border-box}.loader{width:min(420px,calc(100vw - 32px));border:2px solid #fff1e8;background:#0b1636;box-shadow:5px 5px 0 #000;padding:18px;text-align:center}.loader b{display:block;color:#ff77a8;margin-bottom:8px}.loader small{color:#c2c3c7}.error{color:#ff77a8;white-space:pre-wrap}
 </style>
 </head>
 <body>
-<div class="loader" id="loader"><b>BOXED ARP v47</b><span>LOADING LATEST BUILD…</span><small><br>Note-reactive CRT + Sefirot visual</small></div>
+<div class="loader" id="loader"><b>BOXED ARP v48</b><span>LOADING LATEST BUILD…</span><small><br>Continuous quantized arp + note-reactive CRT</small></div>
 <script>
 (async()=>{
-  const files=['../boxed-arp/v47-01.b64?v=47-20260810','../boxed-arp/v47-02.b64?v=47-20260810','../boxed-arp/v47-03.b64?v=47-20260810','../boxed-arp/v47-04.b64?v=47-20260810','../boxed-arp/v47-05.b64?v=47-20260810','../boxed-arp/v47-06.b64?v=47-20260810'];
+  const files=['../boxed-arp/v48-01.b64?v=48-20260810','../boxed-arp/v48-02.b64?v=48-20260810','../boxed-arp/v48-03.b64?v=48-20260810'];
   const parts=[];
   for(const file of files){
     const response=await fetch(file,{cache:'no-store'});
@@ -25,14 +25,14 @@ html,body{margin:0;min-height:100%;background:#101020;color:#fff1e8;font-family:
   const bytes=Uint8Array.from(binary,char=>char.charCodeAt(0));
   const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
   const html=await new Response(stream).text();
-  if(!html.includes('Oscilloscope-style wave that matches the current OSC settings.')) throw new Error('The v47 payload did not verify.');
+  if(!html.includes('Continuous arp voice:')) throw new Error('The v48 payload did not verify.');
   document.open();
   document.write(html);
   document.close();
 })().catch(error=>{
   const loader=document.getElementById('loader');
   loader.classList.add('error');
-  loader.textContent='BOXED ARP v47 could not start.\n'+error.message;
+  loader.textContent='BOXED ARP v48 could not start.\n'+error.message;
   console.error(error);
 });
 </script>
