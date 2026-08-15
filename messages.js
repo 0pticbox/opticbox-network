@@ -31,6 +31,11 @@ const videoPreviewPlayer = $('video-preview-player');
 const videoPreviewName = $('video-preview-name');
 const videoPreviewSize = $('video-preview-size');
 const removeVideoButton = $('remove-video');
+const zipInput = $('message-zip');
+const zipPreview = $('zip-preview');
+const zipPreviewName = $('zip-preview-name');
+const zipPreviewSize = $('zip-preview-size');
+const removeZipButton = $('remove-zip');
 const uploadProgress = $('message-upload-progress');
 const uploadProgressBar = $('message-upload-progress-bar');
 const uploadProgressText = $('message-upload-progress-text');
@@ -44,6 +49,8 @@ const VIDEO_TYPE_BY_EXTENSION = new Map([
   ['mov', 'video/quicktime'],
 ]);
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024;
+const MAX_ZIP_SIZE = 100 * 1024 * 1024;
+const ZIP_MIME_TYPE = 'application/zip';
 const SIGNED_URL_TTL_SECONDS = 300;
 let supabase = null;
 let user = null;
@@ -55,6 +62,7 @@ let currentFriend = null;
 let currentChannel = null;
 let selectedVideo = null;
 let selectedVideoContentType = '';
+let selectedZip = null;
 let blockedIds = new Set();
 let selectedVideoPreviewUrl = '';
 let searchTimer = 0;
@@ -98,7 +106,13 @@ function formatTime(value) {
 }
 
 function safeFileName(name) {
-  return name.toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'video';
+  return name.toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'attachment';
+}
+
+function isZipFile(file) {
+  const name = String(file?.name || '').toLowerCase();
+  const type = String(file?.type || '').toLowerCase();
+  return name.endsWith('.zip') || type === 'application/zip' || type === 'application/x-zip-compressed';
 }
 
 function videoTypeForFile(file) {
@@ -123,7 +137,7 @@ function hideUploadProgress() {
   uploadProgressText.textContent = '';
 }
 
-async function uploadVideoWithProgress(path, file, contentType) {
+async function uploadMediaWithProgress(path, file, contentType, label = 'attachment') {
   const { data, error } = await supabase.auth.getSession();
   if (error) throw error;
   const accessToken = data.session?.access_token;
@@ -142,7 +156,7 @@ async function uploadVideoWithProgress(path, file, contentType) {
 
     request.upload.addEventListener('progress', (event) => {
       if (!event.lengthComputable) {
-        setUploadProgress(0, 'Uploading video…');
+        setUploadProgress(0, `Uploading ${label}…`);
         return;
       }
       const percent = (event.loaded / event.total) * 100;
@@ -164,25 +178,25 @@ async function uploadVideoWithProgress(path, file, contentType) {
       } catch (_) {
         detail = request.responseText || '';
       }
-      reject(new Error(detail || `Video upload failed (${request.status}).`));
+      reject(new Error(detail || `${label} upload failed (${request.status}).`));
     });
 
     request.addEventListener('error', () => {
       currentUploadRequest = null;
-      reject(new Error('The video upload lost its network connection.'));
+      reject(new Error(`The ${label} upload lost its network connection.`));
     });
 
     request.addEventListener('abort', () => {
       currentUploadRequest = null;
-      const abortError = new Error('Video upload canceled.');
+      const abortError = new Error(`${label} upload canceled.`);
       abortError.name = 'AbortError';
       reject(abortError);
     });
 
     const formData = new FormData();
     formData.append('cacheControl', '3600');
-    const normalizedVideo = file.type === contentType ? file : file.slice(0, file.size, contentType);
-    formData.append('', normalizedVideo, file.name);
+    const normalizedFile = file.type === contentType ? file : file.slice(0, file.size, contentType);
+    formData.append('', normalizedFile, file.name);
     request.send(formData);
   });
 }
@@ -438,6 +452,7 @@ async function loadThreads() {
       .order('created_at', { ascending: false })
       .limit(250);
     if (messageError) throw messageError;
+
     (messages || []).forEach((item) => {
       if (!latest.has(item.thread_id)) latest.set(item.thread_id, item);
     });
@@ -472,7 +487,9 @@ function renderThreads() {
     if (thread.latest) {
       note.textContent = thread.latest.message_type === 'video'
         ? `Video: ${thread.latest.media_name || 'attachment'}`
-        : (thread.latest.body || 'Message');
+        : thread.latest.message_type === 'file'
+          ? `ZIP: ${thread.latest.media_name || 'attachment.zip'}`
+          : (thread.latest.body || 'Message');
     } else {
       note.textContent = 'Conversation started';
     }
@@ -495,12 +512,47 @@ function clearSelectedVideo() {
   videoPreview.hidden = true;
 }
 
+function clearSelectedZip() {
+  selectedZip = null;
+  if (zipInput) zipInput.value = '';
+  if (zipPreview) zipPreview.hidden = true;
+  if (zipPreviewName) zipPreviewName.textContent = 'ZIP file';
+  if (zipPreviewSize) zipPreviewSize.textContent = '';
+  messageForm.classList.remove('is-zip-dragover');
+}
+
+function selectZip(file) {
+  clearSelectedZip();
+  if (!file) return;
+  if (!isZipFile(file)) {
+    setStatus('Only .zip files are supported here.', true);
+    return;
+  }
+  if (!file.size) {
+    setStatus('That ZIP file is empty.', true);
+    return;
+  }
+  if (file.size > MAX_ZIP_SIZE) {
+    setStatus('ZIP attachments must be 100 MB or smaller.', true);
+    return;
+  }
+
+  clearSelectedVideo();
+  selectedZip = file;
+  if (zipPreviewName) zipPreviewName.textContent = file.name;
+  if (zipPreviewSize) zipPreviewSize.textContent = `${formatBytes(file.size)} · permanent private attachment`;
+  if (zipPreview) zipPreview.hidden = false;
+  setStatus('ZIP ready to send. You can add a caption above.');
+}
+
 function setComposerEnabled(enabled) {
   const active = Boolean(enabled) && !isSending;
   messageBody.disabled = !active;
   videoInput.disabled = !active;
+  if (zipInput) zipInput.disabled = !active;
   sendButton.disabled = !active;
   removeVideoButton.disabled = !active;
+  if (removeZipButton) removeZipButton.disabled = !active;
   if (!blockButton.hidden) blockButton.disabled = !active;
 }
 
@@ -517,6 +569,7 @@ function resetConversation() {
   blockButton.hidden = true;
   setComposerEnabled(false);
   clearSelectedVideo();
+  clearSelectedZip();
   empty(messageLog, 'Select a friend or an existing conversation.');
   history.replaceState(null, '', 'messages.html');
 }
@@ -548,7 +601,7 @@ async function startConversation(friend) {
   await openConversation(thread, friend);
 }
 
-function cacheSignedVideoUrl(path, url) {
+function cacheSignedMediaUrl(path, url) {
   if (!path || !url) return;
   signedUrlCache.set(path, {
     url,
@@ -556,10 +609,10 @@ function cacheSignedVideoUrl(path, url) {
   });
 }
 
-async function primeSignedVideoUrls(items) {
+async function primeSignedMediaUrls(items) {
   const paths = [...new Set(
     (items || [])
-      .filter((item) => item.message_type === 'video' && item.media_path)
+      .filter((item) => ['video', 'file'].includes(item.message_type) && item.media_path)
       .map((item) => item.media_path)
       .filter((path) => {
         const cached = signedUrlCache.get(path);
@@ -576,11 +629,11 @@ async function primeSignedVideoUrls(items) {
   (data || []).forEach((item, index) => {
     const path = item.path || paths[index];
     const url = item.signedUrl || item.signedURL || '';
-    cacheSignedVideoUrl(path, url);
+    cacheSignedMediaUrl(path, url);
   });
 }
 
-async function getSignedVideoUrl(path) {
+async function getSignedMediaUrl(path) {
   const cached = signedUrlCache.get(path);
   if (cached && cached.expires > Date.now()) return cached.url;
   const { data, error } = await supabase.storage
@@ -588,8 +641,8 @@ async function getSignedVideoUrl(path) {
     .createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
   if (error) throw error;
   const url = data.signedUrl || data.signedURL || '';
-  if (!url) throw new Error('Private video URL was not returned.');
-  cacheSignedVideoUrl(path, url);
+  if (!url) throw new Error('Private attachment URL was not returned.');
+  cacheSignedMediaUrl(path, url);
   return url;
 }
 
@@ -605,7 +658,7 @@ async function createMessageBubble(item) {
       video.controls = true;
       video.preload = 'metadata';
       video.playsInline = true;
-      video.src = await getSignedVideoUrl(item.media_path);
+      video.src = await getSignedMediaUrl(item.media_path);
       bubble.append(video);
       const attachment = document.createElement('span');
       attachment.className = 'message-attachment-name';
@@ -614,6 +667,31 @@ async function createMessageBubble(item) {
     } catch (_) {
       const unavailable = document.createElement('p');
       unavailable.textContent = 'This private video could not be loaded.';
+      bubble.append(unavailable);
+    }
+  }
+
+  if (item.message_type === 'file' && item.media_path) {
+    try {
+      const url = await getSignedMediaUrl(item.media_path);
+      const attachment = document.createElement('div');
+      attachment.className = 'message-zip-card';
+      const name = document.createElement('strong');
+      name.textContent = item.media_name || 'attachment.zip';
+      const size = document.createElement('small');
+      size.textContent = item.media_size ? formatBytes(item.media_size) : 'ZIP attachment';
+      const link = document.createElement('a');
+      link.className = 'retro-button';
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.download = item.media_name || 'attachment.zip';
+      link.textContent = 'Download ZIP';
+      attachment.append(name, size, link);
+      bubble.append(attachment);
+    } catch (_) {
+      const unavailable = document.createElement('p');
+      unavailable.textContent = 'This private ZIP could not be loaded.';
       bubble.append(unavailable);
     }
   }
@@ -658,7 +736,7 @@ async function loadMessages() {
   const generation = ++messageLoadGeneration;
   const { data, error } = await supabase
     .from('direct_messages')
-    .select('id,thread_id,sender_id,body,message_type,media_path,media_name,media_size,created_at')
+    .select('id,thread_id,sender_id,body,message_type,media_path,media_type,media_name,media_size,created_at')
     .eq('thread_id', threadId)
     .order('created_at', { ascending: true })
     .limit(500);
@@ -671,12 +749,12 @@ async function loadMessages() {
   const messages = data || [];
   if (!messages.length) {
     renderedMessageIds.clear();
-    empty(messageLog, 'No messages yet. Say hello or attach a video.');
+    empty(messageLog, 'No messages yet. Say hello, attach a video, or send a ZIP.');
     return;
   }
 
   try {
-    await primeSignedVideoUrls(messages);
+    await primeSignedMediaUrls(messages);
   } catch (_) {
     // Individual bubbles retry their own signed URL so one bad attachment
     // does not prevent the rest of the conversation from loading.
@@ -751,6 +829,7 @@ async function openConversation(thread, friend) {
   currentThread = thread;
   currentFriend = friend;
   clearSelectedVideo();
+  clearSelectedZip();
   hideUploadProgress();
   setAvatar(conversationAvatar, friend);
   conversationName.textContent = friend.display_name || 'Friend';
@@ -785,6 +864,7 @@ videoInput.addEventListener('change', () => {
     return;
   }
 
+  clearSelectedZip();
   selectedVideo = file;
   selectedVideoContentType = contentType;
   selectedVideoPreviewUrl = URL.createObjectURL(file);
@@ -793,6 +873,55 @@ videoInput.addEventListener('change', () => {
   videoPreviewSize.textContent = formatBytes(file.size);
   videoPreview.hidden = false;
   setStatus('Video ready to send. You can add a caption above.');
+});
+
+zipInput?.addEventListener('change', () => {
+  selectZip(zipInput.files?.[0] || null);
+});
+
+removeZipButton?.addEventListener('click', clearSelectedZip);
+
+function dragHasFiles(event) {
+  const types = Array.from(event.dataTransfer?.types || []);
+  return types.includes('Files');
+}
+
+messageForm.addEventListener('dragenter', (event) => {
+  if (!currentThread || isSending || !dragHasFiles(event)) return;
+  event.preventDefault();
+  event.stopPropagation();
+  messageForm.classList.add('is-zip-dragover');
+});
+
+messageForm.addEventListener('dragover', (event) => {
+  if (!currentThread || isSending || !dragHasFiles(event)) return;
+  event.preventDefault();
+  event.stopPropagation();
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+  messageForm.classList.add('is-zip-dragover');
+});
+
+messageForm.addEventListener('dragleave', (event) => {
+  if (event.relatedTarget && messageForm.contains(event.relatedTarget)) return;
+  messageForm.classList.remove('is-zip-dragover');
+});
+
+messageForm.addEventListener('drop', (event) => {
+  if (!dragHasFiles(event)) return;
+  event.preventDefault();
+  event.stopPropagation();
+  messageForm.classList.remove('is-zip-dragover');
+  if (!currentThread || isSending) return;
+  selectZip(event.dataTransfer?.files?.[0] || null);
+});
+
+// Prevent Safari and other desktop browsers from navigating away when a file
+// is dropped outside the composer.
+window.addEventListener('dragover', (event) => {
+  if (dragHasFiles(event)) event.preventDefault();
+});
+window.addEventListener('drop', (event) => {
+  if (dragHasFiles(event)) event.preventDefault();
 });
 
 removeVideoButton.addEventListener('click', clearSelectedVideo);
@@ -815,8 +944,9 @@ messageForm.addEventListener('submit', async (event) => {
   const body = messageBody.value.trim();
   const video = selectedVideo;
   const videoContentType = selectedVideoContentType;
-  if (!body && !video) {
-    setStatus('Write a message or attach a video.', true);
+  const zip = selectedZip;
+  if (!body && !video && !zip) {
+    setStatus('Write a message, attach a video, or attach a ZIP.', true);
     return;
   }
   if (blockedIds.has(friendId) || !profileById(friendId)) {
@@ -827,7 +957,7 @@ messageForm.addEventListener('submit', async (event) => {
 
   isSending = true;
   setComposerEnabled(false);
-  sendButton.textContent = video ? 'Uploading…' : 'Sending…';
+  sendButton.textContent = (video || zip) ? 'Uploading…' : 'Sending…';
   if (cancelUploadButton) cancelUploadButton.disabled = false;
   let uploadedPath = '';
   let uploadCompleted = false;
@@ -838,8 +968,9 @@ messageForm.addEventListener('submit', async (event) => {
       thread_id: threadId,
       sender_id: user.id,
       body,
-      message_type: video ? 'video' : 'text',
+      message_type: zip ? 'file' : (video ? 'video' : 'text'),
       media_path: '',
+      media_type: zip ? ZIP_MIME_TYPE : (videoContentType || ''),
       media_name: '',
       media_size: 0,
     };
@@ -848,11 +979,20 @@ messageForm.addEventListener('submit', async (event) => {
       setStatus(`Uploading ${video.name}…`);
       setUploadProgress(0, 'Starting upload…');
       uploadedPath = `${threadId}/${user.id}/${makeId()}-${safeFileName(video.name)}`;
-      await uploadVideoWithProgress(uploadedPath, video, videoContentType);
+      await uploadMediaWithProgress(uploadedPath, video, videoContentType, 'video');
       uploadCompleted = true;
       payload.media_path = uploadedPath;
       payload.media_name = video.name.slice(0, 180);
       payload.media_size = video.size;
+    } else if (zip) {
+      setStatus(`Uploading ${zip.name}…`);
+      setUploadProgress(0, 'Starting ZIP upload…');
+      uploadedPath = `${threadId}/${user.id}/${makeId()}-${safeFileName(zip.name)}`;
+      await uploadMediaWithProgress(uploadedPath, zip, ZIP_MIME_TYPE, 'ZIP');
+      uploadCompleted = true;
+      payload.media_path = uploadedPath;
+      payload.media_name = zip.name.slice(0, 180);
+      payload.media_size = zip.size;
     }
 
     sendButton.textContent = 'Sending…';
@@ -860,13 +1000,14 @@ messageForm.addEventListener('submit', async (event) => {
     const { data: inserted, error } = await supabase
       .from('direct_messages')
       .insert(payload)
-      .select('id,thread_id,sender_id,body,message_type,media_path,media_name,media_size,created_at')
+      .select('id,thread_id,sender_id,body,message_type,media_path,media_type,media_name,media_size,created_at')
       .single();
     if (error) throw error;
 
     messageBody.value = '';
     messageCount.textContent = '0';
     clearSelectedVideo();
+    clearSelectedZip();
     setStatus('Sent.');
     sent = true;
     if (currentThread?.id === threadId) await appendNewMessage(inserted);
@@ -876,7 +1017,7 @@ messageForm.addEventListener('submit', async (event) => {
       await supabase.storage.from('message-media').remove([uploadedPath]);
     }
     setStatus(
-      error.name === 'AbortError' ? 'Video upload canceled.' : (error.message || 'Message could not be sent.'),
+      error.name === 'AbortError' ? 'Attachment upload canceled.' : (error.message || 'Message could not be sent.'),
       true
     );
   } finally {
@@ -885,7 +1026,7 @@ messageForm.addEventListener('submit', async (event) => {
     sendButton.textContent = 'Send';
     if (cancelUploadButton) cancelUploadButton.disabled = false;
     if (currentThread) setComposerEnabled(true);
-    if (sent && video) window.setTimeout(hideUploadProgress, 650);
+    if (sent && (video || zip)) window.setTimeout(hideUploadProgress, 650);
     else hideUploadProgress();
   }
 });
