@@ -8,10 +8,6 @@
 <title>Messages | 0PTICBOX Network</title>
 <link href="styles.css?v=22" rel="stylesheet"/>
 <link href="network-upgrade.css?v=20" rel="stylesheet"/>
-
-
-
-
 <link rel="preconnect" href="https://db.onlinewebfonts.com" crossorigin>
 <link rel="stylesheet" href="alsina-profile-fix-v20.css">
 <style>
@@ -46,7 +42,7 @@
 <div class="video-preview" id="video-preview" hidden><video id="video-preview-player" controls muted playsinline></video><div class="video-preview-copy"><strong id="video-preview-name">Video</strong><small id="video-preview-size"></small></div><button class="retro-button" id="remove-video" type="button">Remove video</button></div>
 <div class="video-preview" id="zip-preview" hidden><div class="video-preview-copy"><strong id="zip-preview-name">ZIP file</strong><small id="zip-preview-size"></small></div><button class="retro-button" id="remove-zip" type="button">Remove ZIP</button></div>
 <div class="message-compose-row"><div><label for="message-body">Message</label><textarea id="message-body" maxlength="1000" placeholder="Write a private message…" disabled></textarea></div><button class="retro-button primary" id="send-message" type="submit" disabled>Send</button></div>
-<div class="message-compose-footer"><div class="message-file-tools"><label class="retro-button" for="message-video">Attach video</label><input id="message-video" type="file" accept="video/*,.mp4,.m4v,.mov,.webm" hidden disabled/><label class="retro-button" for="message-zip">Attach ZIP</label><input id="message-zip" type="file" accept=".zip,application/zip,application/x-zip-compressed" hidden disabled/><small>Video · 50 MB max / ZIP · 100 MB max · drag a ZIP onto this message box on desktop</small></div><small><span id="message-count">0</span>/1000</small></div>
+<div class="message-compose-footer"><div class="message-file-tools"><label class="retro-button" for="message-video">Attach video</label><input id="message-video" type="file" accept="video/*,.mp4,.m4v,.mov,.webm" hidden disabled/><label class="retro-button" for="message-zip">Attach ZIP</label><input id="message-zip" type="file" accept=".zip,application/zip,application/x-zip-compressed" hidden disabled/><small>Video · uses your Supabase storage limit / ZIP · 100 MB max · drag a ZIP onto this message box on desktop</small></div><small><span id="message-count">0</span>/1000</small></div>
 <div class="message-upload-progress" id="message-upload-progress" hidden><div class="message-upload-progress-copy"><strong>Attachment upload</strong><small id="message-upload-progress-text">Starting upload…</small></div><progress id="message-upload-progress-bar" max="100" value="0">0%</progress><button class="retro-button danger" id="cancel-upload" type="button">Cancel upload</button></div>
 <p class="message-status" id="message-status" aria-live="polite"></p>
 </form>
@@ -55,7 +51,7 @@
 </main>
 <footer><div class="shell footer-inner"><p>© <span id="year"></span> 0PTICBOX Productions</p><div><a href="members.html">Member area</a><a href="profile-settings.html">Settings</a><a href="community.html">Create post</a></div></div></footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="messages.js?v=11" type="module"></script>
+<script src="messages.js?v=12" type="module"></script>
 <script src="site.js?v=20"></script>
 </body>
 </html>
