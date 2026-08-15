@@ -48,7 +48,6 @@ const VIDEO_TYPE_BY_EXTENSION = new Map([
   ['webm', 'video/webm'],
   ['mov', 'video/quicktime'],
 ]);
-const MAX_VIDEO_SIZE = 50 * 1024 * 1024;
 const MAX_ZIP_SIZE = 100 * 1024 * 1024;
 const ZIP_MIME_TYPE = 'application/zip';
 const SIGNED_URL_TTL_SECONDS = 300;
@@ -250,7 +249,6 @@ function profileRow(profile, className) {
   row.append(avatar, copy, actions);
   return { row, actions, copy, avatar };
 }
-
 
 async function loadBlocks() {
   const { data, error } = await supabase
@@ -857,10 +855,6 @@ videoInput.addEventListener('change', () => {
   }
   if (!file.size) {
     setStatus('That video file is empty.', true);
-    return;
-  }
-  if (file.size > MAX_VIDEO_SIZE) {
-    setStatus('Video attachments must be 50 MB or smaller.', true);
     return;
   }
 
