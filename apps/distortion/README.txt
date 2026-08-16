@@ -1,4 +1,4 @@
-DISTORTION v1.3 — DATAMOSH BANK UPDATE
+DISTORTION v1.14 — TWO-VIDEO CHROMA LAYER
 
 Open index.html in a modern desktop browser.
 
@@ -109,3 +109,13 @@ V1.13 ALSINA GLOBAL FONT UPDATE
 - Impact / Arial Narrow remain as automatic fallbacks if the CDN is unavailable.
 - All v1.12 effects, transitions, hot cues, recording controls, themes, and stacking behavior remain unchanged.
 
+V1.14 TWO-VIDEO CHROMA LAYER UPDATE
+- Added a dedicated Chroma Layer panel for compositing a second uploaded video over the active base video.
+- Upload videos once, click one library item for the base, then choose another from Top Video.
+- The top video loops independently and can optionally follow the base video's play/pause state.
+- The key color supports any color, not only green. Use the color input or Pick Color and click directly on the output.
+- Added Color Range, Edge Softness, Color Spill, and Opacity controls.
+- Added Show Top Layer and Remove Key Color switches, plus Play/Pause Top, Restart Top, and Clear Top controls.
+- Chroma processing uses a performance-capped internal buffer while recording remains at the selected full canvas resolution.
+- The finished two-video composite enters the existing universal FX stack as one signal, preserving order-independent effect combinations.
+- Added a complete Chroma Layer tab to Help with the intended base-to-top workflow.
