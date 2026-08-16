@@ -1,0 +1,33 @@
+name: One-time network cleanup v2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/network-cleanup-v2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply cleanup script
+        run: python scripts/network_cleanup_v1.py
+      - name: Commit cleanup
+        run: |
+          if git diff --quiet; then
+            echo "No changes needed."
+            exit 0
+          fi
+          git config user.name "0PTICBOX Cleanup Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add index.html profile.html free-tools.html community.html members.html messages.html profile-settings.html auth-state.js site.js member-profile.js profile-settings.js community.js
+          git commit -m "Clean network navigation profiles and homepage"
+          git push origin HEAD:main
