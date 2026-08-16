@@ -265,6 +265,48 @@
     if (announce) setStatus(`theme changed: ${themeNames[safeTheme]}`);
   }
 
+  function activateControlWindow(controlWindow, target, announce = false) {
+    const buttons = [...controlWindow.querySelectorAll('[data-panel-target]')];
+    const pages = [...controlWindow.querySelectorAll('[data-panel-page]')];
+    const validTargets = new Set(pages.map(page => page.dataset.panelPage));
+    const fallback = controlWindow.dataset.defaultPanel || buttons[0]?.dataset.panelTarget;
+    const safeTarget = validTargets.has(target) ? target : fallback;
+    if (!safeTarget) return;
+
+    buttons.forEach(button => {
+      const selected = button.dataset.panelTarget === safeTarget;
+      button.classList.toggle('active', selected);
+      button.setAttribute('aria-selected', String(selected));
+      button.tabIndex = selected ? 0 : -1;
+    });
+    pages.forEach(page => page.classList.toggle('active', page.dataset.panelPage === safeTarget));
+    controlWindow.dataset.activePanel = safeTarget;
+    try { localStorage.setItem(`distortion-control-window-${controlWindow.dataset.controlWindow}`, safeTarget); } catch {}
+    if (announce) setStatus(`${safeTarget} control window open`);
+    requestAnimationFrame(rebuildTimeline);
+  }
+
+  function initControlWindows() {
+    document.querySelectorAll('[data-control-window]').forEach(controlWindow => {
+      let initial = controlWindow.dataset.defaultPanel;
+      try { initial = localStorage.getItem(`distortion-control-window-${controlWindow.dataset.controlWindow}`) || initial; } catch {}
+      activateControlWindow(controlWindow, initial);
+      controlWindow.querySelectorAll('[data-panel-target]').forEach(button => {
+        button.addEventListener('click', () => activateControlWindow(controlWindow, button.dataset.panelTarget, true));
+        button.addEventListener('keydown', event => {
+          if (!['ArrowLeft','ArrowRight'].includes(event.key)) return;
+          event.preventDefault();
+          const buttons = [...controlWindow.querySelectorAll('[data-panel-target]')];
+          const index = buttons.indexOf(button);
+          const direction = event.key === 'ArrowRight' ? 1 : -1;
+          const next = buttons[(index + direction + buttons.length) % buttons.length];
+          activateControlWindow(controlWindow, next.dataset.panelTarget, true);
+          next.focus();
+        });
+      });
+    });
+  }
+
   function formatTime(seconds, ms = false) {
     if (!Number.isFinite(seconds)) return ms ? '00:00.000' : '00:00';
     const m = Math.floor(seconds / 60);
@@ -1646,5 +1688,5 @@
   let initialTheme = 'studio';
   try { initialTheme = localStorage.getItem('distortion-theme') || 'studio'; } catch {}
   applyTheme(initialTheme);
-  buildCuePads(); buildFxButtons(); setCanvasAspect('16:9'); refreshChromaVideoSelect(); updateChromaUI(); setupRecordingFormatMenu(); rebuildTimeline(); requestAnimationFrame(renderFrame);
+  buildCuePads(); buildFxButtons(); setCanvasAspect('16:9'); initControlWindows(); refreshChromaVideoSelect(); updateChromaUI(); setupRecordingFormatMenu(); rebuildTimeline(); requestAnimationFrame(renderFrame);
 })();

@@ -1,4 +1,4 @@
-DISTORTION v1.14 — TWO-VIDEO CHROMA LAYER
+DISTORTION v1.15 — COMPACT CONTROL WINDOWS
 
 Open index.html in a modern desktop browser.
 
@@ -119,3 +119,13 @@ V1.14 TWO-VIDEO CHROMA LAYER UPDATE
 - Chroma processing uses a performance-capped internal buffer while recording remains at the selected full canvas resolution.
 - The finished two-video composite enters the existing universal FX stack as one signal, preserving order-independent effect combinations.
 - Added a complete Chroma Layer tab to Help with the intended base-to-top workflow.
+
+V1.15 COMPACT CONTROL WINDOWS UPDATE
+- Replaced the long continuous side menus with two compact tabbed control windows.
+- Left Source window: Media, Chroma, Scenes, and Logo.
+- Right Performance window: Signal, FX, Cuts, and Record.
+- Only the selected tool page is displayed, keeping the center video and timeline visually dominant.
+- The last-opened tab on each side is remembered automatically in the browser.
+- Left and right arrow keys move between tabs when a tab has keyboard focus.
+- Existing draggable panel resizing, mobile layout, themes, detached controls, hot cues, chroma compositing, recording, and universal FX stacking remain intact.
+- Added an Interface tab to Help explaining the new window workflow.
