@@ -186,3 +186,173 @@
     left:7px;
   }
 }
+
+/* v43 — each Free Tools preview square gets its own lightweight motion */
+.free-tools-projects .project-art i{
+  will-change:transform,opacity;
+}
+
+/* 0PTICSCOPE — analog beam sweep */
+.free-tools-projects .project[data-product-slug="opticscope"] .project-art i{
+  width:92%;
+  height:3px;
+  border-radius:50%;
+  background:currentColor;
+  box-shadow:0 0 8px currentColor,0 0 18px currentColor;
+  animation:ft-scope-sweep 2.65s ease-in-out infinite;
+}
+@keyframes ft-scope-sweep{
+  0%,100%{transform:translateY(-28px) rotate(-6deg) scaleX(.58);opacity:.58}
+  25%{transform:translateY(8px) rotate(7deg) scaleX(1)}
+  50%{transform:translateY(26px) rotate(-4deg) scaleX(.72);opacity:1}
+  75%{transform:translateY(-5px) rotate(5deg) scaleX(.9)}
+}
+
+/* SPECTRAVAULT — rotating reactor ring */
+.free-tools-projects .project[data-product-slug="spectravault"] .project-art i{
+  width:46%;
+  height:auto;
+  aspect-ratio:1;
+  border:4px double currentColor;
+  border-radius:50%;
+  background:transparent;
+  box-shadow:0 0 10px currentColor,inset 0 0 12px currentColor;
+  animation:ft-vault-reactor 4.6s linear infinite;
+}
+@keyframes ft-vault-reactor{
+  0%{transform:rotate(0deg) scale(.78);opacity:.58}
+  45%{transform:rotate(162deg) scale(1.08);opacity:1}
+  55%{transform:rotate(198deg) scale(.88);opacity:.72}
+  100%{transform:rotate(360deg) scale(.78);opacity:.58}
+}
+
+/* PIXEL VISUALIZER — stepped pixel matrix */
+.free-tools-projects .project[data-product-slug="pixel-visualizer"] .project-art{
+  color:#37d8ff;
+  background:linear-gradient(180deg,#071323,#03070e);
+}
+.free-tools-projects .project[data-product-slug="pixel-visualizer"] .project-art i{
+  width:58%;
+  height:58%;
+  background:
+    linear-gradient(90deg,currentColor 42%,transparent 42% 58%,currentColor 58%) 0 0/18px 18px,
+    linear-gradient(currentColor 42%,transparent 42% 58%,currentColor 58%) 0 0/18px 18px;
+  box-shadow:none;
+  opacity:.62;
+  animation:ft-pixel-grid 2.2s steps(8,end) infinite;
+}
+@keyframes ft-pixel-grid{
+  0%{transform:translate(-5px,-3px) scale(.88);opacity:.35}
+  25%{transform:translate(7px,2px) scale(1.04);opacity:.8}
+  50%{transform:translate(-2px,7px) scale(.94);opacity:.5}
+  75%{transform:translate(4px,-5px) scale(1.08);opacity:.9}
+  100%{transform:translate(-5px,-3px) scale(.88);opacity:.35}
+}
+
+/* DISTORTION — horizontal video tear */
+.free-tools-projects .project[data-product-slug="distortion"] .project-art i{
+  width:145%;
+  height:20%;
+  background:repeating-linear-gradient(0deg,currentColor 0 2px,transparent 2px 7px);
+  box-shadow:none;
+  opacity:.78;
+  animation:ft-distortion-tear 1.45s steps(7,end) infinite;
+}
+@keyframes ft-distortion-tear{
+  0%{transform:translate(-16%,-30px) skewX(-18deg)}
+  18%{transform:translate(14%,18px) skewX(12deg)}
+  36%{transform:translate(-8%,-4px) skewX(-25deg)}
+  55%{transform:translate(20%,30px) skewX(8deg);opacity:.38}
+  74%{transform:translate(-12%,8px) skewX(22deg);opacity:1}
+  100%{transform:translate(-16%,-30px) skewX(-18deg)}
+}
+
+/* DJ VISUAL STUDIO — spinning kaleidoscope disc */
+.free-tools-projects .project[data-product-slug="dj-visual-studio"] .project-art i{
+  width:54%;
+  height:auto;
+  aspect-ratio:1;
+  border-radius:50%;
+  background:conic-gradient(from 0deg,currentColor,transparent 15%,#ff4da6 28%,transparent 42%,#37d8ff 58%,transparent 70%,currentColor 86%,transparent);
+  box-shadow:0 0 13px rgba(255,211,61,.7);
+  animation:ft-vj-kaleido 5.2s linear infinite;
+}
+@keyframes ft-vj-kaleido{
+  0%{transform:rotate(0deg) scale(.78)}
+  50%{transform:rotate(180deg) scale(1.12)}
+  100%{transform:rotate(360deg) scale(.78)}
+}
+
+/* BOXED ARP — quantized sequencer steps */
+.free-tools-projects .project[data-product-slug="boxed-arp"] .project-art i{
+  width:74%;
+  height:34%;
+  background:repeating-linear-gradient(90deg,currentColor 0 8px,transparent 8px 15px);
+  background-size:30px 100%;
+  box-shadow:0 0 9px currentColor;
+  opacity:.82;
+  transform-origin:center bottom;
+  animation:ft-arp-steps 1.6s steps(8,end) infinite;
+}
+@keyframes ft-arp-steps{
+  0%{transform:translateY(14px) scaleY(.35);background-position:0 0}
+  25%{transform:translateY(4px) scaleY(.78);background-position:30px 0}
+  50%{transform:translateY(-10px) scaleY(1.12);background-position:60px 0}
+  75%{transform:translateY(2px) scaleY(.58);background-position:90px 0}
+  100%{transform:translateY(14px) scaleY(.35);background-position:120px 0}
+}
+
+/* ORBITAL REPAIR — orbiting repair beacon */
+.free-tools-projects .project[data-product-slug="orbital-repair"] .project-art i{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:currentColor;
+  box-shadow:0 0 10px currentColor,0 0 18px currentColor;
+  animation:ft-orbital-beacon 3.6s linear infinite;
+}
+@keyframes ft-orbital-beacon{
+  0%{transform:rotate(0deg) translateX(48px) rotate(0deg) scale(.8)}
+  50%{transform:rotate(180deg) translateX(48px) rotate(-180deg) scale(1.25)}
+  100%{transform:rotate(360deg) translateX(48px) rotate(-360deg) scale(.8)}
+}
+
+/* INNER LIGHT — rising ember / runner pulse */
+.free-tools-projects .project[data-product-slug="inner-light-runner"] .project-art i{
+  width:12%;
+  height:48%;
+  border-radius:60% 60% 45% 45%;
+  background:linear-gradient(180deg,#fff7b0,currentColor 45%,#ff6b36 78%,transparent);
+  box-shadow:0 0 13px currentColor;
+  transform-origin:center bottom;
+  animation:ft-inner-ember 1.2s steps(6,end) infinite;
+}
+@keyframes ft-inner-ember{
+  0%{transform:translate(-18px,24px) scale(.55,.8);opacity:.45}
+  30%{transform:translate(4px,6px) scale(.82,1.1);opacity:1}
+  60%{transform:translate(18px,-18px) scale(.62,1.35);opacity:.72}
+  100%{transform:translate(-18px,-34px) scale(.38,.72);opacity:.18}
+}
+
+/* Give the background grids different rhythms too, without expensive filters. */
+.free-tools-projects .project[data-product-slug="opticscope"] .project-art::before{animation:ft-grid-drift-x 9s linear infinite}
+.free-tools-projects .project[data-product-slug="spectravault"] .project-art::before{animation:ft-grid-spin 12s linear infinite}
+.free-tools-projects .project[data-product-slug="pixel-visualizer"] .project-art::before{animation:ft-grid-step 2.4s steps(8,end) infinite}
+.free-tools-projects .project[data-product-slug="distortion"] .project-art::before{animation:ft-grid-jump 1.8s steps(5,end) infinite}
+.free-tools-projects .project[data-product-slug="dj-visual-studio"] .project-art::before{animation:ft-grid-spin 16s linear reverse infinite}
+.free-tools-projects .project[data-product-slug="boxed-arp"] .project-art::before{animation:ft-grid-drift-x 4s steps(8,end) infinite}
+.free-tools-projects .project[data-product-slug="orbital-repair"] .project-art::before{animation:ft-grid-spin 20s linear infinite}
+.free-tools-projects .project[data-product-slug="inner-light-runner"] .project-art::before{animation:ft-grid-rise 6s linear infinite}
+
+@keyframes ft-grid-drift-x{to{transform:translateX(13px)}}
+@keyframes ft-grid-spin{to{transform:rotate(360deg) scale(1.18)}}
+@keyframes ft-grid-step{50%{transform:translate(13px,13px);opacity:.42}}
+@keyframes ft-grid-jump{0%,100%{transform:translateX(0)}50%{transform:translateX(18px)}}
+@keyframes ft-grid-rise{to{transform:translateY(-13px)}}
+
+@media(prefers-reduced-motion:reduce){
+  .free-tools-projects .project-art i,
+  .free-tools-projects .project-art::before{
+    animation:none!important;
+  }
+}
