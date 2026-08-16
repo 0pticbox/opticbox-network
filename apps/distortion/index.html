@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DISTORTION v1.17 — Framing + Custom FX Map</title>
+  <title>DISTORTION v1.18 — Unified Audio Loader</title>
   <link rel="stylesheet" href="styles.css" />
 
 
@@ -61,11 +61,11 @@ textarea, option, label, html body *::before, html body *::after {
         </nav>
         <section class="control-page active" data-panel-page="media">
           <h2>MEDIA</h2>
-          <label class="file-label">UPLOAD SONG / FILES
-            <input id="audioInput" type="file" accept=".wav,.wave,.mp3,.m4a,.aac,.aif,.aiff,.caf,.flac,.ogg,.opus,audio/*" aria-label="Choose an audio file from Files" />
+          <label class="file-label">LOAD AUDIO
+            <input id="audioInput" type="file" accept=".wav,.wave,.mp3,.m4a,.aac,.aif,.aiff,.caf,.flac,.ogg,.opus,audio/*" aria-label="Load an audio file" />
           </label>
           <div id="audioName" class="status-line">NO SONG LOADED</div>
-          <p class="micro-help">Tap UPLOAD SONG / FILES and choose an audio file.</p>
+          <p class="micro-help">One audio loader for WAV, MP3, M4A, AAC, AIF, AIFF, CAF, FLAC, OGG, and OPUS.</p>
           <div class="transport">
             <button id="audioPlayBtn" class="btn small">PLAY / PAUSE</button>
             <button id="audioStopBtn" class="btn small">STOP</button>
@@ -325,7 +325,7 @@ textarea, option, label, html body *::before, html body *::after {
           <h2>QUICK START</h2>
           <ol>
             <li>Use the tabs at the top of the left and right control windows to switch tools without scrolling through the whole app.</li>
-            <li>Upload one song and one or more video files.</li>
+            <li>Use the single Load Audio button in Media, then upload one or more video files.</li>
             <li>Select a video from the media library. This is the base/background clip.</li>
             <li>Optional: choose a second video in Chroma Layer. Pick its background color, then adjust Color Range and Edge Softness.</li>
             <li>Hover across the timeline to jump instantly to that moment.</li>
@@ -433,6 +433,7 @@ textarea, option, label, html body *::before, html body *::after {
             <li><strong>Buttons do nothing:</strong> click once inside the page and check that no browser dialog is blocking input.</li>
             <li><strong>No detached window:</strong> allow pop-ups for this page.</li>
             <li><strong>No recording audio:</strong> start the song once before recording and use Chrome or Edge.</li>
+            <li><strong>Audio will not load:</strong> the Media status reports whether the browser can decode the file. Try WAV or MP3 if another format fails.</li>
             <li><strong>Video is lagging:</strong> reduce Master Distortion, disable Feedback, or use a lower-resolution video.</li>
             <li><strong>Key color is still visible:</strong> use Pick Color on the exact background shade, then raise Color Range gradually.</li>
             <li><strong>Too much of the top clip disappears:</strong> lower Color Range, then use a little Edge Softness instead.</li>
@@ -475,6 +476,6 @@ textarea, option, label, html body *::before, html body *::after {
     </div>
   </dialog>
 
-  <script src="app.js?v=42"></script>
+  <script src="app.js?v=43"></script>
 </body>
 </html>
