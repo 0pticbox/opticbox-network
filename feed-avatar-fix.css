@@ -1,0 +1,22 @@
+/* 0PTICBOX opinion feed avatar crop fix — 2026-08-16 */
+/* Some uploaded profile photos already include circular padding. On the feed,
+   zoom the image slightly inside the existing round mask so it reads as one
+   clean avatar instead of a smaller photo floating inside a black circle. */
+
+.social-feed-column .thread-avatar,
+#hub-compose-avatar.has-image {
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.social-feed-column .thread-avatar img,
+#hub-compose-avatar.has-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: center;
+  transform: scale(1.38);
+  transform-origin: center;
+}
