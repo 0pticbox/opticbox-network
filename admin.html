@@ -1,16 +1,12 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
 <meta content="noindex,nofollow" name="robots"/>
 <meta content="#080b13" name="theme-color"/>
-<title>0PTICBOX Admin Sign In</title>
+<title>Network Controls | 0PTICBOX</title>
 <link href="styles.css?v=22" rel="stylesheet"/>
-
-
-
 <link rel="preconnect" href="https://db.onlinewebfonts.com" crossorigin>
 <link rel="stylesheet" href="alsina-profile-fix-v20.css">
 </head>
@@ -19,32 +15,36 @@
 <header class="topbar">
 <div class="shell topbar-inner">
 <a class="wordmark" href="index.html" aria-label="0PTICBOX Productions home"><img class="wordmark-logo-gif" src="assets/opticbox-spinning-logo.gif" alt="0PTICBOX Productions spinning logo"/></a>
-<nav aria-label="Admin navigation" class="site-nav admin-nav">
-<a href="index.html">View site</a>
-<a href="messages.html">Messages</a><a href="profile-settings.html">Settings</a></nav>
+<nav aria-label="Primary navigation" class="site-nav admin-nav">
+<a href="index.html">Feed</a>
+<a data-my-profile href="members.html">Profile</a>
+<a href="free-tools.html">FREE TOOLS</a>
+<a href="community.html">Post</a>
+<a href="members.html">Members</a>
+<a data-auth-only hidden href="messages.html">Messages</a>
+<a data-auth-only hidden href="profile-settings.html">Settings</a>
+</nav>
 </div>
 </header>
 <main class="shell admin-login-shell">
 <section class="box admin-intro">
-<div class="box-title split-title"><span>0PTICBOX Admin</span><small>private access</small></div>
+<div class="box-title split-title"><span>Network Controls</span><small>0PTICBOX account only</small></div>
 <div class="admin-intro-body">
-<p>Sign in with the owner account to open the private dashboard.</p>
-<p class="admin-warning" hidden="" id="config-warning">This copy is not connected yet. Complete <strong>ADMIN-SETUP.md</strong> and update <strong>supabase-config.js</strong>.</p>
+<p>The 0PTICBOX member account is also the network owner account. No separate admin login is used.</p>
+<p class="admin-warning" hidden id="config-warning">Connect Supabase before opening network controls.</p>
 </div>
 </section>
 <section aria-labelledby="login-title" class="box admin-login" id="login-panel">
-<h1 class="box-title" id="login-title">Admin sign in</h1>
-<form class="admin-form" id="login-form">
-<label for="admin-email">Email</label>
-<input autocomplete="username" id="admin-email" name="email" required="" type="email"/>
-<label for="admin-password">Password</label>
-<input autocomplete="current-password" id="admin-password" name="password" required="" type="password"/>
-<button class="retro-button primary" type="submit">Sign in</button>
-<p aria-live="polite" class="admin-message" id="login-message"></p>
-</form>
+<h1 class="box-title" id="login-title">Checking account</h1>
+<p aria-live="polite" class="admin-message" id="login-message">Checking your signed-in 0PTICBOX account…</p>
+<div class="admin-actions">
+<a class="retro-button primary" href="signin.html?next=admin-dashboard.html">Sign in as 0PTICBOX</a>
+<a class="retro-button" href="members.html">Back to account</a>
+</div>
 </section>
 </main>
-<script src="site.js?v=20"></script>
-<script src="admin.js" type="module"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="admin.js?v=2" type="module"></script>
+<script src="site.js?v=30"></script>
 </body>
 </html>
