@@ -5,6 +5,7 @@
   const canvas = $('outputCanvas');
   const ctx = canvas.getContext('2d', { alpha: false });
   const sourceVideo = $('sourceVideo');
+  const chromaVideo = $('chromaVideo');
   const song = $('song');
   const timeline = $('timelineCanvas');
   const tctx = timeline.getContext('2d');
@@ -20,6 +21,12 @@
   const fxStackB = document.createElement('canvas');
   const fxctxA = fxStackA.getContext('2d');
   const fxctxB = fxStackB.getContext('2d');
+  // Chroma keying runs on a capped-resolution buffer so two videos and the
+  // full distortion stack can keep performing smoothly on typical laptops.
+  const chromaSourceCanvas = document.createElement('canvas');
+  const chromaKeyCanvas = document.createElement('canvas');
+  const chromaSourceCtx = chromaSourceCanvas.getContext('2d', { willReadFrequently: true });
+  const chromaKeyCtx = chromaKeyCanvas.getContext('2d');
 
   const cueKeys = ['q','w','e','r','a','s','d','f','z','x','c','v'];
   // Number row = performance effects. Scene/hot-cue keys stay on Q–V.
@@ -120,6 +127,18 @@
     logoOpacity: 0.9,
     logoVisible: true,
     logoAffected: false,
+    chromaVideoIndex: -1,
+    chromaVisible: true,
+    chromaKeyEnabled: true,
+    chromaSync: true,
+    chromaColor: '#00ff00',
+    chromaTolerance: 0.18,
+    chromaSoftness: 0.12,
+    chromaSpill: 0.7,
+    chromaOpacity: 1,
+    chromaPicking: false,
+    chromaDirty: true,
+    chromaLastProcess: 0,
     draggingLogo: false,
     dragOffsetX: 0,
     dragOffsetY: 0,
@@ -293,6 +312,12 @@
     bufferB.width = dims[0]; bufferB.height = dims[1];
     fxStackA.width = dims[0]; fxStackA.height = dims[1];
     fxStackB.width = dims[0]; fxStackB.height = dims[1];
+    const chromaScale = Math.min(1, 640 / Math.max(dims[0], dims[1]));
+    chromaSourceCanvas.width = Math.max(1, Math.round(dims[0] * chromaScale));
+    chromaSourceCanvas.height = Math.max(1, Math.round(dims[1] * chromaScale));
+    chromaKeyCanvas.width = chromaSourceCanvas.width;
+    chromaKeyCanvas.height = chromaSourceCanvas.height;
+    state.chromaDirty = true;
     state.feedbackReady = false;
     if ($('recordFormatNote')) updateRecordingFormatNote();
   }
@@ -311,6 +336,89 @@
     targetCtx.rotate(rotation);
     targetCtx.drawImage(media, -dw / 2, -dh / 2, dw, dh);
     targetCtx.restore();
+  }
+
+  function hexToRgb(hex) {
+    const clean = String(hex || '#00ff00').replace('#', '');
+    const value = Number.parseInt(clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean, 16);
+    if (!Number.isFinite(value)) return { r: 0, g: 255, b: 0 };
+    return { r: (value >> 16) & 255, g: (value >> 8) & 255, b: value & 255 };
+  }
+
+  function rgbToHex(r, g, b) {
+    return `#${[r, g, b].map(value => Math.max(0, Math.min(255, Math.round(value))).toString(16).padStart(2, '0')).join('')}`;
+  }
+
+  function smoothstep(edge0, edge1, value) {
+    const width = Math.max(0.0001, edge1 - edge0);
+    const t = Math.max(0, Math.min(1, (value - edge0) / width));
+    return t * t * (3 - 2 * t);
+  }
+
+  function drawChromaLayer(targetCtx, w, h, dx, dy, scale, rotation, now) {
+    if (!state.chromaVisible || state.chromaVideoIndex < 0 || chromaVideo.readyState < 2) return;
+
+    if (!state.chromaKeyEnabled) {
+      targetCtx.save();
+      targetCtx.globalAlpha = state.chromaOpacity;
+      drawCover(targetCtx, chromaVideo, w, h, dx, dy, scale, rotation);
+      targetCtx.restore();
+      return;
+    }
+
+    // Refresh the keyed buffer at video cadence, or immediately after any
+    // chroma control changes. It is then upscaled into the full-resolution mix.
+    if (state.chromaDirty || now - state.chromaLastProcess >= 33) {
+      const cw = chromaSourceCanvas.width;
+      const ch = chromaSourceCanvas.height;
+      const sx = cw / w;
+      const sy = ch / h;
+      chromaSourceCtx.clearRect(0, 0, cw, ch);
+      drawCover(chromaSourceCtx, chromaVideo, cw, ch, dx * sx, dy * sy, scale, rotation);
+
+      try {
+        const frame = chromaSourceCtx.getImageData(0, 0, cw, ch);
+        const pixels = frame.data;
+        const key = hexToRgb(state.chromaColor);
+        const keySum = Math.max(1, key.r + key.g + key.b);
+        const kr = key.r / keySum;
+        const kg = key.g / keySum;
+        const kb = key.b / keySum;
+        const dominant = key.g >= key.r && key.g >= key.b ? 1 : key.b >= key.r ? 2 : 0;
+
+        for (let i = 0; i < pixels.length; i += 4) {
+          const r = pixels[i];
+          const g = pixels[i + 1];
+          const b = pixels[i + 2];
+          const sum = Math.max(1, r + g + b);
+          const dr = r / sum - kr;
+          const dg = g / sum - kg;
+          const db = b / sum - kb;
+          const colorDistance = Math.sqrt(dr * dr + dg * dg + db * db);
+          const keep = smoothstep(state.chromaTolerance, state.chromaTolerance + state.chromaSoftness, colorDistance);
+          const spillAmount = state.chromaSpill * (1 - keep);
+
+          if (spillAmount > 0) {
+            const dominantValue = pixels[i + dominant];
+            const otherA = pixels[i + ((dominant + 1) % 3)];
+            const otherB = pixels[i + ((dominant + 2) % 3)];
+            const neutral = Math.max(otherA, otherB);
+            if (dominantValue > neutral) pixels[i + dominant] = dominantValue - (dominantValue - neutral) * spillAmount;
+          }
+          pixels[i + 3] = Math.round(pixels[i + 3] * keep * state.chromaOpacity);
+        }
+        chromaKeyCtx.putImageData(frame, 0, 0);
+        state.chromaDirty = false;
+        state.chromaLastProcess = now;
+      } catch (error) {
+        console.warn('Chroma frame could not be processed.', error);
+        state.chromaKeyEnabled = false;
+        $('chromaKeyEnabled').checked = false;
+        setStatus('chroma key unavailable for this video — showing full top layer');
+      }
+    }
+
+    targetCtx.drawImage(chromaKeyCanvas, 0, 0, w, h);
   }
 
   function drawLogo(targetCtx) {
@@ -725,6 +833,7 @@
         if (p >= 1) state.transition = null;
       }
       drawCover(bctxA, sourceVideo, w, h, shakeX, shakeY, zoom, rotation);
+      drawChromaLayer(bctxA, w, h, shakeX, shakeY, zoom, rotation, now);
       if (state.logoAffected) drawLogo(bctxA);
     }
 
@@ -989,6 +1098,103 @@
     setStatus(`${id} transition`);
   }
 
+  function refreshChromaVideoSelect() {
+    const select = $('chromaVideoSelect');
+    const selected = state.chromaVideoIndex >= 0 ? String(state.chromaVideoIndex) : '';
+    select.innerHTML = '<option value="">NO TOP VIDEO</option>' + state.videos
+      .map((video, index) => `<option value="${index}">${escapeHtml(video.name)}</option>`)
+      .join('');
+    select.value = state.videos[state.chromaVideoIndex] ? selected : '';
+  }
+
+  function updateChromaValueLabels() {
+    $('chromaOpacityValue').textContent = `${Math.round(state.chromaOpacity * 100)}%`;
+    $('chromaToleranceValue').textContent = `${Math.round(state.chromaTolerance * 100)}%`;
+    $('chromaSoftnessValue').textContent = `${Math.round(state.chromaSoftness * 100)}%`;
+    $('chromaSpillValue').textContent = `${Math.round(state.chromaSpill * 100)}%`;
+  }
+
+  function updateChromaUI() {
+    const record = state.videos[state.chromaVideoIndex];
+    const hasVideo = Boolean(record);
+    $('chromaStatus').textContent = hasVideo ? `TOP: ${record.name}` : 'NO CHROMA LAYER LOADED';
+    $('chromaVideoSelect').value = hasVideo ? String(state.chromaVideoIndex) : '';
+    ['chromaVisible','chromaKeyEnabled','chromaSync','chromaColor','chromaOpacity','chromaTolerance','chromaSoftness','chromaSpill','chromaPickBtn','chromaPlayBtn','chromaRestartBtn','chromaClearBtn']
+      .forEach(id => { $(id).disabled = !hasVideo; });
+    $('chromaPickBtn').classList.toggle('active', state.chromaPicking);
+    $('chromaPickBtn').setAttribute('aria-pressed', String(state.chromaPicking));
+    $('chromaPickNote').textContent = state.chromaPicking
+      ? 'CLICK THE KEY COLOR IN THE TOP CLIP ON THE OUTPUT — PRESS PICK COLOR AGAIN TO CANCEL.'
+      : 'Use the color box, or press PICK COLOR and click that color in the top clip on the output.';
+    canvas.classList.toggle('chroma-picking', state.chromaPicking);
+    updateChromaValueLabels();
+  }
+
+  function clearChromaVideo(announce = true) {
+    chromaVideo.pause();
+    chromaVideo.removeAttribute('src');
+    chromaVideo.load();
+    state.chromaVideoIndex = -1;
+    state.chromaPicking = false;
+    state.chromaDirty = true;
+    refreshChromaVideoSelect();
+    updateChromaUI();
+    if (announce) setStatus('top chroma layer cleared');
+  }
+
+  function loadChromaVideo(index) {
+    const record = state.videos[index];
+    if (!record) { clearChromaVideo(); return; }
+    state.chromaVideoIndex = index;
+    state.chromaVisible = true;
+    state.chromaPicking = false;
+    state.chromaDirty = true;
+    $('chromaVisible').checked = true;
+    chromaVideo.src = record.url;
+    chromaVideo.loop = true;
+    chromaVideo.load();
+    chromaVideo.onloadedmetadata = () => {
+      chromaVideo.currentTime = 0;
+      if (!state.chromaSync || !sourceVideo.paused) safePlay(chromaVideo);
+      state.chromaDirty = true;
+      updateChromaUI();
+      setStatus(`top chroma video loaded: ${record.name}`);
+    };
+    updateChromaUI();
+  }
+
+  function setChromaPicking(enabled) {
+    if (state.chromaVideoIndex < 0) return;
+    state.chromaPicking = enabled;
+    updateChromaUI();
+    setStatus(enabled ? 'chroma picker ready — click the key color on the output' : 'chroma color picker cancelled');
+  }
+
+  function sampleChromaColor(event) {
+    if (!state.chromaPicking || chromaVideo.readyState < 2) return false;
+    const cw = chromaSourceCanvas.width;
+    const ch = chromaSourceCanvas.height;
+    chromaSourceCtx.clearRect(0, 0, cw, ch);
+    drawCover(chromaSourceCtx, chromaVideo, cw, ch);
+    const point = pointerToCanvas(event);
+    const x = Math.max(0, Math.min(cw - 1, Math.floor(point.x / canvas.width * cw)));
+    const y = Math.max(0, Math.min(ch - 1, Math.floor(point.y / canvas.height * ch)));
+    try {
+      const pixel = chromaSourceCtx.getImageData(x, y, 1, 1).data;
+      state.chromaColor = rgbToHex(pixel[0], pixel[1], pixel[2]);
+      $('chromaColor').value = state.chromaColor;
+      state.chromaDirty = true;
+      state.chromaPicking = false;
+      updateChromaUI();
+      setStatus(`chroma key color picked: ${state.chromaColor}`);
+    } catch (error) {
+      console.warn('Chroma color could not be sampled.', error);
+      setChromaPicking(false);
+      setStatus('could not sample that chroma color');
+    }
+    return true;
+  }
+
   function loadVideo(index) {
     if (!state.videos[index]) return;
     state.activeVideoIndex = index;
@@ -1035,6 +1241,7 @@
       item.addEventListener('click', () => loadVideo(i));
       $('videoLibrary').appendChild(item);
     });
+    refreshChromaVideoSelect();
   }
 
   function escapeHtml(text) { return text.replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch])); }
@@ -1166,6 +1373,9 @@
       <h3>HOT CUES</h3><div class="grid">${cueMarkup}</div>
       <h3>DISTORTION</h3><div class="grid">${fxMarkup}</div>
       <button class="wide" data-command="audio">PLAY / PAUSE SONG</button>
+      <button class="wide" data-command="chroma-visible">SHOW / HIDE CHROMA LAYER</button>
+      <button class="wide" data-command="chroma-play">PLAY / PAUSE TOP VIDEO</button>
+      <button class="wide" data-command="chroma-restart">RESTART TOP VIDEO</button>
       <button class="wide" data-command="random">DESTROY SIGNAL</button>
       <button class="wide" data-command="panic">CLEAR ALL FX</button>
       <button class="wide" data-command="record">START / STOP RECORDING</button>
@@ -1180,23 +1390,86 @@
 
   function resetPerformanceControls() {
     clearEffects(); state.master=.45; state.audioReact=.35; state.transitionDuration=.16; state.transitionStrength=.85; state.defaultTransitionId='flash'; state.fxMode='hold';
+    state.chromaVisible=true; state.chromaKeyEnabled=true; state.chromaSync=true; state.chromaColor='#00ff00'; state.chromaTolerance=.18; state.chromaSoftness=.12; state.chromaSpill=.7; state.chromaOpacity=1; state.chromaPicking=false; state.chromaDirty=true;
     $('masterDistortion').value=.45; $('audioReact').value=.35; $('transitionDuration').value=.16; $('transitionStrength').value=.85; $('fxModeSelect').value='hold';
+    $('chromaVisible').checked=true; $('chromaKeyEnabled').checked=true; $('chromaSync').checked=true; $('chromaColor').value='#00ff00'; $('chromaTolerance').value=.18; $('chromaSoftness').value=.12; $('chromaSpill').value=.7; $('chromaOpacity').value=1;
     $('masterValue').textContent='45%'; $('reactValue').textContent='35%'; $('transitionValue').textContent='0.16s'; $('transitionStrengthValue').textContent='85%';
-    saveDefaultTransition(); updateDefaultTransitionUI();
+    saveDefaultTransition(); updateDefaultTransitionUI(); updateChromaUI();
     setStatus('performance controls reset');
   }
 
   function resetEntireProject() {
     if (!confirm('Clear all loaded media, cue points, effects, and logo settings?')) return;
+    clearChromaVideo(false);
     state.videos.forEach(v=>URL.revokeObjectURL(v.url));
     state.videos=[]; state.activeVideoIndex=-1; sourceVideo.removeAttribute('src'); sourceVideo.load(); song.removeAttribute('src'); song.load();
     state.cues=Object.fromEntries(cueKeys.map(k=>[k,null])); state.logo=null; clearEffects();
-    $('videoLibrary').innerHTML=''; $('audioName').textContent='NO SONG LOADED'; $('dropHint').classList.remove('hidden'); updateCuePads(); drawTimeline();
+    $('videoLibrary').innerHTML=''; $('audioName').textContent='NO SONG LOADED'; $('dropHint').classList.remove('hidden'); refreshChromaVideoSelect(); updateChromaUI(); updateCuePads(); drawTimeline();
     setStatus('project reset');
   }
 
   // Inputs
   $('videoInput').addEventListener('change', e => addVideos(e.target.files));
+  $('chromaVideoSelect').addEventListener('change', e => {
+    if (e.target.value === '') clearChromaVideo();
+    else loadChromaVideo(Number(e.target.value));
+  });
+  $('chromaVisible').addEventListener('change', e => {
+    state.chromaVisible = e.target.checked;
+    state.chromaDirty = true;
+    if (state.chromaVisible && state.chromaVideoIndex >= 0 && (!state.chromaSync || !sourceVideo.paused)) safePlay(chromaVideo);
+    setStatus(state.chromaVisible ? 'top chroma layer visible' : 'top chroma layer hidden');
+  });
+  $('chromaKeyEnabled').addEventListener('change', e => {
+    state.chromaKeyEnabled = e.target.checked;
+    state.chromaDirty = true;
+    setStatus(state.chromaKeyEnabled ? 'chroma key enabled' : 'chroma key bypassed — full top video visible');
+  });
+  $('chromaSync').addEventListener('change', e => {
+    state.chromaSync = e.target.checked;
+    if (state.chromaSync) {
+      if (sourceVideo.paused) chromaVideo.pause(); else safePlay(chromaVideo);
+    }
+    setStatus(state.chromaSync ? 'top video follows base play and pause' : 'top video transport is independent');
+  });
+  $('chromaColor').addEventListener('input', e => {
+    state.chromaColor = e.target.value;
+    state.chromaDirty = true;
+    setStatus(`chroma key color: ${state.chromaColor}`);
+  });
+  $('chromaOpacity').addEventListener('input', e => {
+    state.chromaOpacity = Number(e.target.value);
+    state.chromaDirty = true;
+    updateChromaValueLabels();
+  });
+  $('chromaTolerance').addEventListener('input', e => {
+    state.chromaTolerance = Number(e.target.value);
+    state.chromaDirty = true;
+    updateChromaValueLabels();
+  });
+  $('chromaSoftness').addEventListener('input', e => {
+    state.chromaSoftness = Number(e.target.value);
+    state.chromaDirty = true;
+    updateChromaValueLabels();
+  });
+  $('chromaSpill').addEventListener('input', e => {
+    state.chromaSpill = Number(e.target.value);
+    state.chromaDirty = true;
+    updateChromaValueLabels();
+  });
+  $('chromaPickBtn').addEventListener('click', () => setChromaPicking(!state.chromaPicking));
+  $('chromaPlayBtn').addEventListener('click', () => {
+    if (chromaVideo.paused) safePlay(chromaVideo); else chromaVideo.pause();
+    setStatus(chromaVideo.paused ? 'top video paused' : 'top video playing');
+  });
+  $('chromaRestartBtn').addEventListener('click', () => {
+    if (state.chromaVideoIndex < 0) return;
+    chromaVideo.currentTime = 0;
+    safePlay(chromaVideo);
+    state.chromaDirty = true;
+    setStatus('top video restarted');
+  });
+  $('chromaClearBtn').addEventListener('click', () => clearChromaVideo());
   $('audioInput').addEventListener('change', e => {
     const file=e.target.files[0]; if(!file)return;
     song.src=URL.createObjectURL(file); $('audioName').textContent=file.name; song.load(); setupAudioGraph(); setStatus(`song loaded: ${file.name}`);
@@ -1211,6 +1484,9 @@
   song.addEventListener('timeupdate',()=>{$('audioTime').textContent=formatTime(song.currentTime);$('audioDuration').textContent=formatTime(song.duration); if(song.duration)$('audioSeek').value=Math.floor(song.currentTime/song.duration*1000);});
   sourceVideo.addEventListener('timeupdate', drawTimeline);
   sourceVideo.addEventListener('ended',()=>{sourceVideo.currentTime=0;safePlay(sourceVideo);});
+  sourceVideo.addEventListener('play', () => { if (state.chromaSync && state.chromaVideoIndex >= 0) safePlay(chromaVideo); });
+  sourceVideo.addEventListener('pause', () => { if (state.chromaSync && state.chromaVideoIndex >= 0) chromaVideo.pause(); });
+  chromaVideo.addEventListener('seeked', () => { state.chromaDirty = true; });
 
   $('cueKeySelect').addEventListener('change',e=>{
     state.armedCue=e.target.value || null;
@@ -1283,7 +1559,10 @@
   $('logoAffected').addEventListener('change',e=>state.logoAffected=e.target.checked);
   $('logoResetBtn').addEventListener('click',()=>{state.logoX=.82;state.logoY=.84;state.logoScale=.2;$('logoScale').value=.2;});
 
-  canvas.addEventListener('pointerdown',e=>{const b=logoBounds();if(!b)return;const p=pointerToCanvas(e);if(p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h){state.draggingLogo=true;state.dragOffsetX=p.x-state.logoX*canvas.width;state.dragOffsetY=p.y-state.logoY*canvas.height;canvas.setPointerCapture(e.pointerId);}});
+  canvas.addEventListener('pointerdown',e=>{
+    if (sampleChromaColor(e)) return;
+    const b=logoBounds();if(!b)return;const p=pointerToCanvas(e);if(p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h){state.draggingLogo=true;state.dragOffsetX=p.x-state.logoX*canvas.width;state.dragOffsetY=p.y-state.logoY*canvas.height;canvas.setPointerCapture(e.pointerId);}
+  });
   canvas.addEventListener('pointermove',e=>{if(!state.draggingLogo)return;const p=pointerToCanvas(e);state.logoX=Math.max(0,Math.min(1,(p.x-state.dragOffsetX)/canvas.width));state.logoY=Math.max(0,Math.min(1,(p.y-state.dragOffsetY)/canvas.height));});
   canvas.addEventListener('pointerup',()=>state.draggingLogo=false);
 
@@ -1326,6 +1605,9 @@
       if(m.command==='cue')triggerCue(m.value,true);
       if(m.command==='fx'){if(state.activeEffects.has(m.value))state.activeEffects.delete(m.value);else state.activeEffects.add(m.value);updateFxButtons();}
       if(m.command==='audio'){$('audioPlayBtn').click();}
+      if(m.command==='chroma-visible'){$('chromaVisible').click();}
+      if(m.command==='chroma-play'){$('chromaPlayBtn').click();}
+      if(m.command==='chroma-restart'){$('chromaRestartBtn').click();}
       if(m.command==='random')randomizeEffects();
       if(m.command==='panic')clearEffects();
       if(m.command==='record'){if(state.recorder&&state.recorder.state==='recording')stopRecording();else startRecording();}
@@ -1364,5 +1646,5 @@
   let initialTheme = 'studio';
   try { initialTheme = localStorage.getItem('distortion-theme') || 'studio'; } catch {}
   applyTheme(initialTheme);
-  buildCuePads(); buildFxButtons(); setCanvasAspect('16:9'); setupRecordingFormatMenu(); rebuildTimeline(); requestAnimationFrame(renderFrame);
+  buildCuePads(); buildFxButtons(); setCanvasAspect('16:9'); refreshChromaVideoSelect(); updateChromaUI(); setupRecordingFormatMenu(); rebuildTimeline(); requestAnimationFrame(renderFrame);
 })();
