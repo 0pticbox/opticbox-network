@@ -350,6 +350,32 @@
 @keyframes ft-grid-jump{0%,100%{transform:translateX(0)}50%{transform:translateX(18px)}}
 @keyframes ft-grid-rise{to{transform:translateY(-13px)}}
 
+/* v44 — explicit preview centering.
+   Individual `translate` keeps the midpoint fixed while each unique keyframe
+   remains free to animate `transform` without overwriting the anchor. */
+.free-tools-projects .project-art > i{
+  left:50%;
+  top:50%;
+  translate:-50% -50%;
+  transform-origin:center center;
+}
+.free-tools-projects .project-art > span{
+  position:absolute;
+  inset:0;
+  z-index:2;
+  width:100%;
+  max-width:none;
+  display:grid;
+  place-items:center;
+  padding:12px;
+  text-align:center;
+  pointer-events:none;
+}
+.free-tools-projects .project[data-product-slug="boxed-arp"] .project-art > i,
+.free-tools-projects .project[data-product-slug="inner-light-runner"] .project-art > i{
+  transform-origin:center bottom;
+}
+
 @media(prefers-reduced-motion:reduce){
   .free-tools-projects .project-art i,
   .free-tools-projects .project-art::before{
