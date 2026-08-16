@@ -117,6 +117,8 @@
   };
 
   let supportedRecordingFormats = [];
+  let activeAudioUrl = '';
+  let activeAudioName = '';
 
   const state = {
     videos: [],
@@ -1686,8 +1688,26 @@
   });
   $('chromaClearBtn').addEventListener('click', () => clearChromaVideo());
   $('audioInput').addEventListener('change', e => {
-    const file=e.target.files[0]; if(!file)return;
-    song.src=URL.createObjectURL(file); $('audioName').textContent=file.name; song.load(); setupAudioGraph(); setStatus(`song loaded: ${file.name}`);
+    const file = e.target.files[0];
+    if (!file) return;
+    if (activeAudioUrl) URL.revokeObjectURL(activeAudioUrl);
+    activeAudioUrl = URL.createObjectURL(file);
+    activeAudioName = file.name;
+    song.src = activeAudioUrl;
+    $('audioName').textContent = `CHECKING — ${file.name}`;
+    song.load();
+    setupAudioGraph();
+    setStatus(`checking audio: ${file.name}`);
+  });
+  song.addEventListener('loadedmetadata', () => {
+    const name = activeAudioName || 'AUDIO';
+    $('audioName').textContent = `READY — ${name}`;
+    setStatus(`audio ready: ${name}`);
+  });
+  song.addEventListener('error', () => {
+    const name = activeAudioName || 'THIS FILE';
+    $('audioName').textContent = `COULD NOT PLAY — ${name}`;
+    setStatus(`audio format not playable in this browser — try WAV or MP3`);
   });
   $('logoInput').addEventListener('change', e=>{
     const file=e.target.files[0]; if(!file)return;

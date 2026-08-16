@@ -1,6 +1,11 @@
-DISTORTION v1.17 — FRAMING + CUSTOM FX MAP
+DISTORTION v1.18 — UNIFIED AUDIO LOADER
 
 Open index.html in a modern desktop browser.
+
+V1.18 UNIFIED AUDIO LOADER
+- DISTORTION now has one audio picker in the Media tab.
+- The retired launcher forwards old bookmarks directly into the app.
+- Audio format checking and clear success/error status now live beside the single Media picker.
 
 CHANGES
 - Rebuilt effects around randomized datamosh/glitch corruption.
