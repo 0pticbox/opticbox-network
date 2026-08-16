@@ -967,7 +967,7 @@ html[data-theme="punk"] body::after {
   top: 0;
   z-index: 20;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
   gap: 3px;
   padding: 7px;
   border-bottom: 1px solid var(--line);
@@ -1046,4 +1046,141 @@ html[data-theme="punk"] body::after {
 }
 @media (prefers-reduced-motion: reduce) {
   .control-page.active { animation: none; }
+}
+
+/* v1.16 — per-video framing and direct output dragging */
+.framing-panel {
+  background: color-mix(in srgb, var(--panel) 93%, var(--accent) 7%);
+}
+.framing-guide {
+  margin: -3px 0 11px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.45;
+}
+.framing-coordinates { margin-top: 2px; }
+.frame-drag-note {
+  display: grid;
+  gap: 4px;
+  margin: 6px 0 10px;
+  padding: 9px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: var(--control-dark);
+}
+.frame-drag-note strong {
+  color: var(--accent);
+  font-size: 9px;
+  letter-spacing: .1em;
+}
+.frame-drag-note span {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.35;
+}
+#outputCanvas.frame-drag-ready { cursor: grab; touch-action: none; }
+#outputCanvas.frame-dragging { cursor: grabbing; }
+.framing-panel :disabled { opacity: .42; cursor: not-allowed; }
+
+/* v1.17 — startup/default/custom FX mapping */
+.startup-map-dialog {
+  width: min(780px, 94vw);
+  height: auto;
+  max-height: 92vh;
+  overflow: auto;
+  padding: 0;
+  border: 1px solid var(--accent);
+  background: var(--panel);
+  box-shadow: 0 26px 90px rgba(0, 0, 0, .75), 0 0 40px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.startup-map-dialog::backdrop {
+  background: rgba(0, 0, 0, .9);
+  backdrop-filter: blur(8px);
+}
+.map-setup-shell { display: grid; }
+.map-setup-header {
+  display: grid;
+  grid-template-columns: 1fr minmax(210px, .7fr);
+  gap: 20px;
+  align-items: end;
+  padding: 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--topbar);
+}
+.map-setup-header span {
+  color: var(--accent);
+  font-size: 9px;
+  letter-spacing: .18em;
+}
+.map-setup-header h1 {
+  margin: 5px 0 0;
+  color: var(--text);
+  font-size: clamp(22px, 5vw, 38px);
+  letter-spacing: .08em;
+}
+.map-setup-header p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.map-mode-choice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 20px;
+}
+.map-choice-card {
+  min-height: 155px;
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  background: var(--control-dark);
+  color: var(--text);
+  text-align: left;
+}
+.map-choice-card:hover,
+.map-choice-card:focus-visible { border-color: var(--accent); outline: none; }
+.map-choice-card.default-card { background: color-mix(in srgb, var(--active-bg) 75%, var(--control-dark)); }
+.map-choice-card strong { color: var(--accent); font-size: 18px; letter-spacing: .08em; }
+.map-choice-card span { color: var(--muted); font-size: 11px; line-height: 1.45; }
+.custom-map-editor { padding: 18px 20px 20px; }
+.custom-map-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.custom-map-heading > div { display: grid; gap: 3px; }
+.custom-map-heading strong { color: var(--accent); letter-spacing: .1em; }
+.custom-map-heading span { color: var(--muted); font-size: 9px; }
+.custom-fx-map-rows {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+.custom-fx-map-row {
+  display: grid;
+  grid-template-columns: 46px 1fr;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+  padding: 7px;
+  border: 1px solid var(--line);
+  background: var(--control-dark);
+}
+.custom-fx-map-row strong {
+  display: grid;
+  place-items: center;
+  min-height: 35px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 15px;
+}
+.custom-fx-map-row select { margin: 0; min-width: 0; }
+.custom-map-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 14px; }
+@media (max-width: 620px) {
+  .map-setup-header { grid-template-columns: 1fr; }
+  .map-mode-choice,
+  .custom-fx-map-rows { grid-template-columns: 1fr; }
+  .map-choice-card { min-height: 118px; }
+  .custom-map-actions { flex-direction: column; }
+  .custom-map-actions .btn { width: 100%; }
 }
