@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DISTORTION v1.14 — Chroma Layer</title>
+  <title>DISTORTION v1.15 — Compact Control Windows</title>
   <link rel="stylesheet" href="styles.css" />
 
 
@@ -50,8 +50,14 @@ textarea, option, label, html body *::before, html body *::after {
     </header>
 
     <main class="workspace">
-      <aside class="panel media-panel">
-        <section>
+      <aside class="panel media-panel control-window" data-control-window="source" data-default-panel="media">
+        <nav class="panel-tabs" aria-label="Source controls">
+          <button class="active" data-panel-target="media" aria-selected="true">MEDIA</button>
+          <button data-panel-target="chroma" aria-selected="false">CHROMA</button>
+          <button data-panel-target="scenes" aria-selected="false">SCENES</button>
+          <button data-panel-target="logo" aria-selected="false">LOGO</button>
+        </nav>
+        <section class="control-page active" data-panel-page="media">
           <h2>MEDIA</h2>
           <label class="file-label">UPLOAD SONG / FILES
             <input id="audioInput" type="file" accept=".wav,.wave,.mp3,.m4a,.aac,.aif,.aiff,.caf,.flac,.ogg,.opus,audio/*" aria-label="Choose an audio file from Files" />
@@ -66,14 +72,14 @@ textarea, option, label, html body *::before, html body *::after {
           <div class="transport-readout"><span id="audioTime">00:00</span><span id="audioDuration">00:00</span></div>
         </section>
 
-        <section>
+        <section class="control-page active" data-panel-page="media">
           <label class="file-label">UPLOAD VIDEOS
             <input id="videoInput" type="file" accept=".mp4,.mov,.m4v,.webm,video/*" multiple aria-label="Choose videos from Files" />
           </label>
           <div id="videoLibrary" class="video-library"></div>
         </section>
 
-        <section class="chroma-panel">
+        <section class="chroma-panel control-page" data-panel-page="chroma">
           <h2>CHROMA LAYER — TOP VIDEO</h2>
           <p class="micro-help chroma-guide">Choose the normal background clip above, then choose a second uploaded clip here. DISTORTION removes the selected color and places the second clip on top.</p>
           <div class="layer-flow" aria-label="Chroma layer order">
@@ -116,7 +122,7 @@ textarea, option, label, html body *::before, html body *::after {
           <p id="chromaPickNote" class="micro-help">Use the color box, or press PICK COLOR and click that color in the top clip on the output.</p>
         </section>
 
-        <section class="scene-bank">
+        <section class="scene-bank control-page" data-panel-page="scenes">
           <h2>SCENES / HOT CUES</h2>
           <p class="micro-help">Click to select. Shift-click a saved pad to jump. Right-click clears one.</p>
           <div class="cue-toolbar">
@@ -137,7 +143,7 @@ textarea, option, label, html body *::before, html body *::after {
           <div id="cuePads" class="cue-pads"></div>
         </section>
 
-        <section>
+        <section class="control-page" data-panel-page="logo">
           <h2>LOGO LAYER</h2>
           <label class="file-label">UPLOAD LOGO
             <input id="logoInput" type="file" accept=".png,.jpg,.jpeg,.webp,.heic,.heif,image/*" aria-label="Choose a logo image from Files" />
@@ -174,8 +180,14 @@ textarea, option, label, html body *::before, html body *::after {
 
       <div class="panel-resizer" data-resize="right" title="Drag to resize right panel"></div>
 
-      <aside class="panel fx-panel">
-        <section>
+      <aside class="panel fx-panel control-window" data-control-window="performance" data-default-panel="effects">
+        <nav class="panel-tabs" aria-label="Performance controls">
+          <button data-panel-target="signal" aria-selected="false">SIGNAL</button>
+          <button class="active" data-panel-target="effects" aria-selected="true">FX</button>
+          <button data-panel-target="transitions" aria-selected="false">CUTS</button>
+          <button data-panel-target="recording" aria-selected="false">RECORD</button>
+        </nav>
+        <section class="control-page" data-panel-page="signal">
           <h2>MASTER SIGNAL</h2>
           <label>MASTER DISTORTION <span id="masterValue">45%</span>
             <input id="masterDistortion" type="range" min="0" max="1" step="0.01" value="0.45" />
@@ -189,7 +201,7 @@ textarea, option, label, html body *::before, html body *::after {
           </div>
         </section>
 
-        <section>
+        <section class="control-page active" data-panel-page="effects">
           <h2>DISTORTION BANK</h2>
           <div id="fxButtons" class="fx-grid"></div>
           <div class="mode-row">
@@ -202,7 +214,7 @@ textarea, option, label, html body *::before, html body *::after {
           </div>
         </section>
 
-        <section>
+        <section class="control-page" data-panel-page="transitions">
           <h2>TRANSITIONS</h2>
           <label>DEFAULT CUE TRANSITION
             <select id="defaultTransitionSelect" aria-describedby="defaultTransitionNote"></select>
@@ -220,7 +232,7 @@ textarea, option, label, html body *::before, html body *::after {
           <button id="resetTransitionKeysBtn" class="btn small full transition-reset">RESET TO T–P MAP</button>
         </section>
 
-        <section>
+        <section class="control-page" data-panel-page="recording">
           <h2>RECORDING</h2>
           <label>FRAME / ASPECT
             <select id="aspectSelect">
@@ -269,6 +281,7 @@ textarea, option, label, html body *::before, html body *::after {
       </div>
       <nav class="help-tabs" id="helpTabs">
         <button class="active" data-tab="quick">QUICK START</button>
+        <button data-tab="interface">INTERFACE</button>
         <button data-tab="cues">HOT CUES</button>
         <button data-tab="effects">EFFECTS</button>
         <button data-tab="transitions">TRANSITIONS</button>
@@ -282,6 +295,7 @@ textarea, option, label, html body *::before, html body *::after {
         <section data-help="quick" class="active">
           <h2>QUICK START</h2>
           <ol>
+            <li>Use the tabs at the top of the left and right control windows to switch tools without scrolling through the whole app.</li>
             <li>Upload one song and one or more video files.</li>
             <li>Select a video from the media library. This is the base/background clip.</li>
             <li>Optional: choose a second video in Chroma Layer. Pick its background color, then adjust Color Range and Edge Softness.</li>
@@ -293,6 +307,16 @@ textarea, option, label, html body *::before, html body *::after {
             <li>Add a logo, move it directly on the video, then record the performance.</li>
           </ol>
           <div class="help-callout">Recommended starting point: Master 45%, Reactivity 35%, White Flash as the default cue transition, Snap Decay 0.12 seconds, Logo 90% opacity.</div>
+        </section>
+        <section data-help="interface">
+          <h2>COMPACT CONTROL WINDOWS</h2>
+          <p>DISTORTION keeps the video and timeline in the center while the controls live in two tabbed windows. Opening a tab replaces the current page in that window instead of adding more controls underneath it.</p>
+          <div class="help-window-grid">
+            <div><strong>LEFT — SOURCE</strong><span>Media · Chroma · Scenes · Logo</span></div>
+            <div><strong>RIGHT — PERFORMANCE</strong><span>Signal · FX · Cuts · Record</span></div>
+          </div>
+          <p>Your last-opened tab on each side is remembered automatically. On desktop, drag the thin divider beside either window to resize it. On smaller screens, the same tabs remain available above each compact panel.</p>
+          <div class="help-callout">Fast workflow: keep Media open while loading clips, switch left to Scenes for cue performance, and leave the right window on FX or Cuts.</div>
         </section>
         <section data-help="cues">
           <h2>HOT CUES</h2>
@@ -374,6 +398,6 @@ textarea, option, label, html body *::before, html body *::after {
     </div>
   </dialog>
 
-  <script src="app.js?v=39"></script>
+  <script src="app.js?v=40"></script>
 </body>
 </html>
