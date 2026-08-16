@@ -23,11 +23,14 @@
 <img class="social-brand-logo-gif" src="assets/opticbox-spinning-logo.gif" alt="0PTICBOX Network spinning logo"/>
 </a>
 <nav aria-label="Quick actions" class="social-top-actions">
-<a href="messages.html">Messages</a>
-<a href="community.html">Create post</a>
-<a href="members.html">Account</a>
+<a href="index.html">Feed</a>
+<a data-my-profile href="members.html">Profile</a>
 <a href="free-tools.html">FREE TOOLS</a>
-<a class="social-profile-button" href="profile.html?handle=0pticbox">0PTICBOX profile</a>
+<a href="community.html">Post</a>
+<a href="members.html">Members</a>
+<a data-auth-only hidden href="messages.html">Messages</a>
+<a data-auth-only hidden href="profile-settings.html">Settings</a>
+<a data-signed-out-only href="signin.html?next=members.html">Sign in</a>
 </nav>
 </div>
 </header>
@@ -36,7 +39,7 @@
 <nav class="social-rail-nav">
 <a class="is-active" href="index.html"><span aria-hidden="true">⌂</span><b>Hub</b></a>
 <a href="community.html"><span aria-hidden="true">＋</span><b>Post</b></a>
-<a href="profile.html?handle=0pticbox"><span aria-hidden="true">◎</span><b>0PTICBOX</b></a>
+<a data-my-profile href="members.html"><span aria-hidden="true">◎</span><b>Profile</b></a>
 <a href="free-tools.html"><span aria-hidden="true">◇</span><b>FREE TOOLS</b></a>
 <a href="messages.html"><span aria-hidden="true">✉</span><b>Messages</b></a>
 <a href="members.html"><span aria-hidden="true">♙</span><b>Members</b></a>
@@ -78,20 +81,6 @@
 </div>
 </section>
 <aside class="social-right-rail">
-<section class="social-side-card hub-about-card">
-<div class="hub-about-inner">
-<div class="hub-kicker-row">
-<span aria-hidden="true" class="hub-room-icon"></span>
-<small>THE MAIN ROOM</small>
-</div>
-<h2>Everyone gets a voice.</h2>
-<p>See what the community is thinking, sharing, and planning.</p>
-</div>
-<a class="hub-card-action" href="community.html">
-<span>Add your opinion</span>
-<span aria-hidden="true">→</span>
-</a>
-</section>
 <section class="social-side-card hub-members-card">
 <div class="social-side-heading">
 <div class="hub-side-title">
@@ -105,24 +94,15 @@
 </div>
 <div class="social-member-list" id="social-member-list"><p>Loading members…</p></div>
 </section>
-<section class="social-side-card">
-<h2>Explore</h2>
-<div class="social-topic-list">
-<a href="index.html"><strong>Everyone's opinions</strong><span>All public posts in one timeline</span></a>
-<a href="community.html"><strong>Listening now</strong><span>Tracks and mixes from members</span></a>
-<a href="community.html"><strong>Event plans</strong><span>Public shows, raves, and festivals</span></a>
-<a href="members.html"><strong>Product reviews</strong><span>Ratings from the community</span></a>
-</div>
-</section>
 </aside>
 </main>
 <nav aria-label="Mobile navigation" class="social-mobile-nav">
 <a class="is-active" href="index.html"><span>⌂</span><small>Hub</small></a>
 <a href="community.html"><span>＋</span><small>Post</small></a>
-<a href="profile.html?handle=0pticbox"><span>◎</span><small>0PTICBOX</small></a>
+<a data-my-profile href="members.html"><span>◎</span><small>Profile</small></a>
 <a href="messages.html"><span>✉</span><small>Messages</small></a>
 </nav>
 <script src="social-home.js?v=26" type="module"></script>
-<script src="site.js?v=20"></script>
+<script src="site.js?v=30"></script>
 </body>
 </html>

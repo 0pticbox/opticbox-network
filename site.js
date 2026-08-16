@@ -157,7 +157,7 @@
   if (year) year.textContent = new Date().getFullYear();
 
   /* Keep authentication-aware navigation available on every page. */
-  import('./auth-state.js').catch((error) => {
+  import('./auth-state.js?v=20260816-2').catch((error) => {
     console.warn('Authentication navigation could not initialize:', error);
   });
 

@@ -95,6 +95,13 @@ const settingsLinks = [
 ];
 const authOnly = [...document.querySelectorAll('[data-auth-only]')];
 const signedOutOnly = [...document.querySelectorAll('[data-signed-out-only]')];
+const myProfileLinks = [...document.querySelectorAll('[data-my-profile]')];
+
+function updateMyProfileLinks(session) {
+  const id = session?.user?.id || '';
+  const href = id ? `profile.html?id=${encodeURIComponent(id)}` : 'members.html';
+  myProfileLinks.forEach((link) => { link.href = href; });
+}
 
 function showSignedInUi(signedIn) {
   settingsLinks.forEach((link) => {
@@ -110,6 +117,7 @@ function showSignedInUi(signedIn) {
 }
 
 showSignedInUi(false);
+updateMyProfileLinks(null);
 
 function safeCurrentTarget() {
   const name = window.location.pathname.split('/').pop() || 'index.html';
@@ -154,6 +162,7 @@ if (!isSupabaseConfigured() || !createClient) {
     window.opticboxAuth.session = session || null;
     const signedIn = Boolean(session?.user);
     showSignedInUi(signedIn);
+    updateMyProfileLinks(session);
 
     if (!signedIn && document.body.dataset.authRequired === 'true') {
       redirectToSignIn();

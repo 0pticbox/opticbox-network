@@ -21,7 +21,7 @@
 <header class="topbar" id="top"><div class="shell topbar-inner">
 <a class="wordmark" href="index.html" aria-label="0PTICBOX Productions home"><img class="wordmark-logo-gif" src="assets/opticbox-spinning-logo.gif" alt="0PTICBOX Productions spinning logo"/></a>
 <button aria-controls="site-nav" aria-expanded="false" class="menu-toggle" type="button">Menu</button>
-<nav aria-label="Primary navigation" class="site-nav" id="site-nav"><a href="index.html">Home</a><a href="community.html">Community feed</a><a href="messages.html">Messages</a><a href="members.html">Member area</a><a class="is-active" href="profile-settings.html">Settings</a></nav>
+<nav aria-label="Primary navigation" class="site-nav" id="site-nav"><a href="index.html">Feed</a><a data-my-profile href="members.html">Profile</a><a href="free-tools.html">FREE TOOLS</a><a href="community.html">Post</a><a href="members.html">Members</a><a data-auth-only hidden href="messages.html">Messages</a><a aria-current="page" class="is-active" data-auth-only hidden href="profile-settings.html">Settings</a><a data-signed-out-only href="signin.html?next=members.html">Sign in</a></nav>
 </div></header>
 <main class="shell settings-page" id="settings">
 <section class="box"><div class="box-title split-title"><span>Profile Settings</span><small>signed-in members only</small></div><div class="member-page-intro-body"><div><span class="mini-label">ACCOUNT PROFILE</span><h1>Everyone gets the same full profile layout — including 0PTICBOX.</h1><p>Connect your identity, wallpaper, featured item, Instagram, YouTube, interests, and links. 0PTICBOX uses the same member template as everyone else.</p></div><a class="retro-button" href="members.html">Back to Member Area</a></div></section>
@@ -116,6 +116,9 @@ https://youtube.com/playlist?list=..."></textarea><small>Up to 3 video or playli
 <div class="settings-field"><label for="settings-contact-email">Public contact email</label><input id="settings-contact-email" type="email" maxlength="254" placeholder="booking@example.com"/><small>Only enter this if you want it visible on your profile.</small></div>
 </div>
 </fieldset>
+<fieldset class="settings-group settings-danger-zone"><legend>Danger zone</legend>
+<div class="settings-field"><strong>Delete account</strong><p>Delete this network account, its profile, posts, reviews, friendships, and messages. This cannot be undone.</p><button class="retro-button danger" id="settings-delete-account" type="button">Delete my account</button><small>Owner/admin accounts are protected and cannot be deleted from this screen.</small></div>
+</fieldset>
 <div class="settings-actions"><button class="retro-button primary" type="submit">Save settings</button><a class="retro-button" id="settings-view-profile" href="profile.html">View profile</a><button class="retro-button danger" id="settings-signout" type="button">Sign out</button></div>
 <p class="settings-message" id="settings-message" aria-live="polite"></p>
 </form>
@@ -124,7 +127,7 @@ https://youtube.com/playlist?list=..."></textarea><small>Up to 3 video or playli
 </main>
 <footer><div class="shell footer-inner"><p>© <span id="year"></span> 0PTICBOX Productions</p><div><a href="members.html">Member area</a><a href="messages.html">Messages</a><a href="community.html">Create post</a></div></div></footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="profile-settings.js?v=28" type="module"></script>
-<script src="site.js?v=25"></script>
+<script src="profile-settings.js?v=29" type="module"></script>
+<script src="site.js?v=30"></script>
 </body>
 </html>

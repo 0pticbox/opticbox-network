@@ -400,5 +400,24 @@ form.addEventListener('submit', async (event) => {
     setMessage(technicalSchemaError ? 'Some profile options are temporarily unavailable. Please try again shortly.' : (error.message || 'Settings could not be saved.'), true);
   } finally { submit.disabled = false; }
 });
+$('settings-delete-account')?.addEventListener('click', async () => {
+  if (!supabase || !user) return;
+  const button = $('settings-delete-account');
+  if (!window.confirm('Delete this account permanently? Your profile, posts, reviews, friendships, and messages will be removed.')) return;
+  const typed = window.prompt('Type DELETE to confirm permanent account deletion.');
+  if (typed !== 'DELETE') return setMessage('Account deletion cancelled.');
+  button.disabled = true;
+  setMessage('Deleting account…');
+  try {
+    const { error } = await supabase.rpc('delete_my_account');
+    if (error) throw error;
+    await supabase.auth.signOut();
+    window.location.replace('index.html');
+  } catch (error) {
+    const missingRpc = /delete_my_account|function .* does not exist|schema cache/i.test(String(error?.message || ''));
+    setMessage(missingRpc ? 'Account deletion needs the newest Supabase account-cleanup migration first.' : (error?.message || 'The account could not be deleted.'), true);
+    button.disabled = false;
+  }
+});
 $('settings-signout').addEventListener('click', async () => { if (!supabase) return; await supabase.auth.signOut(); window.location.replace('signin.html'); });
 bootstrap().catch((error) => setMessage(error.message || 'Profile settings could not load.', true));

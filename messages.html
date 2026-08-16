@@ -23,7 +23,7 @@
 <header class="topbar" id="top"><div class="shell topbar-inner">
 <a class="wordmark" href="index.html" aria-label="0PTICBOX Productions home"><img class="wordmark-logo-gif" src="assets/opticbox-spinning-logo.gif" alt="0PTICBOX Productions spinning logo"/></a>
 <button aria-controls="site-nav" aria-expanded="false" class="menu-toggle" type="button">Menu</button>
-<nav aria-label="Primary navigation" class="site-nav" id="site-nav"><a href="index.html">Home</a><a href="community.html">Create post</a><a class="is-active" href="messages.html">Messages</a><a href="members.html">Member area</a><a href="profile-settings.html">Settings</a></nav>
+<nav aria-label="Primary navigation" class="site-nav" id="site-nav"><a href="index.html">Feed</a><a data-my-profile href="members.html">Profile</a><a href="free-tools.html">FREE TOOLS</a><a href="community.html">Post</a><a href="members.html">Members</a><a aria-current="page" class="is-active" data-auth-only hidden href="messages.html">Messages</a><a data-auth-only hidden href="profile-settings.html">Settings</a><a data-signed-out-only href="signin.html?next=members.html">Sign in</a></nav>
 </div></header>
 <main class="shell messages-page" id="messages-app">
 <section class="box"><div class="box-title messages-titlebar"><span>Private Messages</span><small>friends only · private video + ZIP storage</small></div><div class="member-page-intro-body"><div><span class="mini-label">DIRECT MESSAGES</span><h1>Choose a friend and start talking.</h1><p>General member lookup no longer starts a conversation. Add someone as a friend first, then they appear automatically in this inbox.</p></div><a class="retro-button" href="members.html">Account</a></div></section>
@@ -52,6 +52,6 @@
 <footer><div class="shell footer-inner"><p>© <span id="year"></span> 0PTICBOX Productions</p><div><a href="members.html">Member area</a><a href="profile-settings.html">Settings</a><a href="community.html">Create post</a></div></div></footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="messages.js?v=12" type="module"></script>
-<script src="site.js?v=20"></script>
+<script src="site.js?v=30"></script>
 </body>
 </html>

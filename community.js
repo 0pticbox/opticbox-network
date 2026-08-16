@@ -5,6 +5,7 @@ import {
   SUPABASE_PUBLISHABLE_KEY,
   isSupabaseConfigured,
 } from './supabase-config.js';
+import { hasBlockedLanguage } from './content-moderation.js?v=1';
 
 let supabase = null;
 let user = null;
@@ -695,6 +696,8 @@ form?.addEventListener('submit', async (event) => {
     if (raw && !mediaUrl) return say('The event link needs to start with http:// or https://.', true);
   }
 
+  if (hasBlockedLanguage([title, subtitle, text, city])) return say('That post contains language blocked by the community safety filter.', true);
+
   const submit = form.querySelector('button[type="submit"]');
   submit.disabled = true;
   say('Posting…');
@@ -748,6 +751,7 @@ root?.addEventListener('submit', async (event) => {
   const textArea = commentForm.querySelector('textarea[name="comment"]');
   const body = textArea?.value.trim() || '';
   if (!body) return feedSay('Write a comment first.', true);
+  if (hasBlockedLanguage(body)) return feedSay('That comment contains language blocked by the community safety filter.', true);
   if (body.length > 600) return feedSay('Comments can be up to 600 characters.', true);
   if (busyComments.has(postId)) return;
 

@@ -138,7 +138,7 @@ function renderFollowerTotal(profile) {
   // Instagram followers + YouTube subscribers.
   // The alias fallbacks keep older profile rows working if a previous build
   // used a slightly different YouTube field name.
-  const instagram = socialCount(profile.instagram_followers);
+  const instagram = safeHttpUrl(profile.instagram_url) ? socialCount(profile.instagram_followers) : null;
   const youtube = socialCount(
     profile.youtube_subscribers ??
     profile.youtube_subscriber_count ??
@@ -396,7 +396,7 @@ function renderInstagram(profile, name, handle) {
   const imageUrl = safeLinkUrl(profile.instagram_highlight_image_url);
   const legacyPost = listLines(profile.instagram_embeds, 1)[0] || '';
   const highlightPostUrl = instagramPostUrl(profile.instagram_highlight_post_url || legacyPost);
-  if (!instagramUrl && !imageUrl) {
+  if (!instagramUrl) {
     section.hidden = true;
     return;
   }
