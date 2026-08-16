@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DISTORTION v1.15 — Compact Control Windows</title>
+  <title>DISTORTION v1.17 — Framing + Custom FX Map</title>
   <link rel="stylesheet" href="styles.css" />
 
 
@@ -45,6 +45,7 @@ textarea, option, label, html body *::before, html body *::after {
         </label>
         <button id="detachBtn" class="btn">DETACH CONTROLS</button>
         <button id="fullscreenBtn" class="btn">FULLSCREEN OUTPUT</button>
+        <button id="keyMapBtn" class="btn">KEY MAP</button>
         <button id="helpBtn" class="btn accent">HELP</button>
       </div>
     </header>
@@ -53,6 +54,7 @@ textarea, option, label, html body *::before, html body *::after {
       <aside class="panel media-panel control-window" data-control-window="source" data-default-panel="media">
         <nav class="panel-tabs" aria-label="Source controls">
           <button class="active" data-panel-target="media" aria-selected="true">MEDIA</button>
+          <button data-panel-target="frame" aria-selected="false">FRAME</button>
           <button data-panel-target="chroma" aria-selected="false">CHROMA</button>
           <button data-panel-target="scenes" aria-selected="false">SCENES</button>
           <button data-panel-target="logo" aria-selected="false">LOGO</button>
@@ -77,6 +79,31 @@ textarea, option, label, html body *::before, html body *::after {
             <input id="videoInput" type="file" accept=".mp4,.mov,.m4v,.webm,video/*" multiple aria-label="Choose videos from Files" />
           </label>
           <div id="videoLibrary" class="video-library"></div>
+        </section>
+
+        <section class="framing-panel control-page" data-panel-page="frame">
+          <h2>VIDEO FRAME / CROP</h2>
+          <p class="micro-help framing-guide">Choose a layer, zoom it in, then drag directly on the video output or use the X and Y controls.</p>
+          <label>ADJUST LAYER
+            <select id="framingTarget">
+              <option value="base">BASE VIDEO</option>
+              <option value="top">TOP CHROMA VIDEO</option>
+            </select>
+          </label>
+          <div id="framingStatus" class="status-line">BASE VIDEO — LOAD A CLIP</div>
+          <label>ZOOM / CROP <span id="frameZoomValue">1.00×</span>
+            <input id="frameZoom" type="range" min="1" max="3" step="0.01" value="1" />
+          </label>
+          <div class="control-grid two framing-coordinates">
+            <label>X POSITION <span id="frameXValue">0%</span>
+              <input id="frameX" type="range" min="-1" max="1" step="0.01" value="0" />
+            </label>
+            <label>Y POSITION <span id="frameYValue">0%</span>
+              <input id="frameY" type="range" min="-1" max="1" step="0.01" value="0" />
+            </label>
+          </div>
+          <div class="frame-drag-note"><strong>DRAG MODE ACTIVE</strong><span>Drag the output to reposition the selected video layer.</span></div>
+          <button id="frameResetBtn" class="btn small full">RESET SELECTED FRAME</button>
         </section>
 
         <section class="chroma-panel control-page" data-panel-page="chroma">
@@ -282,6 +309,8 @@ textarea, option, label, html body *::before, html body *::after {
       <nav class="help-tabs" id="helpTabs">
         <button class="active" data-tab="quick">QUICK START</button>
         <button data-tab="interface">INTERFACE</button>
+        <button data-tab="framing">FRAMING</button>
+        <button data-tab="mapping">KEY MAPPING</button>
         <button data-tab="cues">HOT CUES</button>
         <button data-tab="effects">EFFECTS</button>
         <button data-tab="transitions">TRANSITIONS</button>
@@ -318,6 +347,26 @@ textarea, option, label, html body *::before, html body *::after {
           <p>Your last-opened tab on each side is remembered automatically. On desktop, drag the thin divider beside either window to resize it. On smaller screens, the same tabs remain available above each compact panel.</p>
           <div class="help-callout">Fast workflow: keep Media open while loading clips, switch left to Scenes for cue performance, and leave the right window on FX or Cuts.</div>
         </section>
+        <section data-help="framing">
+          <h2>VIDEO FRAME / CROP</h2>
+          <ol>
+            <li>Open Frame in the left control window.</li>
+            <li>Choose Base Video or Top Chroma Video under Adjust Layer.</li>
+            <li>Raise Zoom / Crop to zoom from 1× up to 3×.</li>
+            <li>Drag directly on the output to reposition the selected layer, or use the X and Y sliders for exact control.</li>
+            <li>Use Reset Selected Frame to return only that layer to 1× and centered.</li>
+          </ol>
+          <p>Framing is stored separately for every uploaded clip and for its base or chroma-layer use. Hot cues keep the saved framing when they switch base videos.</p>
+          <div class="help-callout">X and Y movement becomes more visible after increasing Zoom. DISTORTION limits the movement so the video continues covering the output.</div>
+        </section>
+        <section data-help="mapping">
+          <h2>STARTUP FX KEY MAPPING</h2>
+          <p>Every time DISTORTION opens, choose Default Mapping or Custom Mapping before starting the performance.</p>
+          <p><strong>Default Mapping</strong> restores the original exact layout: 1–9 and backslash each trigger their labeled effect. <strong>Custom Mapping</strong> opens one assignment row for every FX key. A blank row leaves that key unassigned.</p>
+          <p>Choose an effect beside each key, then press Save Custom + Start. The custom list is remembered for the next time you open Custom Mapping. Clear All Slots returns every custom row to blank.</p>
+          <p>Use the Key Map button in the top bar whenever you need to switch modes or edit the map again.</p>
+          <div class="help-callout">Custom FX mapping changes only the distortion bank. Hot cues remain on Q–V, and transition keys keep their separate mapping controls in Cuts.</div>
+        </section>
         <section data-help="cues">
           <h2>HOT CUES</h2>
           <p>Hovering previews and, when enabled, immediately continues playback from the hovered position. A normal click jumps playback without saving. Hold <strong>Shift</strong> and click to add a new cue in the selected empty slot or the next available key.</p>
@@ -327,7 +376,8 @@ textarea, option, label, html body *::before, html body *::after {
         </section>
         <section data-help="effects">
           <h2>DISTORTION EFFECTS</h2>
-          <p>Keys 1–9 trigger the main distortion bank. Backslash triggers the hardest negative-strobe effect. Use HOLD for momentary hits or LATCH to keep effects active.</p>
+          <p>With Default Mapping, keys 1–9 trigger the main distortion bank and backslash triggers Negative Strobe. Custom Mapping can assign or blank each of those slots. Use HOLD for momentary hits or LATCH to keep effects active.</p>
+          <p><strong>Default FX map:</strong></p>
           <div class="help-key-grid">
             <div><kbd>1</kbd><span>Datamosh Drift</span></div><div><kbd>2</kbd><span>Mirror Shards</span></div>
             <div><kbd>3</kbd><span>Mirror Grid</span></div><div><kbd>4</kbd><span>Color Crush</span></div>
@@ -398,6 +448,33 @@ textarea, option, label, html body *::before, html body *::after {
     </div>
   </dialog>
 
-  <script src="app.js?v=40"></script>
+  <dialog id="startupMapDialog" class="startup-map-dialog">
+    <div class="map-setup-shell">
+      <header class="map-setup-header">
+        <div><span>PERFORMANCE SETUP</span><h1>CHOOSE FX KEY MAPPING</h1></div>
+        <p>Pick the original layout or build an exact custom map before DISTORTION starts.</p>
+      </header>
+      <section id="mapModeChoice" class="map-mode-choice">
+        <button id="useDefaultMapBtn" class="map-choice-card default-card">
+          <strong>DEFAULT MAPPING</strong>
+          <span>1–9 and \ use the original effect layout.</span>
+        </button>
+        <button id="openCustomMapBtn" class="map-choice-card">
+          <strong>CUSTOM MAPPING</strong>
+          <span>Open blank 1–9 and \ assignment slots.</span>
+        </button>
+      </section>
+      <section id="customMapEditor" class="custom-map-editor hidden">
+        <div class="custom-map-heading"><div><strong>CUSTOM FX MAP</strong><span>Blank means the key does nothing.</span></div><button id="backToMapChoiceBtn" class="btn small">BACK</button></div>
+        <div id="customFxMapRows" class="custom-fx-map-rows"></div>
+        <div class="custom-map-actions">
+          <button id="clearCustomMapBtn" class="btn danger">CLEAR ALL SLOTS</button>
+          <button id="saveCustomMapBtn" class="btn accent">SAVE CUSTOM + START</button>
+        </div>
+      </section>
+    </div>
+  </dialog>
+
+  <script src="app.js?v=42"></script>
 </body>
 </html>
