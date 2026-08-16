@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DISTORTION v1.13 — Alsina Global Font</title>
+  <title>DISTORTION v1.14 — Chroma Layer</title>
   <link rel="stylesheet" href="styles.css" />
 
 
@@ -71,6 +71,49 @@ textarea, option, label, html body *::before, html body *::after {
             <input id="videoInput" type="file" accept=".mp4,.mov,.m4v,.webm,video/*" multiple aria-label="Choose videos from Files" />
           </label>
           <div id="videoLibrary" class="video-library"></div>
+        </section>
+
+        <section class="chroma-panel">
+          <h2>CHROMA LAYER — TOP VIDEO</h2>
+          <p class="micro-help chroma-guide">Choose the normal background clip above, then choose a second uploaded clip here. DISTORTION removes the selected color and places the second clip on top.</p>
+          <div class="layer-flow" aria-label="Chroma layer order">
+            <span>TOP CLIP</span><b>→</b><span>REMOVE COLOR</span><b>→</b><span>BASE CLIP</span>
+          </div>
+          <label>TOP VIDEO
+            <select id="chromaVideoSelect">
+              <option value="">NO TOP VIDEO</option>
+            </select>
+          </label>
+          <div id="chromaStatus" class="status-line">NO CHROMA LAYER LOADED</div>
+          <div class="chroma-toggle-grid">
+            <label class="check-row"><input id="chromaVisible" type="checkbox" checked /> SHOW TOP LAYER</label>
+            <label class="check-row"><input id="chromaKeyEnabled" type="checkbox" checked /> REMOVE KEY COLOR</label>
+            <label class="check-row"><input id="chromaSync" type="checkbox" checked /> SYNC PLAY / PAUSE</label>
+          </div>
+          <div class="control-grid two chroma-controls">
+            <label>KEY COLOR
+              <input id="chromaColor" type="color" value="#00ff00" aria-label="Chroma key color" />
+            </label>
+            <label>OPACITY <span id="chromaOpacityValue">100%</span>
+              <input id="chromaOpacity" type="range" min="0" max="1" step="0.01" value="1" />
+            </label>
+            <label>COLOR RANGE <span id="chromaToleranceValue">18%</span>
+              <input id="chromaTolerance" type="range" min="0.02" max="0.65" step="0.01" value="0.18" />
+            </label>
+            <label>EDGE SOFTNESS <span id="chromaSoftnessValue">12%</span>
+              <input id="chromaSoftness" type="range" min="0.01" max="0.45" step="0.01" value="0.12" />
+            </label>
+            <label>COLOR SPILL <span id="chromaSpillValue">70%</span>
+              <input id="chromaSpill" type="range" min="0" max="1" step="0.01" value="0.7" />
+            </label>
+          </div>
+          <div class="transport chroma-actions">
+            <button id="chromaPickBtn" class="btn small">PICK COLOR</button>
+            <button id="chromaPlayBtn" class="btn small">PLAY / PAUSE TOP</button>
+            <button id="chromaRestartBtn" class="btn small">RESTART TOP</button>
+            <button id="chromaClearBtn" class="btn small danger">CLEAR TOP</button>
+          </div>
+          <p id="chromaPickNote" class="micro-help">Use the color box, or press PICK COLOR and click that color in the top clip on the output.</p>
         </section>
 
         <section class="scene-bank">
@@ -213,13 +256,14 @@ textarea, option, label, html body *::before, html body *::after {
 
   <audio id="song" crossorigin="anonymous"></audio>
   <video id="sourceVideo" muted playsinline crossorigin="anonymous"></video>
+  <video id="chromaVideo" muted playsinline loop crossorigin="anonymous"></video>
 
   <dialog id="helpDialog">
     <div class="help-shell">
       <div class="help-header">
         <div>
           <h1>DISTORTION HELP</h1>
-          <p>Live video hot cues, effects, logo layers, detached controls, and recording.</p>
+          <p>Live video hot cues, two-video chroma layers, effects, logo layers, detached controls, and recording.</p>
         </div>
         <button id="closeHelpBtn" class="btn">CLOSE</button>
       </div>
@@ -228,6 +272,7 @@ textarea, option, label, html body *::before, html body *::after {
         <button data-tab="cues">HOT CUES</button>
         <button data-tab="effects">EFFECTS</button>
         <button data-tab="transitions">TRANSITIONS</button>
+        <button data-tab="chroma">CHROMA LAYER</button>
         <button data-tab="logo">LOGO</button>
         <button data-tab="detach">DETACH</button>
         <button data-tab="record">RECORDING</button>
@@ -238,7 +283,8 @@ textarea, option, label, html body *::before, html body *::after {
           <h2>QUICK START</h2>
           <ol>
             <li>Upload one song and one or more video files.</li>
-            <li>Select a video from the media library.</li>
+            <li>Select a video from the media library. This is the base/background clip.</li>
+            <li>Optional: choose a second video in Chroma Layer. Pick its background color, then adjust Color Range and Edge Softness.</li>
             <li>Hover across the timeline to jump instantly to that moment.</li>
             <li>Hold Shift and click the timeline to add a new hot cue at that starting point.</li>
             <li>Press Q–V cue keys while the song keeps playing. The selected default transition fires automatically.</li>
@@ -279,6 +325,19 @@ textarea, option, label, html body *::before, html body *::after {
           <p><strong>Custom mapping:</strong> click a key box, then press a replacement key. Scene keys and distortion keys cannot be overwritten. RESET TO T–P MAP restores the original row.</p>
           <p><strong>Impact Strength</strong> controls how forcefully the transition hits. <strong>Snap Decay</strong> controls how long the hit lasts.</p>
         </section>
+        <section data-help="chroma">
+          <h2>CHROMA LAYER — TWO VIDEOS</h2>
+          <ol>
+            <li>Upload at least two videos using Upload Videos.</li>
+            <li>Click the background video in the Media library.</li>
+            <li>Choose the foreground video from Top Video in the Chroma Layer panel.</li>
+            <li>Leave the key color green, choose another color, or press Pick Color and click the color directly on the output.</li>
+            <li>Raise Color Range until the background disappears. Add Edge Softness to smooth the cutout and Color Spill to clean the colored edge.</li>
+          </ol>
+          <p>The top clip loops independently while both clips play. Sync Play / Pause makes it follow the base clip’s transport. Play / Pause Top and Restart Top let you perform the foreground clip separately.</p>
+          <p>The completed two-video image enters the existing distortion stack as one signal, so every numbered effect still combines in the same reliable order.</p>
+          <div class="help-callout">Fast starting point: green key, Color Range 18%, Edge Softness 12%, Color Spill 70%, Opacity 100%.</div>
+        </section>
         <section data-help="logo">
           <h2>LOGO LAYER</h2>
           <p>Upload PNG, WebP, or JPG. Drag the logo directly on the output. Use opacity and size controls. Enable “Distort logo with video” to send it through the active signal effects.</p>
@@ -286,7 +345,7 @@ textarea, option, label, html body *::before, html body *::after {
         <section data-help="detach">
           <h2>DETACHED CONTROLS</h2>
           <p>Press DETACH CONTROLS and allow the browser pop-up. Move that window to another monitor. The original page continues rendering and recording the final output.</p>
-          <p>Keep the original performance page open. The detached panel sends cue, effect, transport, panic, and recording commands back to it.</p>
+          <p>Keep the original performance page open. The detached panel sends cue, effect, song transport, chroma visibility/top-video transport, panic, and recording commands back to it.</p>
         </section>
         <section data-help="record">
           <h2>RECORDING</h2>
@@ -301,6 +360,8 @@ textarea, option, label, html body *::before, html body *::after {
             <li><strong>No detached window:</strong> allow pop-ups for this page.</li>
             <li><strong>No recording audio:</strong> start the song once before recording and use Chrome or Edge.</li>
             <li><strong>Video is lagging:</strong> reduce Master Distortion, disable Feedback, or use a lower-resolution video.</li>
+            <li><strong>Key color is still visible:</strong> use Pick Color on the exact background shade, then raise Color Range gradually.</li>
+            <li><strong>Too much of the top clip disappears:</strong> lower Color Range, then use a little Edge Softness instead.</li>
             <li><strong>Keyboard shortcuts type into controls:</strong> click the video output to return focus to performance mode.</li>
             <li><strong>Logo has a background:</strong> use a transparent PNG or WebP.</li>
           </ul>
@@ -313,6 +374,6 @@ textarea, option, label, html body *::before, html body *::after {
     </div>
   </dialog>
 
-  <script src="app.js?v=38"></script>
+  <script src="app.js?v=39"></script>
 </body>
 </html>
