@@ -1,0 +1,47 @@
+/* 0PTICBOX Free Tools — compact page header */
+.free-tools-hero-body{
+  min-height:0;
+  align-items:center;
+  gap:18px;
+  padding:16px 18px;
+}
+
+.free-tools-hero-body>div:first-child{
+  max-width:860px;
+}
+
+.free-tools-hero-summary{
+  max-width:78ch !important;
+  margin:0 !important;
+  color:#b7c3d9 !important;
+  font-size:clamp(12px,1.35vw,15px) !important;
+  line-height:1.5 !important;
+}
+
+.free-tools-hero-actions{
+  align-items:center;
+}
+
+.free-tools-hero-actions .retro-button{
+  min-height:36px;
+  padding-inline:12px;
+}
+
+.free-tools-browser-guide{
+  margin-top:0;
+}
+
+@media(max-width:760px){
+  .free-tools-hero-body{
+    gap:12px;
+    padding:14px;
+  }
+
+  .free-tools-hero-actions{
+    width:100%;
+  }
+
+  .free-tools-hero-actions .retro-button{
+    width:100%;
+  }
+}
