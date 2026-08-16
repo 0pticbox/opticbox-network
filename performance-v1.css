@@ -1,0 +1,127 @@
+/* 0PTICBOX adaptive animation performance layer — 2026-08-16 */
+
+/* Keep the browser from spending paint time on ambient motion while a page is
+   still loading. The performance bootstrap removes this class after load. */
+html.perf-loading .ticker-track,
+html.perf-loading .equalizer i,
+html.perf-loading .online i,
+html.perf-loading .feature-label span,
+html.perf-loading .project-art > i,
+html.perf-loading .startup-grid,
+html.perf-loading .startup-noise,
+html.perf-loading .startup-orbit,
+html.perf-loading .startup-wave-line,
+html.perf-loading .startup-wave-shadow {
+  animation-play-state: paused !important;
+}
+
+/* Promote only transform-heavy animation layers that benefit from their own
+   compositor layer. Avoid putting will-change on every card/page element. */
+.ticker-track,
+.project-art > i,
+.startup-orbit,
+.startup-wave-line,
+.startup-wave-shadow {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* Lower-end computers: preserve the main layout while removing the most
+   expensive ambient paints. JavaScript also nudges the particle canvas to
+   resize after this class is applied. */
+html.perf-low #page-particles {
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+}
+
+html.perf-low .topbar {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  background: rgba(8, 12, 24, .98) !important;
+}
+
+html.perf-low .equalizer i,
+html.perf-low .online i,
+html.perf-low .feature-label span {
+  animation: none !important;
+}
+
+html.perf-low .equalizer i {
+  height: 55% !important;
+}
+
+html.perf-low .project-art > i {
+  box-shadow: none !important;
+}
+
+html.perf-low .scope-stage::after,
+html.perf-low .player-screen {
+  text-shadow: none !important;
+}
+
+/* Mid-tier / touch devices keep the animations, but drop expensive blur where
+   it contributes little visually. */
+html.perf-mid .topbar {
+  -webkit-backdrop-filter: blur(7px) !important;
+  backdrop-filter: blur(7px) !important;
+}
+
+/* Defer painting larger below-the-fold cards until they are close to view.
+   This cuts first-load work without changing their layout when visible. */
+@supports (content-visibility: auto) {
+  .project,
+  .thread-card,
+  .social-side-card,
+  .browser-guide-card,
+  .member-instagram-grid > *,
+  .messages-sidebar-section {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 240px;
+  }
+}
+
+/* Phones/tablets benefit from not drawing the full-screen particle canvas.
+   The rest of the site's visible animations remain available. */
+@media (max-width: 900px), (hover: none), (pointer: coarse) {
+  #page-particles {
+    width: 1px !important;
+    height: 1px !important;
+    opacity: 0 !important;
+  }
+
+  .topbar {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
+/* Respect OS-level motion preferences and slow-refresh displays. */
+@media (prefers-reduced-motion: reduce), (update: slow) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .ticker-track,
+  .equalizer i,
+  .online i,
+  .feature-label span,
+  .project-art > i,
+  .startup-grid,
+  .startup-noise,
+  .startup-orbit,
+  .startup-wave-line,
+  .startup-wave-shadow {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  #page-particles,
+  .site-cursor-canvas {
+    display: none !important;
+  }
+}
