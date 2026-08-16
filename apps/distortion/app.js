@@ -42,6 +42,19 @@
     { id: 'colorsurge', name: 'COLOR SURGE', key: '9' },
     { id: 'strobe', name: 'NEGATIVE STROBE', key: '\\' }
   ];
+  const fxKeySlots = effects.map(effect => effect.key);
+  const defaultFxKeyMap = Object.fromEntries(effects.map(effect => [effect.key, effect.id]));
+  const savedCustomFxKeyMap = (() => {
+    const blank = Object.fromEntries(fxKeySlots.map(key => [key, '']));
+    try {
+      const saved = JSON.parse(localStorage.getItem('distortion-custom-fx-map-v1') || '{}');
+      fxKeySlots.forEach(key => {
+        const id = saved[key];
+        blank[key] = effects.some(effect => effect.id === id) ? id : '';
+      });
+    } catch {}
+    return blank;
+  })();
   const savedTransitionKeys = (() => {
     try { return JSON.parse(localStorage.getItem('distortion-transition-keys-v2') || '{}'); }
     catch { return {}; }
@@ -111,6 +124,8 @@
     cues: Object.fromEntries(cueKeys.map(k => [k, null])),
     activeEffects: new Set(),
     heldEffects: new Set(),
+    fxKeyMap: { ...defaultFxKeyMap },
+    fxMapMode: 'default',
     armedCue: null,
     fxMode: 'hold',
     master: 0.45,
@@ -120,6 +135,14 @@
     defaultTransitionId: savedDefaultTransition,
     transition: null,
     hoverWasPlaying: false,
+    baseFraming: new Map(),
+    topFraming: new Map(),
+    framingTarget: 'base',
+    draggingFrame: false,
+    frameDragStartX: 0,
+    frameDragStartY: 0,
+    frameDragOriginX: 0,
+    frameDragOriginY: 0,
     logo: null,
     logoX: 0.82,
     logoY: 0.84,
@@ -281,6 +304,7 @@
     });
     pages.forEach(page => page.classList.toggle('active', page.dataset.panelPage === safeTarget));
     controlWindow.dataset.activePanel = safeTarget;
+    if (controlWindow.dataset.controlWindow === 'source') updateFramingUI();
     try { localStorage.setItem(`distortion-control-window-${controlWindow.dataset.controlWindow}`, safeTarget); } catch {}
     if (announce) setStatus(`${safeTarget} control window open`);
     requestAnimationFrame(rebuildTimeline);
@@ -364,7 +388,7 @@
     if ($('recordFormatNote')) updateRecordingFormatNote();
   }
 
-  function drawCover(targetCtx, media, w, h, dx = 0, dy = 0, scale = 1, rotation = 0) {
+  function drawCover(targetCtx, media, w, h, dx = 0, dy = 0, scale = 1, rotation = 0, panX = 0, panY = 0) {
     const sw = media.videoWidth || media.naturalWidth || w;
     const sh = media.videoHeight || media.naturalHeight || h;
     if (!sw || !sh) return;
@@ -373,11 +397,56 @@
     let dw, dh;
     if (sourceRatio > targetRatio) { dh = h * scale; dw = dh * sourceRatio; }
     else { dw = w * scale; dh = dw / sourceRatio; }
+    const maxPanX = Math.max(0, (dw - w) / 2);
+    const maxPanY = Math.max(0, (dh - h) / 2);
     targetCtx.save();
-    targetCtx.translate(w / 2 + dx, h / 2 + dy);
+    targetCtx.translate(w / 2 + dx + panX * maxPanX, h / 2 + dy + panY * maxPanY);
     targetCtx.rotate(rotation);
     targetCtx.drawImage(media, -dw / 2, -dh / 2, dw, dh);
     targetCtx.restore();
+  }
+
+  function framingVideoIndex(target = state.framingTarget) {
+    return target === 'top' ? state.chromaVideoIndex : state.activeVideoIndex;
+  }
+
+  function framingMap(target = state.framingTarget) {
+    return target === 'top' ? state.topFraming : state.baseFraming;
+  }
+
+  function getFraming(target = state.framingTarget, create = true) {
+    const index = framingVideoIndex(target);
+    if (index < 0 || !state.videos[index]) return null;
+    const map = framingMap(target);
+    if (!map.has(index) && create) map.set(index, { zoom: 1, x: 0, y: 0 });
+    return map.get(index) || null;
+  }
+
+  function updateFramingUI() {
+    const target = state.framingTarget;
+    const index = framingVideoIndex(target);
+    const record = state.videos[index];
+    const frame = getFraming(target);
+    const hasVideo = Boolean(record && frame);
+    const topOption = $('framingTarget').querySelector('option[value="top"]');
+    if (topOption) topOption.disabled = state.chromaVideoIndex < 0;
+    $('framingTarget').value = target;
+    $('framingStatus').textContent = hasVideo
+      ? `${target === 'top' ? 'TOP CHROMA' : 'BASE'}: ${record.name}`
+      : `${target === 'top' ? 'TOP CHROMA VIDEO' : 'BASE VIDEO'} — LOAD A CLIP`;
+    ['frameZoom','frameX','frameY','frameResetBtn'].forEach(id => { $(id).disabled = !hasVideo; });
+    const safeFrame = frame || { zoom: 1, x: 0, y: 0 };
+    $('frameZoom').value = safeFrame.zoom;
+    $('frameX').value = safeFrame.x;
+    $('frameY').value = safeFrame.y;
+    $('frameZoomValue').textContent = `${safeFrame.zoom.toFixed(2)}×`;
+    $('frameXValue').textContent = `${Math.round(safeFrame.x * 100)}%`;
+    $('frameYValue').textContent = `${Math.round(safeFrame.y * 100)}%`;
+    canvas.classList.toggle('frame-drag-ready', hasVideo && document.querySelector('[data-control-window="source"]')?.dataset.activePanel === 'frame');
+  }
+
+  function isFramePanelActive() {
+    return document.querySelector('[data-control-window="source"]')?.dataset.activePanel === 'frame';
   }
 
   function hexToRgb(hex) {
@@ -399,11 +468,12 @@
 
   function drawChromaLayer(targetCtx, w, h, dx, dy, scale, rotation, now) {
     if (!state.chromaVisible || state.chromaVideoIndex < 0 || chromaVideo.readyState < 2) return;
+    const frame = getFraming('top') || { zoom: 1, x: 0, y: 0 };
 
     if (!state.chromaKeyEnabled) {
       targetCtx.save();
       targetCtx.globalAlpha = state.chromaOpacity;
-      drawCover(targetCtx, chromaVideo, w, h, dx, dy, scale, rotation);
+      drawCover(targetCtx, chromaVideo, w, h, dx, dy, scale * frame.zoom, rotation, frame.x, frame.y);
       targetCtx.restore();
       return;
     }
@@ -416,7 +486,7 @@
       const sx = cw / w;
       const sy = ch / h;
       chromaSourceCtx.clearRect(0, 0, cw, ch);
-      drawCover(chromaSourceCtx, chromaVideo, cw, ch, dx * sx, dy * sy, scale, rotation);
+      drawCover(chromaSourceCtx, chromaVideo, cw, ch, dx * sx, dy * sy, scale * frame.zoom, rotation, frame.x, frame.y);
 
       try {
         const frame = chromaSourceCtx.getImageData(0, 0, cw, ch);
@@ -874,7 +944,8 @@
         if (state.transition.id === 'spin') rotation = s * .62 * hit;
         if (p >= 1) state.transition = null;
       }
-      drawCover(bctxA, sourceVideo, w, h, shakeX, shakeY, zoom, rotation);
+      const frame = getFraming('base') || { zoom: 1, x: 0, y: 0 };
+      drawCover(bctxA, sourceVideo, w, h, shakeX, shakeY, zoom * frame.zoom, rotation, frame.x, frame.y);
       drawChromaLayer(bctxA, w, h, shakeX, shakeY, zoom, rotation, now);
       if (state.logoAffected) drawLogo(bctxA);
     }
@@ -989,12 +1060,79 @@
     });
   }
 
+  function assignedFxKeys(effectId) {
+    return fxKeySlots.filter(key => state.fxKeyMap[key] === effectId);
+  }
+
+  function effectForPerformanceKey(key) {
+    const id = state.fxKeyMap[key];
+    return effects.find(effect => effect.id === id) || null;
+  }
+
+  function applyFxKeyMap(mode, customMap = null, announce = true) {
+    state.fxMapMode = mode === 'custom' ? 'custom' : 'default';
+    state.fxKeyMap = state.fxMapMode === 'default'
+      ? { ...defaultFxKeyMap }
+      : Object.fromEntries(fxKeySlots.map(key => {
+          const id = customMap?.[key];
+          return [key, effects.some(effect => effect.id === id) ? id : ''];
+        }));
+    clearEffects();
+    buildFxButtons();
+    if (announce) setStatus(`${state.fxMapMode} FX key mapping active`);
+  }
+
+  function buildCustomFxMapRows(map = savedCustomFxKeyMap) {
+    const container = $('customFxMapRows');
+    container.innerHTML = '';
+    fxKeySlots.forEach(key => {
+      const row = document.createElement('label');
+      row.className = 'custom-fx-map-row';
+      const keyLabel = document.createElement('strong');
+      keyLabel.textContent = displayKey(key);
+      const select = document.createElement('select');
+      select.dataset.fxMapKey = key;
+      select.setAttribute('aria-label', `Effect assigned to ${displayKey(key)}`);
+      select.innerHTML = '<option value="">BLANK — NO EFFECT</option>' + effects
+        .map(effect => `<option value="${effect.id}">${effect.name}</option>`).join('');
+      select.value = effects.some(effect => effect.id === map[key]) ? map[key] : '';
+      row.append(keyLabel, select);
+      container.appendChild(row);
+    });
+  }
+
+  function readCustomFxMapRows() {
+    return Object.fromEntries(fxKeySlots.map(key => {
+      const select = [...document.querySelectorAll('[data-fx-map-key]')].find(input => input.dataset.fxMapKey === key);
+      return [key, select?.value || ''];
+    }));
+  }
+
+  function showFxMapChoice() {
+    $('mapModeChoice').classList.remove('hidden');
+    $('customMapEditor').classList.add('hidden');
+    const dialog = $('startupMapDialog');
+    if (!dialog.open) dialog.showModal();
+  }
+
+  function showCustomFxMapEditor() {
+    buildCustomFxMapRows(savedCustomFxKeyMap);
+    $('mapModeChoice').classList.add('hidden');
+    $('customMapEditor').classList.remove('hidden');
+  }
+
+  function closeFxMapSetup() {
+    const dialog = $('startupMapDialog');
+    if (dialog.open) dialog.close();
+  }
+
   function buildFxButtons() {
     $('fxButtons').innerHTML = '';
     effects.forEach(fx => {
       const b = document.createElement('button');
       b.className = 'fx-btn'; b.dataset.fx = fx.id;
-      b.innerHTML = `<strong>${fx.name}</strong><span>${fx.key.toUpperCase()}</span>`;
+      const keys = assignedFxKeys(fx.id);
+      b.innerHTML = `<strong>${fx.name}</strong><span>${keys.length ? keys.map(displayKey).join(' · ') : 'UNMAPPED'}</span>`;
       b.addEventListener('pointerdown', (e) => { e.preventDefault(); activateEffect(fx.id, true); });
       b.addEventListener('pointerup', () => deactivateEffect(fx.id));
       b.addEventListener('pointerleave', () => { if (state.fxMode === 'hold') deactivateEffect(fx.id); });
@@ -1023,8 +1161,8 @@
         e.preventDefault(); e.stopPropagation();
         if (['Shift','Control','Alt','Meta'].includes(e.key)) return;
         const next = normalizeKey(e.key);
-        const conflict = [...effects, ...transitions.filter(t => t !== tr)].find(item => item.key === next);
-        if (cueKeys.includes(next) || conflict) {
+        const conflict = transitions.filter(t => t !== tr).find(item => item.key === next);
+        if (cueKeys.includes(next) || fxKeySlots.includes(next) || conflict) {
           setStatus(`key ${displayKey(next)} is already assigned`);
           input.value = displayKey(tr.key);
           input.blur(); return;
@@ -1177,10 +1315,11 @@
     chromaVideo.removeAttribute('src');
     chromaVideo.load();
     state.chromaVideoIndex = -1;
+    if (state.framingTarget === 'top') state.framingTarget = 'base';
     state.chromaPicking = false;
     state.chromaDirty = true;
     refreshChromaVideoSelect();
-    updateChromaUI();
+    updateChromaUI(); updateFramingUI();
     if (announce) setStatus('top chroma layer cleared');
   }
 
@@ -1199,7 +1338,7 @@
       chromaVideo.currentTime = 0;
       if (!state.chromaSync || !sourceVideo.paused) safePlay(chromaVideo);
       state.chromaDirty = true;
-      updateChromaUI();
+      updateChromaUI(); updateFramingUI();
       setStatus(`top chroma video loaded: ${record.name}`);
     };
     updateChromaUI();
@@ -1217,7 +1356,8 @@
     const cw = chromaSourceCanvas.width;
     const ch = chromaSourceCanvas.height;
     chromaSourceCtx.clearRect(0, 0, cw, ch);
-    drawCover(chromaSourceCtx, chromaVideo, cw, ch);
+    const frame = getFraming('top') || { zoom: 1, x: 0, y: 0 };
+    drawCover(chromaSourceCtx, chromaVideo, cw, ch, 0, 0, frame.zoom, 0, frame.x, frame.y);
     const point = pointerToCanvas(event);
     const x = Math.max(0, Math.min(cw - 1, Math.floor(point.x / canvas.width * cw)));
     const y = Math.max(0, Math.min(ch - 1, Math.floor(point.y / canvas.height * ch)));
@@ -1247,7 +1387,7 @@
       safePlay(sourceVideo);
       $('dropHint').classList.add('hidden');
       document.querySelectorAll('.video-item').forEach((el,i)=>el.classList.toggle('active',i===index));
-      drawTimeline(); updateCuePads(); setStatus(`video loaded: ${state.videos[index].name}`);
+      drawTimeline(); updateCuePads(); updateFramingUI(); setStatus(`video loaded: ${state.videos[index].name}`);
     };
   }
 
@@ -1406,7 +1546,7 @@
     const win = window.open('', 'DISTORTION_CONTROLS', 'width=460,height=820,resizable=yes');
     if (!win) { alert('The detached controls window was blocked. Allow pop-ups for this page.'); return; }
     state.detachedWindow = win;
-    const fxMarkup = effects.map(f=>`<button data-command="fx" data-value="${f.id}">${f.key.toUpperCase()}<small>${f.name}</small></button>`).join('');
+    const fxMarkup = effects.map(f=>`<button data-command="fx" data-value="${f.id}">${assignedFxKeys(f.id).map(displayKey).join('/') || '—'}<small>${f.name}</small></button>`).join('');
     const cueMarkup = cueKeys.map(k=>`<button data-command="cue" data-value="${k}">${k.toUpperCase()}<small>HOT CUE</small></button>`).join('');
     win.document.open();
     win.document.write(`<!doctype html><html><head><title>DISTORTION Controls</title><style>
@@ -1432,11 +1572,12 @@
 
   function resetPerformanceControls() {
     clearEffects(); state.master=.45; state.audioReact=.35; state.transitionDuration=.16; state.transitionStrength=.85; state.defaultTransitionId='flash'; state.fxMode='hold';
+    state.baseFraming.clear(); state.topFraming.clear(); state.framingTarget='base'; state.draggingFrame=false;
     state.chromaVisible=true; state.chromaKeyEnabled=true; state.chromaSync=true; state.chromaColor='#00ff00'; state.chromaTolerance=.18; state.chromaSoftness=.12; state.chromaSpill=.7; state.chromaOpacity=1; state.chromaPicking=false; state.chromaDirty=true;
     $('masterDistortion').value=.45; $('audioReact').value=.35; $('transitionDuration').value=.16; $('transitionStrength').value=.85; $('fxModeSelect').value='hold';
     $('chromaVisible').checked=true; $('chromaKeyEnabled').checked=true; $('chromaSync').checked=true; $('chromaColor').value='#00ff00'; $('chromaTolerance').value=.18; $('chromaSoftness').value=.12; $('chromaSpill').value=.7; $('chromaOpacity').value=1;
     $('masterValue').textContent='45%'; $('reactValue').textContent='35%'; $('transitionValue').textContent='0.16s'; $('transitionStrengthValue').textContent='85%';
-    saveDefaultTransition(); updateDefaultTransitionUI(); updateChromaUI();
+    saveDefaultTransition(); updateDefaultTransitionUI(); updateChromaUI(); updateFramingUI();
     setStatus('performance controls reset');
   }
 
@@ -1445,13 +1586,45 @@
     clearChromaVideo(false);
     state.videos.forEach(v=>URL.revokeObjectURL(v.url));
     state.videos=[]; state.activeVideoIndex=-1; sourceVideo.removeAttribute('src'); sourceVideo.load(); song.removeAttribute('src'); song.load();
+    state.baseFraming.clear(); state.topFraming.clear(); state.framingTarget='base'; state.draggingFrame=false;
     state.cues=Object.fromEntries(cueKeys.map(k=>[k,null])); state.logo=null; clearEffects();
-    $('videoLibrary').innerHTML=''; $('audioName').textContent='NO SONG LOADED'; $('dropHint').classList.remove('hidden'); refreshChromaVideoSelect(); updateChromaUI(); updateCuePads(); drawTimeline();
+    $('videoLibrary').innerHTML=''; $('audioName').textContent='NO SONG LOADED'; $('dropHint').classList.remove('hidden'); refreshChromaVideoSelect(); updateChromaUI(); updateFramingUI(); updateCuePads(); drawTimeline();
     setStatus('project reset');
   }
 
   // Inputs
   $('videoInput').addEventListener('change', e => addVideos(e.target.files));
+  $('framingTarget').addEventListener('change', e => {
+    state.framingTarget = e.target.value === 'top' ? 'top' : 'base';
+    state.draggingFrame = false;
+    updateFramingUI();
+    setStatus(`${state.framingTarget === 'top' ? 'top chroma' : 'base video'} framing selected — drag the output to reposition`);
+  });
+  $('frameZoom').addEventListener('input', e => {
+    const frame = getFraming(); if (!frame) return;
+    frame.zoom = Number(e.target.value);
+    if (state.framingTarget === 'top') state.chromaDirty = true;
+    updateFramingUI();
+  });
+  $('frameX').addEventListener('input', e => {
+    const frame = getFraming(); if (!frame) return;
+    frame.x = Number(e.target.value);
+    if (state.framingTarget === 'top') state.chromaDirty = true;
+    updateFramingUI();
+  });
+  $('frameY').addEventListener('input', e => {
+    const frame = getFraming(); if (!frame) return;
+    frame.y = Number(e.target.value);
+    if (state.framingTarget === 'top') state.chromaDirty = true;
+    updateFramingUI();
+  });
+  $('frameResetBtn').addEventListener('click', () => {
+    const frame = getFraming(); if (!frame) return;
+    frame.zoom = 1; frame.x = 0; frame.y = 0;
+    if (state.framingTarget === 'top') state.chromaDirty = true;
+    updateFramingUI();
+    setStatus(`${state.framingTarget === 'top' ? 'top chroma' : 'base video'} frame reset`);
+  });
   $('chromaVideoSelect').addEventListener('change', e => {
     if (e.target.value === '') clearChromaVideo();
     else loadChromaVideo(Number(e.target.value));
@@ -1603,10 +1776,25 @@
 
   canvas.addEventListener('pointerdown',e=>{
     if (sampleChromaColor(e)) return;
-    const b=logoBounds();if(!b)return;const p=pointerToCanvas(e);if(p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h){state.draggingLogo=true;state.dragOffsetX=p.x-state.logoX*canvas.width;state.dragOffsetY=p.y-state.logoY*canvas.height;canvas.setPointerCapture(e.pointerId);}
+    const p=pointerToCanvas(e);
+    const b=logoBounds();
+    if(b&&p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h){state.draggingLogo=true;state.dragOffsetX=p.x-state.logoX*canvas.width;state.dragOffsetY=p.y-state.logoY*canvas.height;canvas.setPointerCapture(e.pointerId);return;}
+    const frame = isFramePanelActive() ? getFraming() : null;
+    if(frame){state.draggingFrame=true;state.frameDragStartX=p.x;state.frameDragStartY=p.y;state.frameDragOriginX=frame.x;state.frameDragOriginY=frame.y;canvas.classList.add('frame-dragging');canvas.setPointerCapture(e.pointerId);}
   });
-  canvas.addEventListener('pointermove',e=>{if(!state.draggingLogo)return;const p=pointerToCanvas(e);state.logoX=Math.max(0,Math.min(1,(p.x-state.dragOffsetX)/canvas.width));state.logoY=Math.max(0,Math.min(1,(p.y-state.dragOffsetY)/canvas.height));});
-  canvas.addEventListener('pointerup',()=>state.draggingLogo=false);
+  canvas.addEventListener('pointermove',e=>{
+    const p=pointerToCanvas(e);
+    if(state.draggingLogo){state.logoX=Math.max(0,Math.min(1,(p.x-state.dragOffsetX)/canvas.width));state.logoY=Math.max(0,Math.min(1,(p.y-state.dragOffsetY)/canvas.height));return;}
+    if(!state.draggingFrame)return;
+    const frame=getFraming();if(!frame)return;
+    frame.x=Math.max(-1,Math.min(1,state.frameDragOriginX+(p.x-state.frameDragStartX)/canvas.width*2));
+    frame.y=Math.max(-1,Math.min(1,state.frameDragOriginY+(p.y-state.frameDragStartY)/canvas.height*2));
+    if(state.framingTarget==='top')state.chromaDirty=true;
+    updateFramingUI();
+  });
+  const stopCanvasDrag=()=>{state.draggingLogo=false;state.draggingFrame=false;canvas.classList.remove('frame-dragging');};
+  canvas.addEventListener('pointerup',stopCanvasDrag);
+  canvas.addEventListener('pointercancel',stopCanvasDrag);
 
   $('themeSelect').addEventListener('change', e => applyTheme(e.target.value, true));
   $('aspectSelect').addEventListener('change',e=>setCanvasAspect(e.target.value));
@@ -1621,23 +1809,37 @@
   $('recordBtn').addEventListener('click',startRecording); $('stopRecordBtn').addEventListener('click',stopRecording);
   $('fullscreenBtn').addEventListener('click',()=>{$('outputFrame').requestFullscreen?.();});
   $('detachBtn').addEventListener('click',openDetachedControls);
+  $('keyMapBtn').addEventListener('click',showFxMapChoice);
+  $('useDefaultMapBtn').addEventListener('click',()=>{applyFxKeyMap('default');closeFxMapSetup();});
+  $('openCustomMapBtn').addEventListener('click',showCustomFxMapEditor);
+  $('backToMapChoiceBtn').addEventListener('click',()=>{$('customMapEditor').classList.add('hidden');$('mapModeChoice').classList.remove('hidden');});
+  $('clearCustomMapBtn').addEventListener('click',()=>{document.querySelectorAll('[data-fx-map-key]').forEach(select=>select.value='');setStatus('custom FX slots cleared — save to apply');});
+  $('saveCustomMapBtn').addEventListener('click',()=>{
+    const map=readCustomFxMapRows();
+    Object.assign(savedCustomFxKeyMap,map);
+    try{localStorage.setItem('distortion-custom-fx-map-v1',JSON.stringify(map));}catch{}
+    applyFxKeyMap('custom',map);
+    closeFxMapSetup();
+  });
+  $('startupMapDialog').addEventListener('cancel',e=>e.preventDefault());
 
   $('helpBtn').addEventListener('click',()=>$('helpDialog').showModal()); $('closeHelpBtn').addEventListener('click',()=>$('helpDialog').close());
   $('helpTabs').addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(!tab)return;document.querySelectorAll('#helpTabs button').forEach(b=>b.classList.toggle('active',b===tab));document.querySelectorAll('[data-help]').forEach(s=>s.classList.toggle('active',s.dataset.help===tab.dataset.tab));});
   $('resetControlsBtn').addEventListener('click',resetPerformanceControls); $('resetProjectBtn').addEventListener('click',resetEntireProject);
 
   document.addEventListener('keydown',e=>{
+    if($('startupMapDialog').open||$('helpDialog').open)return;
     const tag=document.activeElement?.tagName; if(['INPUT','SELECT','TEXTAREA'].includes(tag))return;
     const key=normalizeKey(e.key);
     if(key===' '){e.preventDefault();setupAudioGraph();if(song.paused)safePlay(song);else song.pause();return;}
     if(key==='f1'||key==='?'){e.preventDefault();$('helpDialog').showModal();return;}
     if(cueKeys.includes(key)){if(!e.repeat)triggerCue(key);return;}
-    const fx=effects.find(f=>f.key===key);if(fx&&!e.repeat){activateEffect(fx.id,state.fxMode==='latch');return;}
+    const fx=effectForPerformanceKey(key);if(fx&&!e.repeat){activateEffect(fx.id,state.fxMode==='latch');return;}
     const tr=transitions.find(t=>t.key===key);if(tr&&!e.repeat){triggerTransition(tr.id);return;}
   });
   document.addEventListener('keyup',e=>{
     const key=normalizeKey(e.key); if(cueKeys.includes(key))releaseCue(key);
-    const fx=effects.find(f=>f.key===key); if(fx&&state.fxMode==='hold')deactivateEffect(fx.id);
+    const fx=effectForPerformanceKey(key); if(fx&&state.fxMode==='hold')deactivateEffect(fx.id);
   });
 
   if ('BroadcastChannel' in window) {
@@ -1688,5 +1890,5 @@
   let initialTheme = 'studio';
   try { initialTheme = localStorage.getItem('distortion-theme') || 'studio'; } catch {}
   applyTheme(initialTheme);
-  buildCuePads(); buildFxButtons(); setCanvasAspect('16:9'); initControlWindows(); refreshChromaVideoSelect(); updateChromaUI(); setupRecordingFormatMenu(); rebuildTimeline(); requestAnimationFrame(renderFrame);
+  buildCuePads(); buildFxButtons(); setCanvasAspect('16:9'); initControlWindows(); refreshChromaVideoSelect(); updateChromaUI(); updateFramingUI(); setupRecordingFormatMenu(); rebuildTimeline(); requestAnimationFrame(renderFrame); requestAnimationFrame(showFxMapChoice);
 })();
