@@ -1,4 +1,4 @@
-DISTORTION v1.15 — COMPACT CONTROL WINDOWS
+DISTORTION v1.17 — FRAMING + CUSTOM FX MAP
 
 Open index.html in a modern desktop browser.
 
@@ -129,3 +129,27 @@ V1.15 COMPACT CONTROL WINDOWS UPDATE
 - Left and right arrow keys move between tabs when a tab has keyboard focus.
 - Existing draggable panel resizing, mobile layout, themes, detached controls, hot cues, chroma compositing, recording, and universal FX stacking remain intact.
 - Added an Interface tab to Help explaining the new window workflow.
+
+V1.16 VIDEO FRAMING / CROP UPDATE
+- Added a dedicated Frame tab to the compact left Source window.
+- Select either the active Base Video or Top Chroma Video for adjustment.
+- Zoom / Crop scales each layer continuously from 1× to 3×.
+- X Position and Y Position sliders provide exact framing control.
+- While the Frame tab is open, drag directly on the output to reposition the selected video layer.
+- Reset Selected Frame restores only the chosen layer to 1× and centered.
+- Base and top-layer framing is stored separately for every uploaded video during the session.
+- Framing follows base clips when hot cues switch between uploaded videos.
+- Added a Framing tab to Help with the full crop, slider, and direct-drag workflow.
+
+V1.17 STARTUP CUSTOM FX MAPPING UPDATE
+- Added a required startup choice between Default Mapping and Custom Mapping.
+- Default Mapping restores the exact original effect layout on 1–9 and backslash.
+- Custom Mapping opens one assignment row for each of those ten physical keys.
+- Every custom row begins blank on first use and can be assigned to any distortion effect.
+- Blank slots intentionally do nothing, and one effect may be assigned to multiple keys.
+- Custom maps are saved in the browser and restored when Custom Mapping is opened again.
+- Added Clear All Slots, Back, and Save Custom + Start controls.
+- Added a Key Map button in the top bar so mapping can be changed after startup.
+- Effect buttons and the detached controller display the currently assigned key or Unmapped state.
+- Hot-cue and transition mappings remain separate and protected from FX-key conflicts.
+- Added a complete Key Mapping Help page.
