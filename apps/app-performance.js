@@ -6,7 +6,6 @@
 
   const root = document.documentElement;
   const nativeRAF = window.requestAnimationFrame.bind(window);
-  const nativeCAF = window.cancelAnimationFrame.bind(window);
   const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
   const coarsePointer = window.matchMedia?.('(hover: none), (pointer: coarse)').matches || false;
   const saveData = Boolean(navigator.connection?.saveData);
@@ -126,9 +125,11 @@
     return id;
   };
 
+  /* Every requestAnimationFrame ID exposed after this controller loads is a
+     synthetic queue ID. Never pass it to the browser's native cancel method:
+     numeric ID collisions could otherwise cancel the internal frame pump. */
   window.cancelAnimationFrame = (id) => {
-    if (queuedFrames.delete(id)) return;
-    nativeCAF(id);
+    queuedFrames.delete(id);
   };
 
   window.OPTICBOX_PERF = {
