@@ -151,7 +151,11 @@
   }
 
   // Keep the Help-page preset aligned with the neutral real-scope calibration.
-  if (typeof recommendedSettings !== "undefined") recommendedSettings.xyPhase = 0;
+  if (typeof recommendedSettings !== "undefined") {
+    recommendedSettings.xGain = 1;
+    recommendedSettings.yGain = 1;
+    recommendedSettings.xyPhase = 0;
+  }
   if ($("applyRecommendedBtn")) {
     $("applyRecommendedBtn").onclick = () => {
       Object.entries(recommendedSettings).forEach(([id, v]) => {
@@ -177,5 +181,24 @@
       $("recommendedStatus").textContent =
         "Recommended real-scope settings applied. Fine-tune X/Y gain only if the source needs it.";
     };
+  }
+
+  // Correct the older help copy so it does not tell users to reintroduce
+  // a phase shift or unequal axis gain when testing oscilloscope music.
+  const helpTerms = [...document.querySelectorAll("#page-help dt")];
+  const recommendedXY = helpTerms.find(dt => dt.textContent.trim() === "X-Y CALIBRATION" && dt.parentElement?.previousElementSibling?.textContent?.includes("RECOMMENDED"));
+  if (recommendedXY?.nextElementSibling) {
+    recommendedXY.nextElementSibling.textContent =
+      "X Gain 1.00× · Y Gain 1.00× · Rotation 0° · Phase 0° · Z Auto Spin OFF · Z Spin Speed 0.05× · Invert Y OFF · Auto Level X-Y OFF";
+  }
+  const phaseTerm = helpTerms.find(dt => dt.textContent.trim() === "PHASE");
+  if (phaseTerm?.nextElementSibling) {
+    phaseTerm.nextElementSibling.textContent =
+      "Offsets Y relative to X as an optional effect or manual correction. For true stereo oscilloscope music, start at 0° so LEFT[n] and RIGHT[n] stay paired.";
+  }
+  const autoTerm = helpTerms.find(dt => dt.textContent.trim() === "AUTO LEVEL X-Y");
+  if (autoTerm?.nextElementSibling) {
+    autoTerm.nextElementSibling.textContent =
+      "Slowly enlarges quiet incoming signals. Leave it OFF for fixed, repeatable real-scope geometry; enable it only when you want automatic display leveling.";
   }
 })();
