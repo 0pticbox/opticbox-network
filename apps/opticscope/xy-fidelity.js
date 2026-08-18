@@ -1,10 +1,14 @@
 "use strict";
 
-// 0PTICSCOPE X-Y fidelity patch v39
+// 0PTICSCOPE X-Y fidelity patch v40
 // Keeps live stereo oscilloscope music sample-paired: LEFT[n] = X, RIGHT[n] = Y.
 (() => {
   const XY_FFT_SIZE = 8192;
   let xyDisplayScale = 1;
+  let desktopDualMonoFrames = 0;
+  let desktopWarning = "";
+  let desktopCaptureChannels = 0;
+  let desktopDisplaySurface = "";
 
   // Make a physically neutral X-Y setup the default.
   state.xyPhase = 0;
@@ -15,9 +19,60 @@
   }
   if ($("xyAutoGain")) $("xyAutoGain").checked = false;
 
+  // Explain the one capture choice that matters most for oscilloscope music.
+  const desktopBtn = $("desktopBtn");
+  if (desktopBtn) {
+    desktopBtn.title = "For oscilloscope music, choose the browser tab playing the video and share its tab audio.";
+    const inputBox = desktopBtn.closest("fieldset");
+    if (inputBox && !$("xyStereoHint")) {
+      const hint = document.createElement("p");
+      hint.id = "xyStereoHint";
+      hint.className = "small files-note";
+      hint.textContent = "X-Y STEREO: when DESKTOP opens the share picker, choose the browser tab playing the oscilloscope video. Whole-screen/system capture may arrive as mono or dual-mono and collapse the X-Y picture into a line.";
+      const audio = $("audioElement");
+      inputBox.insertBefore(hint, audio || null);
+    }
+  }
+
+  function setDesktopWarning(text) {
+    if (desktopWarning === text) return;
+    desktopWarning = text;
+    if (!text) {
+      if (currentInput === "DESKTOP AUDIO") {
+        ui.inputReadout.textContent = "DESKTOP AUDIO";
+        status("INPUT ACTIVE");
+      }
+      return;
+    }
+    if (currentInput === "DESKTOP AUDIO") {
+      ui.inputReadout.textContent = text.includes("MONO") ? "DESKTOP MONO" : "DESKTOP AUDIO";
+      status(text);
+    }
+  }
+
+  function stereoSimilarity(a, b) {
+    const len = Math.min(a.length, b.length);
+    let sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0, diff = 0, energy = 0, n = 0;
+    for (let i = 0; i < len; i += 16) {
+      const x = a[i], y = b[i];
+      sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y;
+      diff += Math.abs(x - y);
+      energy += Math.abs(x) + Math.abs(y);
+      n++;
+    }
+    if (n < 4) return { correlation: 0, difference: 1 };
+    const cov = sxy - sx * sy / n;
+    const vx = sxx - sx * sx / n;
+    const vy = syy - sy * sy / n;
+    const correlation = cov / Math.sqrt(Math.max(1e-12, vx * vy));
+    const difference = diff / Math.max(1e-9, energy);
+    return { correlation, difference };
+  }
+
   // Capture a much larger, unsmoothed time-domain window. The display still
   // renders at the browser frame rate, but the beam path is built from every
   // available PCM sample in the analyser window instead of every other sample.
+  // Channel 0 and channel 1 are kept discrete; a mono source is NOT duplicated.
   setupAnalysis = function(node, channels = 2, monitor = false) {
     leftAnalyser = audioContext.createAnalyser();
     rightAnalyser = audioContext.createAnalyser();
@@ -33,12 +88,80 @@
     monoData = new Float32Array(XY_FFT_SIZE);
 
     splitter = audioContext.createChannelSplitter(2);
+    try { splitter.channelInterpretation = "discrete"; } catch (_) {}
     node.connect(splitter);
     splitter.connect(leftAnalyser, 0);
-    splitter.connect(rightAnalyser, channels > 1 ? 1 : 0);
+    // Always read the actual second channel. If the source is mono this stays
+    // silent instead of fabricating Y from X.
+    splitter.connect(rightAnalyser, 1);
     node.connect(monoAnalyser);
     node.connect(recordDest);
     if (monitor) node.connect(audioContext.destination);
+  };
+
+  // Prefer a browser-tab share for stereo oscilloscope material. These options
+  // guide Chromium/Edge's picker but the user still chooses the source.
+  connectDesktop = async function() {
+    disconnectInput();
+    await ensureAudio();
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      throw Error("Screen/tab audio sharing is not available in this browser.");
+    }
+
+    let stream;
+    const preferred = {
+      video: {
+        width: { ideal: 320 },
+        height: { ideal: 180 },
+        frameRate: { ideal: 5, max: 10 },
+        displaySurface: "browser"
+      },
+      audio: true,
+      systemAudio: "exclude",
+      selfBrowserSurface: "exclude",
+      surfaceSwitching: "include"
+    };
+
+    try {
+      stream = await navigator.mediaDevices.getDisplayMedia(preferred);
+    } catch (err) {
+      // Fall back for browsers that reject one of the newer display hints.
+      if (err?.name === "TypeError" || err?.name === "OverconstrainedError") {
+        stream = await navigator.mediaDevices.getDisplayMedia({
+          video: { width: { ideal: 320 }, height: { ideal: 180 }, frameRate: { ideal: 5, max: 10 } },
+          audio: true
+        });
+      } else {
+        throw err;
+      }
+    }
+
+    sourceStream = stream;
+    const audioTracks = sourceStream.getAudioTracks();
+    if (!audioTracks.length) {
+      sourceStream.getTracks().forEach(t => t.stop());
+      sourceStream = null;
+      throw Error("No shared audio track was provided. Choose the browser tab playing the video and enable Share tab audio.");
+    }
+
+    const settings = audioTracks[0].getSettings?.() || {};
+    desktopCaptureChannels = Number(settings.channelCount || 0);
+    desktopDisplaySurface = sourceStream.getVideoTracks()[0]?.getSettings?.().displaySurface || "";
+    desktopDualMonoFrames = 0;
+    desktopWarning = "";
+
+    sourceNode = audioContext.createMediaStreamSource(new MediaStream(audioTracks));
+    setupAnalysis(sourceNode, desktopCaptureChannels || 2);
+    currentInput = "DESKTOP AUDIO";
+    ui.inputReadout.textContent = currentInput;
+
+    if (desktopCaptureChannels === 1) {
+      setDesktopWarning("MONO CAPTURE · CHOOSE BROWSER TAB AUDIO");
+    } else if (desktopDisplaySurface && desktopDisplaySurface !== "browser") {
+      status("DESKTOP ACTIVE · BROWSER TAB RECOMMENDED");
+    } else {
+      status("STEREO TAB AUDIO ACTIVE");
+    }
   };
 
   drawXY = function(c, w, h, col) {
@@ -58,7 +181,7 @@
       const yr = x * sr + y * cr;
       const px = w / 2 + xr * w * .39;
       const py = h / 2 - yr * h * .39;
-      lastTracePoints.push({x: px, y: py});
+      lastTracePoints.push({ x: px, y: py });
       n++ ? c.lineTo(px, py) : c.moveTo(px, py);
     };
 
@@ -72,8 +195,6 @@
       const len = Math.min(leftData.length, rightData.length);
       let leftPeak = 0, rightPeak = 0;
 
-      // Peak scan is only for signal detection / optional display leveling.
-      // It never changes the relationship between X and Y samples.
       for (let i = 0; i < len; i += 8) {
         leftPeak = Math.max(leftPeak, Math.abs(leftData[i]));
         rightPeak = Math.max(rightPeak, Math.abs(rightData[i]));
@@ -82,17 +203,35 @@
       const peak = Math.max(leftPeak, rightPeak);
       const hasSignal = peak > .0005;
 
+      // Detect the exact failure shown by a 45-degree X-Y line: both captured
+      // channels contain essentially the same waveform for a sustained period.
+      if (currentInput === "DESKTOP AUDIO" && hasSignal) {
+        if (desktopCaptureChannels === 1 || rightPeak < .00005) {
+          desktopDualMonoFrames = 40;
+          setDesktopWarning("MONO CAPTURE · CHOOSE BROWSER TAB AUDIO");
+        } else {
+          const sim = stereoSimilarity(leftData, rightData);
+          const looksDuplicated = sim.correlation > .9995 && sim.difference < .008;
+          desktopDualMonoFrames = looksDuplicated
+            ? Math.min(60, desktopDualMonoFrames + 1)
+            : Math.max(0, desktopDualMonoFrames - 2);
+
+          if (desktopDualMonoFrames > 18) {
+            setDesktopWarning("DUAL-MONO CAPTURE · SHARE THE VIDEO TAB, NOT THE SCREEN");
+          } else if (desktopDualMonoFrames === 0 && desktopWarning) {
+            setDesktopWarning("");
+          }
+        }
+      }
+
       if (state.xyAutoGain && hasSignal) {
         const target = Math.min(8, .82 / Math.max(peak, .0005));
-        // Slow follower prevents the picture from pumping/zooming every frame.
         xyDisplayScale += (target - xyDisplayScale) * .06;
       } else {
         xyDisplayScale += (1 - xyDisplayScale) * .18;
       }
 
       if (hasSignal) {
-        // 0° means true oscilloscope mapping: L[n] -> X, R[n] -> Y.
-        // The phase control remains available as an optional manual offset.
         const phaseSamples = state.xyPhase === 0
           ? 0
           : Math.round((state.xyPhase / 360) * len);
@@ -104,7 +243,6 @@
           plot(x, y);
         }
       } else {
-        // Keep the existing calibration figure when no source is active.
         const t = performance.now() * .001;
         const N = 1100, a = 3, b = 2;
         const phaseRad = Math.PI / 2 + state.xyPhase * Math.PI / 180;
@@ -150,7 +288,6 @@
     };
   }
 
-  // Keep the Help-page preset aligned with the neutral real-scope calibration.
   if (typeof recommendedSettings !== "undefined") {
     recommendedSettings.xGain = 1;
     recommendedSettings.yGain = 1;
@@ -183,8 +320,6 @@
     };
   }
 
-  // Correct the older help copy so it does not tell users to reintroduce
-  // a phase shift or unequal axis gain when testing oscilloscope music.
   const helpTerms = [...document.querySelectorAll("#page-help dt")];
   const recommendedXY = helpTerms.find(dt => dt.textContent.trim() === "X-Y CALIBRATION" && dt.parentElement?.previousElementSibling?.textContent?.includes("RECOMMENDED"));
   if (recommendedXY?.nextElementSibling) {
