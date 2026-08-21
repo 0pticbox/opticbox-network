@@ -9,11 +9,75 @@
 <title>FREE TOOLS | 0PTICBOX Productions</title>
 <link href="styles.css?v=40" rel="stylesheet"/>
 <link href="free-tools.css?v=44" rel="stylesheet"/>
-<link href="free-tools-compact-v1.css?v=20260816-1" rel="stylesheet"/>
+<link href="free-tools-compact-v1.css?v=20260821-2" rel="stylesheet"/>
 <link rel="preconnect" href="https://db.onlinewebfonts.com" crossorigin>
 <link rel="stylesheet" href="alsina-profile-fix-v20.css">
 <style>
-.newest-app-feature{position:relative;overflow:hidden;border:4px solid #fff;box-shadow:8px 8px 0 #000;background:linear-gradient(135deg,#150a28,#08192c 55%,#24103b);color:#fff}.newest-app-feature::after{content:"NEWEST APP  ★  NEWEST APP  ★  NEWEST APP";position:absolute;right:-78px;top:28px;transform:rotate(35deg);padding:7px 90px;background:#ffe45e;color:#080b13;border:3px solid #000;font-weight:900;letter-spacing:.08em}.newest-app-inner{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(220px,.6fr);gap:22px;align-items:center;padding:clamp(22px,4vw,42px)}.newest-app-kicker{display:inline-block;padding:4px 8px;background:#ff5f8f;color:#080b13;border:3px solid #000;box-shadow:3px 3px 0 #000;font-weight:900;letter-spacing:.08em}.newest-app-feature h2{margin:12px 0 8px;font-size:clamp(34px,6vw,70px);line-height:.86;color:#ffe45e;text-shadow:4px 4px 0 #5c2a91}.newest-app-feature p{max-width:720px;font-size:1.02rem}.newest-app-launch{display:flex;justify-content:center;align-items:center;min-height:130px;padding:20px;border:4px solid #000;background:repeating-linear-gradient(135deg,#37d7ff 0 14px,#1b8fb8 14px 28px);color:#050711!important;font-size:clamp(22px,3vw,38px);font-weight:900;text-decoration:none;box-shadow:7px 7px 0 #000;transform:rotate(1deg)}.newest-app-launch:hover{transform:rotate(-1deg) translateY(-2px)}.project.newest-app-card{grid-column:1/-1;border-color:#ffe45e!important;box-shadow:8px 8px 0 #000!important;background:linear-gradient(135deg,rgba(255,228,94,.12),rgba(55,215,255,.08))!important}.project.newest-app-card .project-art{background:linear-gradient(135deg,#5c2a91,#ff5f8f 45%,#37d7ff)!important}.project.newest-app-card h3::before{content:"★ NEWEST APP";display:inline-block;margin-right:8px;padding:2px 6px;background:#ffe45e;color:#080b13;border:2px solid #000;font-size:.7em;vertical-align:middle}.project.newest-app-card .browser-hint{font-weight:900;color:#ffe45e}@media(max-width:720px){.newest-app-inner{grid-template-columns:1fr}.newest-app-feature::after{display:none}.newest-app-launch{min-height:80px}}
+/* BLASTER BOX owns the single compact featured slot. These overrides are inline
+   so the feature does not depend on a cached stylesheet. */
+.free-tools-projects .project[data-product-slug="boxed-arp"]{
+  order:initial!important;
+  border:1px solid #3c4c70!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+.free-tools-projects .project[data-product-slug="boxed-arp"]::before{display:none!important;content:none!important}
+.free-tools-projects .project[data-product-slug="boxed-arp"] .project-art{outline:none!important}
+.free-tools-projects .project[data-product-slug="boxed-arp"] h3 a::after{content:none!important}
+.free-tools-projects .project[data-product-slug="boxed-arp"]:hover{
+  transform:translateY(-3px)!important;
+  box-shadow:4px 5px 0 rgba(15,32,66,.22)!important;
+}
+.free-tools-projects .project[data-product-slug="blaster-box"]{
+  order:-2!important;
+  grid-column:auto!important;
+  position:relative;
+  border:3px solid #ff8a3d!important;
+  box-shadow:5px 5px 0 #7f2d0f,0 0 24px rgba(255,138,61,.28)!important;
+  transform:translateY(-2px)!important;
+  background:inherit!important;
+}
+.free-tools-projects .project[data-product-slug="blaster-box"]::before{
+  content:"★ NEWEST APP"!important;
+  display:block!important;
+  position:absolute;
+  z-index:4;
+  top:9px;
+  left:9px;
+  padding:5px 8px;
+  background:#ff8a3d;
+  color:#080b13;
+  border:2px solid #080b13;
+  box-shadow:2px 2px 0 #080b13;
+  font:1000 10px/1 Arial Black,Impact,sans-serif;
+  letter-spacing:.06em;
+  pointer-events:none;
+}
+.free-tools-projects .project[data-product-slug="blaster-box"] .project-art{
+  outline:2px solid rgba(255,138,61,.9)!important;
+  outline-offset:-2px;
+  color:#fff;
+  background:linear-gradient(145deg,#28135b,#ad2c77 48%,#318fc1)!important;
+}
+.free-tools-projects .project[data-product-slug="blaster-box"] .project-art i{
+  width:118%;height:3px;background:#fff;
+  box-shadow:0 0 7px #fff,0 0 16px #ff5f8f,0 0 24px #37d7ff;
+  transform-origin:left center;
+  animation:ft-blaster-shot 1.7s steps(6,end) infinite;
+}
+.free-tools-projects .project[data-product-slug="blaster-box"] h3 a::after{content:"  ★";color:#ff8a3d}
+.free-tools-projects .project[data-product-slug="blaster-box"]:hover{
+  transform:translateY(-6px)!important;
+  box-shadow:7px 8px 0 #7f2d0f,0 0 30px rgba(255,138,61,.36)!important;
+}
+@keyframes ft-blaster-shot{
+  0%,12%{transform:translate(-58px,24px) rotate(8deg) scaleX(.12);opacity:0}
+  18%{opacity:1}
+  36%{transform:translate(-8px,4px) rotate(8deg) scaleX(1);opacity:1}
+  48%{transform:translate(22px,-8px) rotate(8deg) scaleX(.72);opacity:.72}
+  62%,100%{transform:translate(70px,-24px) rotate(8deg) scaleX(.08);opacity:0}
+}
+@media(max-width:520px){.free-tools-projects .project[data-product-slug="blaster-box"]::before{font-size:9px;top:7px;left:7px}}
 </style>
 </head>
 <body class="free-tools-body">
@@ -43,17 +107,6 @@
 <div class="free-tools-hero-actions">
 <a class="retro-button primary" href="#free-tools-grid">Browse all 9</a>
 </div>
-</div>
-</section>
-
-<section class="newest-app-feature" aria-labelledby="newest-app-title">
-<div class="newest-app-inner">
-<div>
-<span class="newest-app-kicker">★ NEWEST APP</span>
-<h2 id="newest-app-title">BLASTER BOX</h2>
-<p>Procedural ray-gun synth with custom pixel skins, editable pitch envelopes, wavetable motion, arcade-style visuals, skin-matched palettes, Spacebar firing, and WAV export.</p>
-</div>
-<a class="newest-app-launch" href="apps/blaster-box/index.html?v=20260821-1" rel="noopener" target="_blank">LAUNCH BLASTER BOX →</a>
 </div>
 </section>
 
@@ -87,7 +140,7 @@
 <section aria-labelledby="projects-title" class="box projects-box free-tools-projects" id="free-tools-grid">
 <div class="box-title split-title"><span id="projects-title">FREE TOOLS</span><small>9 projects</small></div>
 <div class="top-eight">
-<article class="project newest-app-card" data-product-slug="blaster-box"><a class="project-art" href="apps/blaster-box/index.html?v=20260821-1" rel="noopener" target="_blank"><span>BLASTER BOX</span><i></i></a><h3><a href="apps/blaster-box/index.html?v=20260821-1" rel="noopener" target="_blank">BLASTER BOX</a></h3><p>Procedural ray-gun synth with custom pixel skins, draggable pitch-envelope points, wavetable shaping, reactive colors, arcade UI, and WAV export.</p><div class="browser-actions"><a class="browser-launch chrome-launch" href="apps/blaster-box/index.html?v=20260821-1" rel="noopener" target="_blank"><span class="browser-logo"><img src="assets/browser-logos/chrome.gif" alt=""/></span>Launch newest app</a></div><p class="browser-hint">NEWEST APP • Chrome or Edge recommended</p></article>
+<article class="project" data-product-slug="blaster-box"><a class="project-art" href="apps/blaster-box/index.html?v=20260821-2" rel="noopener" target="_blank"><span>BLASTER BOX</span><i></i></a><h3><a href="apps/blaster-box/index.html?v=20260821-2" rel="noopener" target="_blank">BLASTER BOX</a></h3><p>Procedural ray-gun synth with custom pixel skins, draggable pitch-envelope points, wavetable shaping, reactive colors, arcade UI, and WAV export.</p><div class="browser-actions"><a class="browser-launch chrome-launch" href="apps/blaster-box/index.html?v=20260821-2" rel="noopener" target="_blank"><span class="browser-logo"><img src="assets/browser-logos/chrome.gif" alt=""/></span>Launch newest app</a></div><p class="browser-hint">NEWEST APP • Chrome or Edge recommended</p></article>
 <article class="project" data-product-slug="opticscope"><a class="project-art scope" href="apps/opticscope/index.html?v=38" rel="noopener" target="_blank"><span>0PTICSCOPE</span><i></i></a><h3><a href="apps/opticscope/index.html?v=38" rel="noopener" target="_blank">0PTICSCOPE</a></h3><p>Oscilloscope art lab</p><div class="browser-actions"><a class="browser-launch chrome-launch" href="apps/opticscope/index.html?v=38" rel="noopener" target="_blank"><span class="browser-logo"><img src="assets/browser-logos/chrome.gif" alt=""/></span>Chrome</a><a class="zip-launch" download href="downloads/opticscope-visualizer.zip">ZIP</a></div><p class="browser-hint">Best in Chrome • Edge also works</p></article>
 <article class="project" data-product-slug="spectravault"><a class="project-art vault" href="apps/spectravault/index.html?v=38" rel="noopener" target="_blank"><span>SPECTRAVAULT</span><i></i></a><h3><a href="apps/spectravault/index.html?v=38" rel="noopener" target="_blank">SPECTRAVAULT</a></h3><p>Audio-reactive engine</p><div class="browser-actions"><a class="browser-launch chrome-launch" href="apps/spectravault/index.html?v=38" rel="noopener" target="_blank"><span class="browser-logo"><img src="assets/browser-logos/chrome.gif" alt=""/></span>Chrome</a><a class="zip-launch" download href="downloads/spectravault-visualizer.zip">ZIP</a></div><p class="browser-hint">Best in Chrome • Edge also works</p></article>
 <article class="project" data-product-slug="pixel-visualizer"><a class="project-art scope" href="apps/pixel-visualizer/index.html?v=3" rel="noopener" target="_blank"><span>PIXEL VISUALIZER</span><i></i></a><h3><a href="apps/pixel-visualizer/index.html?v=3" rel="noopener" target="_blank">Pixel Visualizer</a></h3><p>Retro desktop-audio spectrum visualizer</p><div class="browser-actions"><a class="browser-launch chrome-launch" href="apps/pixel-visualizer/index.html?v=3" rel="noopener" target="_blank"><span class="browser-logo"><img src="assets/browser-logos/chrome.gif" alt=""/></span>Launch</a></div><p class="browser-hint">Desktop Chrome or Edge • share system audio</p></article>
