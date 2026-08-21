@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BLASTER BOX v0.12</title>
+<link rel="stylesheet" href="styles.css?v=12">
+</head>
+<body>
+<div class="wrap" id="app">
+  <header class="top">
+    <div class="brand">
+      <h1 class="blaster-title" data-text="BLASTER BOX"><span>BLASTER</span><span>BOX</span></h1>
+      <small>PROCEDURAL RAY-GUN SYNTH // v0.12</small><br>
+      <span class="font-status" id="fontStatus">CHECKING ALSINA...</span>
+    </div>
+    <div class="status" id="status" aria-live="polite">READY — FIRE A LASER OR CLICK NEXT.</div>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <div class="cardhead">TOY LASER DISPLAY</div>
+      <div class="stage">
+        <canvas id="gunCanvas" width="768" height="432" aria-label="Animated pixel toy laser gun"></canvas>
+
+        <div class="meters">
+          <div class="meterbox">
+            <div class="meterlabel" id="waveMeterTitle">WAVEFORM</div>
+            <div class="meterhelp" id="waveMeterHelp">OSC 1 SHAPE</div>
+            <canvas id="scopeCanvas" width="360" height="132" aria-label="Waveform or wavetable position display"></canvas>
+          </div>
+          <div class="meterbox">
+            <div class="meterlabel">PITCH ENVELOPE</div>
+            <div class="meterhelp">DRAG: PEAK = START • CURVE = SLOPE • END = FINAL</div>
+            <canvas id="pitchCanvas" width="620" height="172" aria-label="Interactive pitch envelope. Drag peak, curve, and end points."></canvas>
+          </div>
+        </div>
+
+        <div class="readout" id="shotReadout">LASER // 2200 HZ // -43 ST // 280 MS</div>
+
+        <div class="actions">
+          <button class="dark" id="prevBtn" type="button">&lt; PREV</button>
+          <button class="warn" id="fireBtn" type="button" aria-label="Fire laser. Press Space to play.">
+            <span class="fire-cycle" aria-hidden="true">
+              <span class="fire-prompt">FIRE!</span>
+              <span class="space-prompt">PRESS SPACE</span>
+            </span>
+          </button>
+          <button class="alt" id="nextBtn" type="button">NEXT &gt;</button>
+        </div>
+
+        <div class="export">
+          <button id="downloadBtn" type="button" disabled>DOWNLOAD WAV</button>
+        </div>
+        <p class="note">SPACE is locked to FIRE only — it will not change controls. Export the finished sound as a WAV for your DAW.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <nav class="tabs" aria-label="Blaster Box controls">
+        <button class="tab active" type="button" data-tab="main">MAIN</button>
+        <button class="tab" type="button" data-tab="osc">OSC</button>
+        <button class="tab" type="button" data-tab="shape">SHAPE</button>
+        <button class="tab" type="button" data-tab="fx">FX</button>
+      </nav>
+
+      <div class="panel active" id="panel-main" data-module="BLASTER CORE">
+        <div class="row">
+          <div class="field">
+            <label>LASER FAMILY <output id="typeOut"></output></label>
+            <select id="laserType">
+              <option>SHORT ZAP</option>
+              <option selected>LASER</option>
+              <option>PLASMA</option>
+              <option>CHARGE</option>
+              <option>LONG ZAP</option>
+              <option>ECHO ZAP</option>
+              <option>HEAVY ZAP</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>LASER SKIN <output id="skinOut"></output></label>
+            <select id="laserSkin">
+              <option selected>SPIRAL POP</option>
+              <option>CYAN BLASTER</option>
+              <option>HEAT CANNON</option>
+              <option>SOLAR RAY</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>START PITCH <output id="startOut"></output></label>
+            <input id="startPitch" type="range" min="220" max="6200" step="10" value="2200">
+          </div>
+          <div class="field">
+            <label>SWEEP AMOUNT <output id="sweepOut"></output></label>
+            <input id="sweepAmount" type="range" min="4" max="84" step="1" value="43">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>SWEEP DECAY <output id="sweepDecayOut"></output></label>
+            <input id="sweepDecay" type="range" min="20" max="2200" step="5" value="220">
+          </div>
+          <div class="field">
+            <label>PITCH CURVE <output id="curveOut"></output></label>
+            <input id="pitchCurve" type="range" min="25" max="450" step="5" value="165">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>TOTAL LENGTH <output id="lengthOut"></output></label>
+          <input id="length" type="range" min="55" max="3000" step="5" value="280">
+        </div>
+
+        <div class="field">
+          <label>RANDOMIZE AMOUNT <output id="randomOut"></output></label>
+          <input id="randomAmount" type="range" min="0" max="100" value="82">
+        </div>
+
+        <label class="checkline">
+          <input id="autoFire" type="checkbox" checked>
+          <strong>AUTO FIRE ON NEXT</strong>
+        </label>
+
+        <button id="randomBtn" class="alt" type="button" style="width:100%">RANDOM BLASTER!</button>
+      </div>
+
+      <div class="panel" id="panel-osc" data-module="WAVE BAY">
+        <div class="row">
+          <div class="field">
+            <label>OSC 1 <output id="osc1Out"></output></label>
+            <select id="osc1">
+              <option value="sine">SINE</option>
+              <option value="triangle">TRI</option>
+              <option value="sawtooth" selected>SAW</option>
+              <option value="square">SQUARE</option>
+              <option value="pulse">PULSE</option>
+              <option value="custom">CUSTOM WT</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>OSC 2 <output id="osc2Out"></output></label>
+            <select id="osc2">
+              <option value="sine">SINE</option>
+              <option value="triangle" selected>TRI</option>
+              <option value="sawtooth">SAW</option>
+              <option value="square">SQUARE</option>
+              <option value="pulse">PULSE</option>
+              <option value="noise">NOISE</option>
+              <option value="custom">CUSTOM WT</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>OSC MIX <output id="mixOut"></output></label>
+            <input id="oscMix" type="range" min="0" max="100" value="28">
+          </div>
+          <div class="field">
+            <label>OSC 2 DETUNE <output id="detuneOut"></output></label>
+            <input id="detune" type="range" min="-36" max="36" step="1" value="7">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>FM / PHASE BEND <output id="fmOut"></output></label>
+            <input id="fm" type="range" min="0" max="100" value="18">
+          </div>
+          <div class="field">
+            <label>NOISE BURST <output id="noiseOut"></output></label>
+            <input id="noiseBurst" type="range" min="0" max="100" value="8">
+          </div>
+        </div>
+
+        <details class="custom" id="customDetails">
+          <summary><span>OPTIONAL CUSTOM WAVETABLE</span><span class="pill">SERUM WAV / FXP</span></summary>
+          <div class="detailbody">
+            <div id="dropZone" class="drop" tabindex="0">
+              <div><strong>DROP SERUM WAV / FXP HERE</strong><br><span>or click to browse</span></div>
+            </div>
+            <input id="fileInput" type="file" accept=".wav,.fxp,audio/wav" hidden>
+            <div class="filemeta" id="fileMeta">NO CUSTOM WAVETABLE LOADED.</div>
+
+            <div class="row" style="margin-top:10px">
+              <div class="field">
+                <label>WT START <output id="wtOut">0%</output></label>
+                <input id="wtPos" type="range" min="0" max="100" value="0" disabled>
+              </div>
+              <div class="field">
+                <label>WT MOVEMENT <output id="wtMoveOut">0%</output></label>
+                <input id="wtMove" type="range" min="-100" max="100" value="0" disabled>
+              </div>
+            </div>
+
+            <label class="lockline">
+              <input id="lockCustom" type="checkbox" disabled>
+              <strong>LOCK IN CUSTOM WAVETABLE</strong>
+            </label>
+            <p class="note">FXP importing is experimental. v0.3 understands the FXP container and scans its plugin chunk for a real embedded RIFF/WAVE block. Some Serum presets reference content instead of embedding it.</p>
+          </div>
+        </details>
+      </div>
+
+      <div class="panel" id="panel-shape" data-module="ENVELOPE BAY">
+        <div class="row">
+          <div class="field">
+            <label>ATTACK <output id="attackOut"></output></label>
+            <input id="attack" type="range" min="0" max="180" step="1" value="2">
+          </div>
+          <div class="field">
+            <label>BODY DECAY <output id="bodyOut"></output></label>
+            <input id="bodyCurve" type="range" min="30" max="500" step="5" value="180">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>CHARGE TIME <output id="chargeOut"></output></label>
+            <input id="chargeTime" type="range" min="0" max="600" step="5" value="0">
+          </div>
+          <div class="field">
+            <label>PULSE WIDTH <output id="pulseOut"></output></label>
+            <input id="pulseWidth" type="range" min="8" max="92" step="1" value="34">
+          </div>
+        </div>
+
+        <p class="note">CHARGE TIME is most noticeable in the CHARGE family: the tone climbs into the shot, then falls through the main zap sweep.</p>
+      </div>
+
+      <div class="panel" id="panel-fx" data-module="FX ARCADE">
+        <div class="fx-rack">
+          <section class="fx-module filter-deck">
+            <div class="fx-module-head">FILTER DECK</div>
+            <div class="fx-doodle">FREQ</div>
+            <div class="row">
+              <div class="field">
+                <label>FILTER CUTOFF <output id="filterOut"></output></label>
+                <input id="filter" type="range" min="300" max="19000" step="25" value="11500">
+              </div>
+              <div class="field">
+                <label>RESONANCE <output id="resOut"></output></label>
+                <input id="resonance" type="range" min="0" max="200" value="54">
+              </div>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label>FILTER SWEEP <output id="filterEnvOut"></output></label>
+                <input id="filterEnv" type="range" min="-100" max="100" value="24">
+              </div>
+              <div class="field">
+                <label>DRIVE <output id="driveOut"></output></label>
+                <input id="drive" type="range" min="0" max="100" value="22">
+              </div>
+            </div>
+          </section>
+
+          <section class="fx-module echo-chamber">
+            <div class="fx-module-head">ECHO CHAMBER</div>
+            <div class="fx-doodle">ECHO</div>
+            <div class="row">
+              <div class="field">
+                <label>DELAY TIME <output id="delayOut"></output></label>
+                <input id="delayTime" type="range" min="0" max="780" step="5" value="120">
+              </div>
+              <div class="field">
+                <label>FEEDBACK <output id="feedbackOut"></output></label>
+                <input id="feedback" type="range" min="0" max="82" value="24">
+              </div>
+            </div>
+            <div class="field">
+              <label>DELAY MIX <output id="delayMixOut"></output></label>
+              <input id="delayMix" type="range" min="0" max="100" value="18">
+            </div>
+          </section>
+
+          <section class="fx-module space-tank">
+            <div class="fx-module-head">SPACE TANK</div>
+            <div class="fx-doodle">ROOM</div>
+            <div class="row">
+              <div class="field">
+                <label>REVERB MIX <output id="reverbOut"></output></label>
+                <input id="reverb" type="range" min="0" max="70" value="8">
+              </div>
+              <div class="field">
+                <label>REVERB SIZE <output id="reverbSizeOut"></output></label>
+                <input id="reverbSize" type="range" min="10" max="220" value="55">
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="footer">BLASTER BOX // PROCEDURAL RAY-GUN SYNTH // PIXEL GUNS + WAV EXPORT</div>
+</div>
+
+<script src="chunks/core-1.js?v=12"></script>
+<script src="chunks/core-2.js?v=12"></script>
+<script src="chunks/core-3.js?v=12"></script>
+<script src="chunks/core-4.js?v=12"></script>
+<script src="chunks/visual-1.js?v=12"></script>
+<script src="chunks/visual-2.js?v=12"></script>
+<script src="chunks/visual-3.js?v=12"></script>
+</body>
+</html>
