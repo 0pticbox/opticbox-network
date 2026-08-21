@@ -12,14 +12,17 @@
 <link href="free-tools-compact-v1.css?v=20260816-1" rel="stylesheet"/>
 <link rel="preconnect" href="https://db.onlinewebfonts.com" crossorigin>
 <link rel="stylesheet" href="alsina-profile-fix-v20.css">
+<style>
+.newest-app-feature{position:relative;overflow:hidden;border:4px solid #fff;box-shadow:8px 8px 0 #000;background:linear-gradient(135deg,#150a28,#08192c 55%,#24103b);color:#fff}.newest-app-feature::after{content:"NEWEST APP  ★  NEWEST APP  ★  NEWEST APP";position:absolute;right:-78px;top:28px;transform:rotate(35deg);padding:7px 90px;background:#ffe45e;color:#080b13;border:3px solid #000;font-weight:900;letter-spacing:.08em}.newest-app-inner{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(220px,.6fr);gap:22px;align-items:center;padding:clamp(22px,4vw,42px)}.newest-app-kicker{display:inline-block;padding:4px 8px;background:#ff5f8f;color:#080b13;border:3px solid #000;box-shadow:3px 3px 0 #000;font-weight:900;letter-spacing:.08em}.newest-app-feature h2{margin:12px 0 8px;font-size:clamp(34px,6vw,70px);line-height:.86;color:#ffe45e;text-shadow:4px 4px 0 #5c2a91}.newest-app-feature p{max-width:720px;font-size:1.02rem}.newest-app-launch{display:flex;justify-content:center;align-items:center;min-height:130px;padding:20px;border:4px solid #000;background:repeating-linear-gradient(135deg,#37d7ff 0 14px,#1b8fb8 14px 28px);color:#050711!important;font-size:clamp(22px,3vw,38px);font-weight:900;text-decoration:none;box-shadow:7px 7px 0 #000;transform:rotate(1deg)}.newest-app-launch:hover{transform:rotate(-1deg) translateY(-2px)}.project.newest-app-card{grid-column:1/-1;border-color:#ffe45e!important;box-shadow:8px 8px 0 #000!important;background:linear-gradient(135deg,rgba(255,228,94,.12),rgba(55,215,255,.08))!important}.project.newest-app-card .project-art{background:linear-gradient(135deg,#5c2a91,#ff5f8f 45%,#37d7ff)!important}.project.newest-app-card h3::before{content:"★ NEWEST APP";display:inline-block;margin-right:8px;padding:2px 6px;background:#ffe45e;color:#080b13;border:2px solid #000;font-size:.7em;vertical-align:middle}.project.newest-app-card .browser-hint{font-weight:900;color:#ffe45e}@media(max-width:720px){.newest-app-inner{grid-template-columns:1fr}.newest-app-feature::after{display:none}.newest-app-launch{min-height:80px}}
+</style>
 </head>
 <body class="free-tools-body">
 <canvas aria-hidden="true" id="page-particles"></canvas>
 <a class="skip-link" href="#free-tools-grid">Skip to free tools</a>
 <div class="ticker">
 <div class="ticker-track">
-<span>★ FREE TOOLS ★ BROWSER VISUALS ★ AUDIO TOOLS ★ PICO-8 GAMES ★ NO PAYWALL ★</span>
-<span aria-hidden="true">★ FREE TOOLS ★ BROWSER VISUALS ★ AUDIO TOOLS ★ PICO-8 GAMES ★ NO PAYWALL ★</span>
+<span>★ NEWEST APP: BLASTER BOX ★ FREE TOOLS ★ BROWSER VISUALS ★ AUDIO TOOLS ★ NO PAYWALL ★</span>
+<span aria-hidden="true">★ NEWEST APP: BLASTER BOX ★ FREE TOOLS ★ BROWSER VISUALS ★ AUDIO TOOLS ★ NO PAYWALL ★</span>
 </div>
 </div>
 <header class="topbar" id="top">
@@ -32,14 +35,25 @@
 
 <main class="shell free-tools-page">
 <section aria-labelledby="free-tools-title" class="box free-tools-hero">
-<div class="box-title split-title"><span id="free-tools-title">FREE TOOLS</span><small>8 free browser tools + games</small></div>
+<div class="box-title split-title"><span id="free-tools-title">FREE TOOLS</span><small>9 free browser tools + games</small></div>
 <div class="free-tools-hero-body">
 <div>
 <p class="free-tools-hero-summary">Visualizers, music experiments, performance tools, and tiny games. Open one in your browser or download a copy to keep.</p>
 </div>
 <div class="free-tools-hero-actions">
-<a class="retro-button primary" href="#free-tools-grid">Browse all 8</a>
+<a class="retro-button primary" href="#free-tools-grid">Browse all 9</a>
 </div>
+</div>
+</section>
+
+<section class="newest-app-feature" aria-labelledby="newest-app-title">
+<div class="newest-app-inner">
+<div>
+<span class="newest-app-kicker">★ NEWEST APP</span>
+<h2 id="newest-app-title">BLASTER BOX</h2>
+<p>Procedural ray-gun synth with custom pixel skins, editable pitch envelopes, wavetable motion, arcade-style visuals, skin-matched palettes, Spacebar firing, and WAV export.</p>
+</div>
+<a class="newest-app-launch" href="apps/blaster-box/index.html?v=20260821-1" rel="noopener" target="_blank">LAUNCH BLASTER BOX →</a>
 </div>
 </section>
 
@@ -54,7 +68,7 @@
         <p class="browser-guide-tag">Best default for the audio apps</p>
       </div>
     </div>
-    <p>Use Chrome first for <strong>0PTICSCOPE</strong>, <strong>SPECTRAVAULT</strong>, and <strong>PIXEL VISUALIZER</strong>. It is the most reliable choice for microphone input, local files, screen or tab sharing, and recording.</p>
+    <p>Use Chrome first for <strong>BLASTER BOX</strong>, <strong>0PTICSCOPE</strong>, <strong>SPECTRAVAULT</strong>, and <strong>PIXEL VISUALIZER</strong>. It is the most reliable choice for audio, microphone input, local files, screen or tab sharing, and recording.</p>
   </article>
   <article class="browser-guide-card">
     <div class="browser-guide-head">
@@ -64,21 +78,22 @@
         <p class="browser-guide-tag">Strong fallback for Chromium-based tools</p>
       </div>
     </div>
-    <p>Use Edge if Chrome gives you trouble. It is also a good pick for <strong>DISTORTION</strong>, <strong>DJ Visual Studio</strong>, and <strong>PIXEL VISUALIZER</strong>, especially for screen capture, detachable windows, and file-based sessions.</p>
+    <p>Use Edge if Chrome gives you trouble. It is also a good pick for <strong>BLASTER BOX</strong>, <strong>DISTORTION</strong>, <strong>DJ Visual Studio</strong>, and <strong>PIXEL VISUALIZER</strong>, especially for file-based sessions.</p>
   </article>
 </div>
 <p class="browser-guide-footnote"><strong>Quick rule:</strong> Chrome or Edge for the full desktop experience. Safari on iPhone or iPad is fine for browsing and loading local files, but the heavier browser tools are still best on desktop Chrome or Edge.</p>
 </section>
 
 <section aria-labelledby="projects-title" class="box projects-box free-tools-projects" id="free-tools-grid">
-<div class="box-title split-title"><span id="projects-title">FREE TOOLS</span><small>8 projects</small></div>
+<div class="box-title split-title"><span id="projects-title">FREE TOOLS</span><small>9 projects</small></div>
 <div class="top-eight">
+<article class="project newest-app-card" data-product-slug="blaster-box"><a class="project-art" href="apps/blaster-box/index.html?v=20260821-1" rel="noopener" target="_blank"><span>BLASTER BOX</span><i></i></a><h3><a href="apps/blaster-box/index.html?v=20260821-1" rel="noopener" target="_blank">BLASTER BOX</a></h3><p>Procedural ray-gun synth with custom pixel skins, draggable pitch-envelope points, wavetable shaping, reactive colors, arcade UI, and WAV export.</p><div class="browser-actions"><a class="browser-launch chrome-launch" href="apps/blaster-box/index.html?v=20260821-1" rel="noopener" target="_blank"><span class="browser-logo"><img src="assets/browser-logos/chrome.gif" alt=""/></span>Launch newest app</a></div><p class="browser-hint">NEWEST APP • Chrome or Edge recommended</p></article>
 <article class="project" data-product-slug="opticscope"><a class="project-art scope" href="apps/opticscope/index.html?v=38" rel="noopener" target="_blank"><span>0PTICSCOPE</span><i></i></a><h3><a href="apps/opticscope/index.html?v=38" rel="noopener" target="_blank">0PTICSCOPE</a></h3><p>Oscilloscope art lab</p><div class="browser-actions"><a class="browser-launch chrome-launch" href="apps/opticscope/index.html?v=38" rel="noopener" target="_blank"><span class="browser-logo"><img src="assets/browser-logos/chrome.gif" alt=""/></span>Chrome</a><a class="zip-launch" download href="downloads/opticscope-visualizer.zip">ZIP</a></div><p class="browser-hint">Best in Chrome • Edge also works</p></article>
 <article class="project" data-product-slug="spectravault"><a class="project-art vault" href="apps/spectravault/index.html?v=38" rel="noopener" target="_blank"><span>SPECTRAVAULT</span><i></i></a><h3><a href="apps/spectravault/index.html?v=38" rel="noopener" target="_blank">SPECTRAVAULT</a></h3><p>Audio-reactive engine</p><div class="browser-actions"><a class="browser-launch chrome-launch" href="apps/spectravault/index.html?v=38" rel="noopener" target="_blank"><span class="browser-logo"><img src="assets/browser-logos/chrome.gif" alt=""/></span>Chrome</a><a class="zip-launch" download href="downloads/spectravault-visualizer.zip">ZIP</a></div><p class="browser-hint">Best in Chrome • Edge also works</p></article>
 <article class="project" data-product-slug="pixel-visualizer"><a class="project-art scope" href="apps/pixel-visualizer/index.html?v=3" rel="noopener" target="_blank"><span>PIXEL VISUALIZER</span><i></i></a><h3><a href="apps/pixel-visualizer/index.html?v=3" rel="noopener" target="_blank">Pixel Visualizer</a></h3><p>Retro desktop-audio spectrum visualizer</p><div class="browser-actions"><a class="browser-launch chrome-launch" href="apps/pixel-visualizer/index.html?v=3" rel="noopener" target="_blank"><span class="browser-logo"><img src="assets/browser-logos/chrome.gif" alt=""/></span>Launch</a></div><p class="browser-hint">Desktop Chrome or Edge • share system audio</p></article>
 <article class="project" data-product-slug="distortion"><a class="project-art distortion" href="apps/distortion/index.html?v=20260816-2" rel="noopener" target="_blank"><span>DISTORTION</span><i></i></a><h3><a href="apps/distortion/index.html?v=20260816-2" rel="noopener" target="_blank">DISTORTION</a></h3><p>Live video remix</p><div class="browser-actions"><a class="browser-launch edge-launch" href="apps/distortion/index.html?v=20260816-2" rel="noopener" target="_blank"><span class="browser-logo"><img src="assets/browser-logos/edge.gif" alt=""/></span>Edge / Chrome</a><a download class="zip-launch" href="downloads/distortion-live-video-remix.zip">ZIP</a></div><p class="browser-hint">One in-app audio loader checks WAV / MP3 / AIFF compatibility</p></article>
 <article class="project" data-product-slug="dj-visual-studio"><a class="project-art vj" href="apps/dj-visual-studio/index.html?v=38" rel="noopener" target="_blank"><span>VJ STUDIO</span><i></i></a><h3><a href="apps/dj-visual-studio/index.html?v=38" rel="noopener" target="_blank">DJ Visual Studio</a></h3><p>Performance visuals</p><div class="browser-actions"><a class="browser-launch edge-launch" href="apps/dj-visual-studio/index.html?v=38" rel="noopener" target="_blank"><span class="browser-logo"><img src="assets/browser-logos/edge.gif" alt=""/></span>Edge / Chrome</a><a download class="zip-launch" href="downloads/dj-visual-studio.zip">ZIP</a></div><p class="browser-hint">Great in Edge or Chrome</p></article>
-<article class="project" data-product-slug="boxed-arp"><a class="project-art arp" href="apps/boxed-arp-v47/index.html?v=20260810-1" rel="noopener" target="_blank"><span>BOXED ARP</span><i></i></a><h3><a href="apps/boxed-arp-v47/index.html?v=20260810-1" rel="noopener" target="_blank">BOXED ARP</a></h3><p><strong>★ TOOL OF THE WEEK</strong><br/>Browser arpeggiator with scale-locked keys, chord modifiers, multi-octave patterns, MIDI/WAV capture, and the new note-reactive CRT + Sefirot visual.</p><div class="browser-actions"><a class="browser-launch chrome-launch" href="apps/boxed-arp-v47/index.html?v=20260810-1" rel="noopener" target="_blank"><span class="browser-logo"><img src="assets/browser-logos/chrome.gif" alt=""/></span>Launch v47</a></div><p class="browser-hint">Featured this week • latest v47 build • Chrome or Edge recommended</p></article>
+<article class="project" data-product-slug="boxed-arp"><a class="project-art arp" href="apps/boxed-arp-v47/index.html?v=20260810-1" rel="noopener" target="_blank"><span>BOXED ARP</span><i></i></a><h3><a href="apps/boxed-arp-v47/index.html?v=20260810-1" rel="noopener" target="_blank">BOXED ARP</a></h3><p>Browser arpeggiator with scale-locked keys, chord modifiers, multi-octave patterns, MIDI/WAV capture, and the note-reactive CRT + Sefirot visual.</p><div class="browser-actions"><a class="browser-launch chrome-launch" href="apps/boxed-arp-v47/index.html?v=20260810-1" rel="noopener" target="_blank"><span class="browser-logo"><img src="assets/browser-logos/chrome.gif" alt=""/></span>Launch v47</a></div><p class="browser-hint">Latest v47 build • Chrome or Edge recommended</p></article>
 <article class="project" data-product-slug="orbital-repair"><a class="project-art orbital" href="games/orbital-repair/"><span>ORBITAL REPAIR</span><i></i></a><h3><a href="games/orbital-repair/">Orbital Repair</a></h3><p>PICO-8 space repair game</p><div><a href="games/orbital-repair/">Play game</a><a download href="downloads/orbital-repair-html.zip">Download HTML</a></div></article>
 <article class="project" data-product-slug="inner-light-runner"><a class="project-art inner" href="games/inner-light-runner/"><span>INNER LIGHT</span><i></i></a><h3><a href="games/inner-light-runner/">Inner Light Runner</a></h3><p>PICO-8 action runner</p><div><a href="games/inner-light-runner/">Play game</a><a download href="downloads/inner-light-runner-html.zip">Download HTML</a></div></article>
 </div>
@@ -88,7 +103,7 @@
 <div class="box-title split-title"><span>USE THEM YOUR WAY</span><small>browser or download</small></div>
 <div class="free-tools-note-body">
 <p>Launch buttons open the live browser version. ZIP and cart links save a copy to your device when a download is available.</p>
-<p><strong>Browser version:</strong> Start with the Browser Guide above. <strong>Chrome</strong> is the recommended default for 0PTICSCOPE, SPECTRAVAULT, and PIXEL VISUALIZER. <strong>Edge</strong> is the best alternate pick and is also a strong choice for DISTORTION and DJ Visual Studio.</p>
+<p><strong>Browser version:</strong> Start with the Browser Guide above. <strong>Chrome</strong> is the recommended default for BLASTER BOX, 0PTICSCOPE, SPECTRAVAULT, and PIXEL VISUALIZER. <strong>Edge</strong> is the best alternate pick and is also a strong choice for DISTORTION and DJ Visual Studio.</p>
 <p><strong>Files:</strong> Local upload buttons in 0PTICSCOPE, SPECTRAVAULT, DISTORTION and DJ VISUAL STUDIO open the device file picker directly. Audio pickers include WAV, MP3, M4A, AAC, AIFF, CAF, FLAC, OGG and OPUS extensions. DISTORTION now confirms whether the browser can actually decode the selected song instead of treating every selection as a successful load. If the browser blocks autoplay after choosing a song, tap Play once on the app audio control.</p>
 <a class="retro-button" href="community.html">Share what you made</a>
 </div>
