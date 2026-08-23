@@ -1,14 +1,49 @@
 "use strict";
 
-// 0PTICSCOPE X-Y fidelity patch v40
-// Keeps live stereo oscilloscope music sample-paired: LEFT[n] = X, RIGHT[n] = Y.
+// 0PTICSCOPE X-Y fidelity + responsive render patch v41
+// Keeps true stereo sample pairing while avoiding thousands of invisible canvas
+// operations per frame. The display is tuned for fast, musical response.
 (() => {
-  const XY_FFT_SIZE = 8192;
+  // 2048 samples is ~43 ms at 48 kHz: enough for accurate X-Y geometry while
+  // feeling much more immediate than the previous 8192-sample (~171 ms) window.
+  const XY_FFT_SIZE = 2048;
+  const TIER_POINTS = { full: 2048, mid: 1200, low: 720 };
+  const TIER_PARTICLES = { full: 320, mid: 200, low: 110 };
+  const TIER_EMIT = { full: 8, mid: 5, low: 3 };
+
   let xyDisplayScale = 1;
   let desktopDualMonoFrames = 0;
   let desktopWarning = "";
   let desktopCaptureChannels = 0;
   let desktopDisplaySurface = "";
+  let lastMeterUpdate = 0;
+  let cachedSignalRms = 0;
+  let gridCache = null;
+  let gridCacheKey = "";
+
+  const perfTier = () => {
+    const tier = window.OPTICBOX_PERF?.tier;
+    return tier === "low" || tier === "mid" ? tier : "full";
+  };
+
+  function fastRms(a) {
+    if (!a?.length) return 0;
+    let s = 0, n = 0;
+    // Metering does not need every PCM sample. Sampling every fourth point keeps
+    // the meter/particles responsive without rescanning the whole analyser twice.
+    for (let i = 0; i < a.length; i += 4) {
+      const v = a[i];
+      s += v * v;
+      n++;
+    }
+    return n ? Math.sqrt(s / n) : 0;
+  }
+
+  function rememberTracePoint(x, y, plottedIndex) {
+    // Particles only need representative positions along the beam, not one new
+    // object for every line segment. This removes a large source of GC stutter.
+    if ((plottedIndex & 7) === 0) lastTracePoints.push({ x, y });
+  }
 
   // Make a physically neutral X-Y setup the default.
   state.xyPhase = 0;
@@ -53,7 +88,7 @@
   function stereoSimilarity(a, b) {
     const len = Math.min(a.length, b.length);
     let sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0, diff = 0, energy = 0, n = 0;
-    for (let i = 0; i < len; i += 16) {
+    for (let i = 0; i < len; i += 8) {
       const x = a[i], y = b[i];
       sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y;
       diff += Math.abs(x - y);
@@ -69,10 +104,8 @@
     return { correlation, difference };
   }
 
-  // Capture a much larger, unsmoothed time-domain window. The display still
-  // renders at the browser frame rate, but the beam path is built from every
-  // available PCM sample in the analyser window instead of every other sample.
-  // Channel 0 and channel 1 are kept discrete; a mono source is NOT duplicated.
+  // Keep true left/right sample pairing, but use a shorter analyser window for a
+  // much more responsive display. 2048 points is still above visible canvas detail.
   setupAnalysis = function(node, channels = 2, monitor = false) {
     leftAnalyser = audioContext.createAnalyser();
     rightAnalyser = audioContext.createAnalyser();
@@ -91,16 +124,13 @@
     try { splitter.channelInterpretation = "discrete"; } catch (_) {}
     node.connect(splitter);
     splitter.connect(leftAnalyser, 0);
-    // Always read the actual second channel. If the source is mono this stays
-    // silent instead of fabricating Y from X.
     splitter.connect(rightAnalyser, 1);
     node.connect(monoAnalyser);
     node.connect(recordDest);
     if (monitor) node.connect(audioContext.destination);
   };
 
-  // Prefer a browser-tab share for stereo oscilloscope material. These options
-  // guide Chromium/Edge's picker but the user still chooses the source.
+  // Prefer a browser-tab share for stereo oscilloscope material.
   connectDesktop = async function() {
     disconnectInput();
     await ensureAudio();
@@ -125,7 +155,6 @@
     try {
       stream = await navigator.mediaDevices.getDisplayMedia(preferred);
     } catch (err) {
-      // Fall back for browsers that reject one of the newer display hints.
       if (err?.name === "TypeError" || err?.name === "OverconstrainedError") {
         stream = await navigator.mediaDevices.getDisplayMedia({
           video: { width: { ideal: 320 }, height: { ideal: 180 }, frameRate: { ideal: 5, max: 10 } },
@@ -164,6 +193,70 @@
     }
   };
 
+  // Cache the graticule instead of rebuilding 20+ stroked paths every frame.
+  grid = function(c, w, h, col) {
+    if (!state.grid) return;
+    const key = `${w}x${h}:${col.grid.join(",")}`;
+    if (!gridCache || gridCacheKey !== key) {
+      gridCache = document.createElement("canvas");
+      gridCache.width = w;
+      gridCache.height = h;
+      const g = gridCache.getContext("2d");
+      g.lineWidth = 1;
+      g.strokeStyle = `rgba(${col.grid},.52)`;
+      g.beginPath();
+      for (let i = 0; i <= 10; i++) {
+        const x = i * w / 10;
+        g.moveTo(x, 0); g.lineTo(x, h);
+      }
+      for (let i = 0; i <= 8; i++) {
+        const y = i * h / 8;
+        g.moveTo(0, y); g.lineTo(w, y);
+      }
+      g.stroke();
+      g.strokeStyle = `rgba(${col.grid},.85)`;
+      g.beginPath();
+      g.moveTo(w / 2, 0); g.lineTo(w / 2, h);
+      g.moveTo(0, h / 2); g.lineTo(w, h / 2);
+      g.stroke();
+      gridCacheKey = key;
+    }
+    c.drawImage(gridCache, 0, 0);
+  };
+
+  // TIME mode previously inherited the full 8192-sample window. Limit the
+  // visible path to about one canvas-width worth of points for faster response.
+  drawTime = function(c, w, h, col) {
+    const len = monoData.length;
+    const tier = perfTier();
+    const maxPoints = tier === "full" ? 1400 : tier === "mid" ? 900 : 600;
+    const start = triggerIndex(monoData, state.triggerLevel);
+    const available = Math.max(1, len - start);
+    const requested = Math.max(64, Math.floor(available / state.sweep));
+    const step = Math.max(1, Math.ceil(requested / maxPoints));
+    const samples = Math.ceil(requested / step);
+
+    lastTracePoints = [];
+    c.save();
+    beam(c, col);
+    c.beginPath();
+    let drawn = 0;
+    for (let i = 0; i < requested; i += step) {
+      const j = start + Math.floor(i * state.sweep);
+      if (j >= len) break;
+      const x = drawn * w / Math.max(1, samples - 1);
+      const y = h / 2 - monoData[j] * state.gain * h * .38;
+      if (drawn) c.lineTo(x, y); else c.moveTo(x, y);
+      rememberTracePoint(x, y, drawn);
+      drawn++;
+    }
+    c.stroke();
+    c.globalAlpha = .16;
+    c.lineWidth = state.focus * 2.6;
+    c.stroke();
+    c.restore();
+  };
+
   drawXY = function(c, w, h, col) {
     const effectiveRotation = state.rotation + (state.zSpin ? zSpinAngle : 0);
     const r = effectiveRotation * Math.PI / 180;
@@ -181,13 +274,15 @@
       const yr = x * sr + y * cr;
       const px = w / 2 + xr * w * .39;
       const py = h / 2 - yr * h * .39;
-      lastTracePoints.push({ x: px, y: py });
-      n++ ? c.lineTo(px, py) : c.moveTo(px, py);
+      if (n) c.lineTo(px, py); else c.moveTo(px, py);
+      rememberTracePoint(px, py, n);
+      n++;
     };
 
     if (currentInput === "ART SIGNAL" && artPoints.length > 1) {
       const pts = pngSpinActive ? transformedPngPoints() : artPoints;
-      const step = Math.max(1, Math.floor(pts.length / 12000));
+      const maxPoints = perfTier() === "full" ? 4096 : perfTier() === "mid" ? 2400 : 1400;
+      const step = Math.max(1, Math.ceil(pts.length / maxPoints));
       for (let i = 0; i < pts.length; i += step) {
         plot(pts[i].x * state.xGain, pts[i].y * state.yGain * invert);
       }
@@ -203,8 +298,6 @@
       const peak = Math.max(leftPeak, rightPeak);
       const hasSignal = peak > .0005;
 
-      // Detect the exact failure shown by a 45-degree X-Y line: both captured
-      // channels contain essentially the same waveform for a sustained period.
       if (currentInput === "DESKTOP AUDIO" && hasSignal) {
         if (desktopCaptureChannels === 1 || rightPeak < .00005) {
           desktopDualMonoFrames = 40;
@@ -226,17 +319,19 @@
 
       if (state.xyAutoGain && hasSignal) {
         const target = Math.min(8, .82 / Math.max(peak, .0005));
-        xyDisplayScale += (target - xyDisplayScale) * .06;
+        xyDisplayScale += (target - xyDisplayScale) * .08;
       } else {
-        xyDisplayScale += (1 - xyDisplayScale) * .18;
+        xyDisplayScale += (1 - xyDisplayScale) * .22;
       }
 
       if (hasSignal) {
         const phaseSamples = state.xyPhase === 0
           ? 0
           : Math.round((state.xyPhase / 360) * len);
+        const maxPoints = TIER_POINTS[perfTier()];
+        const step = Math.max(1, Math.ceil(len / maxPoints));
 
-        for (let i = 0; i < len; i++) {
+        for (let i = 0; i < len; i += step) {
           const ri = (i + phaseSamples + len) % len;
           const x = leftData[i] * xyDisplayScale * state.xGain;
           const y = rightData[ri] * xyDisplayScale * state.yGain * invert;
@@ -244,7 +339,8 @@
         }
       } else {
         const t = performance.now() * .001;
-        const N = 1100, a = 3, b = 2;
+        const N = perfTier() === "full" ? 720 : perfTier() === "mid" ? 520 : 360;
+        const a = 3, b = 2;
         const phaseRad = Math.PI / 2 + state.xyPhase * Math.PI / 180;
         for (let i = 0; i < N; i++) {
           const q = i / (N - 1) * Math.PI * 2;
@@ -257,10 +353,84 @@
     }
 
     c.stroke();
-    c.globalAlpha = .18;
-    c.lineWidth = state.focus * 3;
+    c.globalAlpha = .16;
+    c.lineWidth = state.focus * 2.6;
     c.stroke();
     c.restore();
+  };
+
+  emitPhosphorParticles = function() {
+    if (!state.particles || lastTracePoints.length < 2) return;
+    const tier = perfTier();
+    const level = Math.max(
+      cachedSignalRms * 7,
+      currentInput === "ART SIGNAL" ? .35 : 0,
+      mode === "xy" && currentInput === "NO INPUT" ? .2 : 0
+    );
+    const requested = Math.floor(Math.max(0, level - .04) * (state.particleAmount / 100) * 18);
+    const count = Math.min(TIER_EMIT[tier], requested);
+    for (let i = 0; i < count; i++) {
+      const p = lastTracePoints[Math.floor(Math.random() * lastTracePoints.length)];
+      phosphorParticles.push({
+        x: p.x, y: p.y,
+        vx: (Math.random() - .5) * (1 + level * 4),
+        vy: (Math.random() - .5) * (1 + level * 4),
+        life: 1,
+        size: .6 + Math.random() * 1.8
+      });
+    }
+    const cap = TIER_PARTICLES[tier];
+    if (phosphorParticles.length > cap) {
+      phosphorParticles.splice(0, phosphorParticles.length - cap);
+    }
+  };
+
+  drawPhosphorParticles = function(c, col) {
+    if (!state.particles) {
+      phosphorParticles.length = 0;
+      return;
+    }
+    emitPhosphorParticles(col);
+    c.save();
+    c.globalCompositeOperation = "lighter";
+    c.fillStyle = `rgb(${col.trace})`;
+    c.shadowColor = `rgb(${col.trace})`;
+    c.shadowBlur = perfTier() === "low" ? 4 : perfTier() === "mid" ? 6 : 8;
+
+    let write = 0;
+    for (let i = 0; i < phosphorParticles.length; i++) {
+      const q = phosphorParticles[i];
+      q.x += q.vx * state.particleDrift;
+      q.y += q.vy * state.particleDrift;
+      q.vy += .004 * state.particleDrift;
+      q.life *= state.particleDecay;
+      if (q.life < .025) continue;
+      c.globalAlpha = q.life * .78;
+      const size = q.size * 2;
+      c.fillRect(q.x - q.size, q.y - q.size, size, size);
+      phosphorParticles[write++] = q;
+    }
+    phosphorParticles.length = write;
+    c.restore();
+  };
+
+  // Reduce non-visual work in the hot loop: calculate the signal level once and
+  // update DOM text at 10 Hz instead of forcing layout/text changes every frame.
+  animate = function(now = performance.now()) {
+    const dt = Math.min(.05, (now - lastFrameTime) / 1000);
+    lastFrameTime = now;
+    if (pngSpinActive) pngSpinAngle += dt * state.spinSpeed * Math.PI * 2;
+    if (state.zSpin) zSpinAngle = (zSpinAngle + dt * state.zSpinSpeed * 360) % 360;
+    frame++;
+    readAudio();
+    cachedSignalRms = fastRms(monoData);
+    render(ctx, canvas.width, canvas.height);
+    if (now - lastMeterUpdate >= 100) {
+      ui.signalReadout.textContent = `${(cachedSignalRms * 5).toFixed(3)} V`;
+      lastMeterUpdate = now;
+    }
+    if (recorder?.state === "recording") drawRecordFrame();
+    requestAnimationFrame(animate);
   };
 
   if ($("xyAutoGain")) {
