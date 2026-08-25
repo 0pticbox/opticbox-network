@@ -1,34 +1,30 @@
-/* DISTORTION strobe illusion pack — 2026-08-24
-   Replaces the default Mirror Grid / Negative Pulse / Negative Strobe performance
-   slots with three distinct strobe illusions while keeping Mirror Shards. */
+/* DISTORTION color/strobe extension — 2026-08-24
+   Keeps the original backslash NEGATIVE STROBE intact and replaces two weaker
+   default slots with color-heavy pulse effects inspired by Color Crush / RGB Pulse / Color Surge. */
 (() => {
   'use strict';
 
   const replacements = {
-    mirrorgrid: { effect: 'frameSkip', name: 'FRAME SKIP STROBE' },
-    invert: { effect: 'rgbPulse', name: 'RGB PULSE STROBE' },
-    strobe: { effect: 'rollingBand', name: 'ROLLING BAND STROBE' }
+    mirrorgrid: { effect: 'crushPulse', name: 'CRUSH PULSE' },
+    blocks: { effect: 'chromaBurn', name: 'CHROMA BURN' },
+    invert: { effect: 'rgbPulse', name: 'RGB PULSE STROBE' }
   };
   const legacyToEffect = Object.fromEntries(
     Object.entries(replacements).map(([legacyId, config]) => [legacyId, config.effect])
   );
   const defaultBindings = new Map([
-    ['3', 'frameSkip'],
-    ['8', 'rgbPulse'],
-    ['\\', 'rollingBand']
+    ['3', 'crushPulse'],
+    ['6', 'chromaBurn'],
+    ['8', 'rgbPulse']
   ]);
 
   let canvas;
   let ctx;
   let sourceCanvas;
   let sourceCtx;
-  let holdCanvas;
-  let holdCtx;
   let keyBindings = new Map(defaultBindings);
   const active = new Set();
   const held = new Set();
-  let lastFrameSkipStep = -1;
-  let holdReady = false;
 
   const normalizeKey = key => key === ' ' ? 'space' : String(key).toLowerCase();
   const mode = () => document.getElementById('fxModeSelect')?.value || 'hold';
@@ -48,13 +44,10 @@
   }
 
   function ensureBuffers() {
-    if (!canvas) return;
-    for (const buffer of [sourceCanvas, holdCanvas]) {
-      if (buffer.width !== canvas.width || buffer.height !== canvas.height) {
-        buffer.width = canvas.width;
-        buffer.height = canvas.height;
-        holdReady = false;
-      }
+    if (!canvas || !sourceCanvas) return;
+    if (sourceCanvas.width !== canvas.width || sourceCanvas.height !== canvas.height) {
+      sourceCanvas.width = canvas.width;
+      sourceCanvas.height = canvas.height;
     }
   }
 
@@ -135,9 +128,10 @@
     const section = document.querySelector('[data-help="effects"]');
     if (!section) return;
     const labels = {
-      '3': 'Frame Skip Strobe',
+      '3': 'Crush Pulse',
+      '6': 'Chroma Burn',
       '8': 'RGB Pulse Strobe',
-      '\\': 'Rolling Band Strobe'
+      '\\': 'Negative Strobe'
     };
     section.querySelectorAll('.help-key-grid > div').forEach(item => {
       const key = item.querySelector('kbd')?.textContent?.trim();
@@ -146,11 +140,11 @@
     });
     const paragraphs = [...section.querySelectorAll('p')];
     if (paragraphs[0]) {
-      paragraphs[0].textContent = 'With Default Mapping, keys 1–9 and backslash trigger the distortion bank. Key 3 is Frame Skip Strobe, key 8 is RGB Pulse Strobe, and backslash is Rolling Band Strobe. Use HOLD for momentary hits or LATCH to keep effects active.';
+      paragraphs[0].textContent = 'With Default Mapping, 3 is Crush Pulse, 4 stays Color Crush, 6 is Chroma Burn, 8 is RGB Pulse Strobe, 9 stays Color Surge, and backslash is restored to the original Negative Strobe. Use HOLD for momentary hits or LATCH to keep effects active.';
     }
-    const stackNote = paragraphs.find(p => p.textContent.includes('universal pass-by-pass stack'));
+    const stackNote = paragraphs.find(p => p.textContent.includes('universal pass-by-pass stack') || p.textContent.includes('distortion bank still uses'));
     if (stackNote) {
-      stackNote.textContent = 'The distortion bank still uses the universal pass-by-pass stack, so the new strobe illusions can mix with Mirror Shards, Video Tear, Color Surge, and the rest of the bank. Use CLEAR ALL FX for an instant clean signal.';
+      stackNote.textContent = 'The color-heavy effects are designed to layer together: Crush Pulse + Color Crush for hard posterized hits, RGB Pulse + Color Surge for chromatic motion, and the original backslash Negative Strobe for the sharp flash you already liked.';
     }
   }
 
@@ -161,7 +155,7 @@
     const note = document.createElement('p');
     note.className = 'micro-help strobe-safety-note';
     note.setAttribute('role', 'note');
-    note.textContent = 'STROBE FX USE RAPID FLASHING / HIGH-CONTRAST PULSES. AVOID THESE FX IF YOU ARE PHOTOSENSITIVE.';
+    note.textContent = 'STROBE / PULSE FX USE FLASHING OR HIGH-CONTRAST PULSES. AVOID THESE FX IF YOU ARE PHOTOSENSITIVE.';
     note.style.margin = '8px 0 10px';
     note.style.fontWeight = '700';
     grid.insertAdjacentElement('afterend', note);
@@ -201,42 +195,38 @@
     });
   }
 
-  function drawFrameSkip(src, amount, now) {
+  function drawCrushPulse(src, amount, now) {
     const w = canvas.width;
     const h = canvas.height;
-    const interval = 460 - amount * 80;
-    const step = Math.floor(now / interval);
-
-    if (!holdReady || step !== lastFrameSkipStep) {
-      lastFrameSkipStep = step;
-      if (!holdReady || step % 2 === 0) {
-        holdCtx.setTransform(1, 0, 0, 1, 0, 0);
-        holdCtx.globalAlpha = 1;
-        holdCtx.globalCompositeOperation = 'source-over';
-        holdCtx.filter = 'none';
-        holdCtx.clearRect(0, 0, w, h);
-        holdCtx.drawImage(src, 0, 0, w, h);
-        holdReady = true;
-      }
-    }
+    const step = Math.floor(now / (340 - amount * 80));
+    const hit = step % 4 === 0 || step % 4 === 2;
+    const hue = (step * 47) % 360;
 
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
-    ctx.filter = 'none';
     ctx.globalAlpha = 1;
-    if (step % 2) {
-      const jump = (6 + amount * 22) * (step % 4 === 1 ? -1 : 1);
-      const zoom = 1.015 + amount * .035;
-      ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, w, h);
-      ctx.translate(w / 2 + jump, h / 2);
-      ctx.scale(zoom, zoom);
-      ctx.filter = `contrast(${1.12 + amount * .7}) saturate(${1.05 + amount * .5})`;
-      ctx.drawImage(holdCanvas, -w / 2, -h / 2, w, h);
-    } else {
-      ctx.drawImage(src, 0, 0, w, h);
-    }
+    ctx.filter = hit
+      ? `contrast(${1.75 + amount * 2.4}) saturate(${2.7 + amount * 4.2}) brightness(${.82 + amount * .22}) hue-rotate(${hue}deg)`
+      : `contrast(${1.25 + amount * .85}) saturate(${1.5 + amount * 1.8})`;
+    ctx.drawImage(src, 0, 0, w, h);
     ctx.restore();
+
+    if (!hit) return;
+
+    const bandCount = 3 + Math.floor(amount * 4);
+    for (let i = 0; i < bandCount; i++) {
+      const bandH = Math.max(8, h * (.035 + (i % 3) * .018));
+      const y = ((step * 83 + i * 137) % Math.max(1, Math.floor(h + bandH))) - bandH;
+      const shift = ((i % 2 ? 1 : -1) * (7 + amount * 30));
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, y, w, bandH);
+      ctx.clip();
+      ctx.globalAlpha = .42 + amount * .28;
+      ctx.filter = `contrast(${2 + amount * 2.2}) saturate(${3 + amount * 4}) hue-rotate(${hue + i * 65}deg)`;
+      ctx.drawImage(src, shift, 0, w, h);
+      ctx.restore();
+    }
   }
 
   function drawRgbPulse(src, amount, now) {
@@ -274,36 +264,35 @@
     }
   }
 
-  function drawRollingBand(src, amount, now) {
+  function drawChromaBurn(src, amount, now) {
     const w = canvas.width;
     const h = canvas.height;
+    const hue = (now * (.045 + amount * .03)) % 360;
+    const pulse = .5 + .5 * Math.sin(now * (.006 + amount * .002));
+    const offset = (6 + amount * 32) * Math.sin(now * .012);
+
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
-    ctx.filter = 'none';
+    ctx.filter = `hue-rotate(${hue}deg) saturate(${2.3 + amount * 4.8}) contrast(${1.25 + amount * 1.25}) brightness(${.82 + pulse * .26})`;
     ctx.drawImage(src, 0, 0, w, h);
     ctx.restore();
 
-    const bands = 5 + Math.floor(amount * 4);
-    const bandH = h / bands;
-    const travel = (now * (.23 + amount * .18)) % (h + bandH * 2) - bandH;
-    const phase = Math.floor(now / (620 - amount * 120));
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    ctx.globalAlpha = .16 + amount * .24;
+    ctx.filter = `sepia(1) saturate(${5 + amount * 6}) hue-rotate(${hue + 55}deg) contrast(1.35)`;
+    ctx.drawImage(src, offset, 0, w, h);
+    ctx.filter = `sepia(1) saturate(${5 + amount * 6}) hue-rotate(${hue + 210}deg) contrast(1.35)`;
+    ctx.drawImage(src, -offset, 0, w, h);
+    ctx.restore();
 
-    for (let i = 0; i < bands; i++) {
-      const y = (travel + i * bandH * 1.45) % (h + bandH) - bandH * .5;
-      const height = bandH * (.22 + amount * .16);
+    if (Math.floor(now / (460 - amount * 80)) % 3 === 0) {
       ctx.save();
-      ctx.beginPath();
-      ctx.rect(0, y, w, height);
-      ctx.clip();
-      ctx.globalAlpha = .62 + amount * .28;
-      ctx.filter = `contrast(${1.35 + amount * 1.2}) saturate(${1.1 + amount})`;
-      const shift = (phase + i) % 2 ? 10 + amount * 30 : -(10 + amount * 30);
-      ctx.drawImage(src, shift, 0, w, h);
       ctx.globalCompositeOperation = 'difference';
-      ctx.globalAlpha = .42 + amount * .25;
+      ctx.globalAlpha = .08 + amount * .13;
       ctx.fillStyle = '#fff';
-      ctx.fillRect(0, y, w, height);
+      ctx.fillRect(0, 0, w, h);
       ctx.restore();
     }
   }
@@ -318,7 +307,7 @@
     const amount = intensity();
 
     // Each replacement receives the completed output of the previous one.
-    for (const effect of ['frameSkip', 'rgbPulse', 'rollingBand']) {
+    for (const effect of ['crushPulse', 'chromaBurn', 'rgbPulse']) {
       if (!active.has(effect)) continue;
       sourceCtx.setTransform(1, 0, 0, 1, 0, 0);
       sourceCtx.globalAlpha = 1;
@@ -327,9 +316,9 @@
       sourceCtx.clearRect(0, 0, canvas.width, canvas.height);
       sourceCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height);
 
-      if (effect === 'frameSkip') drawFrameSkip(sourceCanvas, amount, now);
+      if (effect === 'crushPulse') drawCrushPulse(sourceCanvas, amount, now);
+      else if (effect === 'chromaBurn') drawChromaBurn(sourceCanvas, amount, now);
       else if (effect === 'rgbPulse') drawRgbPulse(sourceCanvas, amount, now);
-      else if (effect === 'rollingBand') drawRollingBand(sourceCanvas, amount, now);
     }
     syncButtons();
   }
@@ -340,8 +329,6 @@
     ctx = canvas.getContext('2d', { alpha: false });
     sourceCanvas = document.createElement('canvas');
     sourceCtx = sourceCanvas.getContext('2d');
-    holdCanvas = document.createElement('canvas');
-    holdCtx = holdCanvas.getContext('2d');
     ensureBuffers();
 
     patchButtons();
