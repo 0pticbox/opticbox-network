@@ -207,7 +207,7 @@
   const loadDistortionStrobes = () => {
     if (document.querySelector('script[data-distortion-strobe-pack]')) return;
     const script = document.createElement('script');
-    script.src = './strobe-fx.js?v=20260824-2';
+    script.src = './strobe-fx.js?v=20260824-3';
     script.dataset.distortionStrobePack = 'true';
     (document.head || document.documentElement).appendChild(script);
   };
