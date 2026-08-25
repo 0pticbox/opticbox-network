@@ -131,6 +131,29 @@
     });
   }
 
+  function patchHelp() {
+    const section = document.querySelector('[data-help="effects"]');
+    if (!section) return;
+    const labels = {
+      '3': 'Frame Skip Strobe',
+      '8': 'RGB Pulse Strobe',
+      '\\': 'Rolling Band Strobe'
+    };
+    section.querySelectorAll('.help-key-grid > div').forEach(item => {
+      const key = item.querySelector('kbd')?.textContent?.trim();
+      const span = item.querySelector('span');
+      if (span && labels[key]) span.textContent = labels[key];
+    });
+    const paragraphs = [...section.querySelectorAll('p')];
+    if (paragraphs[0]) {
+      paragraphs[0].textContent = 'With Default Mapping, keys 1–9 and backslash trigger the distortion bank. Key 3 is Frame Skip Strobe, key 8 is RGB Pulse Strobe, and backslash is Rolling Band Strobe. Use HOLD for momentary hits or LATCH to keep effects active.';
+    }
+    const stackNote = paragraphs.find(p => p.textContent.includes('universal pass-by-pass stack'));
+    if (stackNote) {
+      stackNote.textContent = 'The distortion bank still uses the universal pass-by-pass stack, so the new strobe illusions can mix with Mirror Shards, Video Tear, Color Surge, and the rest of the bank. Use CLEAR ALL FX for an instant clean signal.';
+    }
+  }
+
   function addWarning() {
     const fxPage = document.querySelector('[data-panel-page="effects"]');
     const grid = document.getElementById('fxButtons');
@@ -324,6 +347,7 @@
     patchButtons();
     patchCustomOptions();
     addWarning();
+    patchHelp();
     bindMappingControls();
 
     const fxGrid = document.getElementById('fxButtons');
@@ -332,6 +356,7 @@
       patchButtons();
       patchCustomOptions();
       addWarning();
+      patchHelp();
     });
     if (fxGrid) observer.observe(fxGrid, { childList: true, subtree: true });
     if (mapRows) observer.observe(mapRows, { childList: true, subtree: true });
