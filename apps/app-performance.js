@@ -197,3 +197,24 @@
 
   nativeRAF(monitor);
 })();
+
+/* DISTORTION-only visual extension loader. Keeping this path-gated means the
+   shared performance controller stays a no-op for every other 0PTICBOX app. */
+(() => {
+  'use strict';
+  if (!/\/apps\/distortion\/?(?:index\.html)?$/i.test(location.pathname)) return;
+
+  const loadDistortionStrobes = () => {
+    if (document.querySelector('script[data-distortion-strobe-pack]')) return;
+    const script = document.createElement('script');
+    script.src = './strobe-fx.js?v=20260824-1';
+    script.dataset.distortionStrobePack = 'true';
+    (document.head || document.documentElement).appendChild(script);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadDistortionStrobes, { once: true });
+  } else {
+    loadDistortionStrobes();
+  }
+})();
