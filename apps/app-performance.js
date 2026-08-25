@@ -198,23 +198,28 @@
   nativeRAF(monitor);
 })();
 
-/* DISTORTION-only visual extension loader. Keeping this path-gated means the
-   shared performance controller stays a no-op for every other 0PTICBOX app. */
+/* DISTORTION-only extensions. Keeping this path-gated means the shared
+   performance controller stays a no-op for every other 0PTICBOX app. */
 (() => {
   'use strict';
   if (!/\/apps\/distortion\/?(?:index\.html)?$/i.test(location.pathname)) return;
 
-  const loadDistortionStrobes = () => {
-    if (document.querySelector('script[data-distortion-strobe-pack]')) return;
-    const script = document.createElement('script');
-    script.src = './strobe-fx.js?v=20260824-3';
-    script.dataset.distortionStrobePack = 'true';
-    (document.head || document.documentElement).appendChild(script);
+  const loadDistortionExtensions = () => {
+    const load = (src, marker) => {
+      if (document.querySelector(`script[${marker}]`)) return;
+      const script = document.createElement('script');
+      script.src = src;
+      script.setAttribute(marker, 'true');
+      (document.head || document.documentElement).appendChild(script);
+    };
+
+    load('./strobe-fx.js?v=20260824-3', 'data-distortion-strobe-pack');
+    load('./clip-trim.js?v=20260825-1', 'data-distortion-clip-trim');
   };
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadDistortionStrobes, { once: true });
+    document.addEventListener('DOMContentLoaded', loadDistortionExtensions, { once: true });
   } else {
-    loadDistortionStrobes();
+    loadDistortionExtensions();
   }
 })();
