@@ -125,9 +125,6 @@
     return id;
   };
 
-  /* Every requestAnimationFrame ID exposed after this controller loads is a
-     synthetic queue ID. Never pass it to the browser's native cancel method:
-     numeric ID collisions could otherwise cancel the internal frame pump. */
   window.cancelAnimationFrame = (id) => {
     queuedFrames.delete(id);
   };
@@ -164,9 +161,6 @@
     releaseLoadingMotion();
   }
 
-  /* Measure the first visible seconds with the native RAF. If the main thread
-     cannot sustain smooth delivery, downgrade one performance tier. This is
-     intentionally one-way to avoid quality oscillation during live visuals. */
   let monitorStart = 0;
   let monitorLast = 0;
   const monitorSamples = [];
@@ -215,7 +209,7 @@
 
     load('./strobe-fx.js?v=20260824-3', 'data-distortion-strobe-pack');
     load('./clip-trim.js?v=20260825-1', 'data-distortion-clip-trim');
-    load('./extra-strobes.js?v=20260825-1', 'data-distortion-extra-strobes');
+    load('./extra-strobes.js?v=20260825-2', 'data-distortion-extra-strobes');
   };
 
   if (document.readyState === 'loading') {
