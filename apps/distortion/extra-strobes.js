@@ -1,5 +1,5 @@
 /* DISTORTION extra negative-strobe keys — 2026-08-25
-   Adds two related but slower negative-flash variants on 0 and period.
+   Adds two related negative-flash variants on 0 and period.
    The original backslash NEGATIVE STROBE remains untouched in app.js. */
 (() => {
   'use strict';
@@ -76,7 +76,14 @@
     const button = document.createElement('button');
     button.className = 'fx-btn extra-strobe-btn';
     button.dataset.extraStrobe = id;
-    button.innerHTML = `<strong>${info.name}</strong><span>${info.key === '.' ? '.' : info.key}</span>`;
+    button.innerHTML = `<strong>${info.name}</strong><span>${info.key}</span>`;
+
+    // Give period its own colder visual identity in the bank.
+    if (id === 'void') {
+      button.style.borderColor = '#756dff';
+      button.style.background = 'linear-gradient(135deg, rgba(42,34,92,.52), rgba(16,26,38,.92))';
+    }
+
     button.addEventListener('pointerdown', event => {
       event.preventDefault();
       button.setPointerCapture?.(event.pointerId);
@@ -141,7 +148,10 @@
   function drawGhost(amount, now) {
     const w = canvas.width;
     const h = canvas.height;
-    const step = Math.floor(now / (310 - amount * 35));
+
+    // Snappier than the first version, but still deliberately paced instead of
+    // turning into a continuous high-frequency full-screen flash.
+    const step = Math.floor(now / (235 - amount * 25));
     const hit = step % 3 === 0;
 
     ctx.save();
@@ -155,18 +165,20 @@
 
     if (!hit) return;
 
-    const shift = 7 + amount * 24;
-    const bands = 4;
+    const shift = 5 + amount * 18;
+    const bands = 7;
     for (let i = 0; i < bands; i++) {
-      const y = i * h / bands;
-      const bh = h / bands * .38;
+      const bandSlot = h / bands;
+      const bh = Math.max(3, bandSlot * .16);
+      const y = Math.max(0, Math.min(h - bh, i * bandSlot + bandSlot * .38));
       ctx.save();
       ctx.beginPath();
       ctx.rect(0, y, w, bh);
       ctx.clip();
       ctx.globalCompositeOperation = 'difference';
-      ctx.globalAlpha = .22 + amount * .18;
-      ctx.drawImage(sourceCanvas, i % 2 ? shift : -shift, 0, w, h);
+      ctx.globalAlpha = .2 + amount * .15;
+      const dx = i % 2 ? shift : -shift;
+      ctx.drawImage(sourceCanvas, dx, 0, w, h);
       ctx.restore();
     }
   }
@@ -174,37 +186,49 @@
   function drawVoid(amount, now) {
     const w = canvas.width;
     const h = canvas.height;
-    const step = Math.floor(now / (390 - amount * 45));
-    const hit = step % 4 === 0 || step % 4 === 2;
+
+    // Faster response than v1, with a colder cyan/violet negative tint.
+    const step = Math.floor(now / (255 - amount * 30));
+    const hit = step % 3 !== 1;
+    const hue = 185 + (step % 4) * 13;
 
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
     ctx.filter = hit
-      ? `invert(1) grayscale(${.2 + amount * .35}) contrast(${1.45 + amount * .8}) brightness(${.72 + amount * .12})`
-      : `brightness(${.78 + amount * .10}) contrast(${1.08 + amount * .35})`;
+      ? `invert(1) sepia(.32) saturate(${1.8 + amount * 1.5}) hue-rotate(${hue}deg) contrast(${1.35 + amount * .7}) brightness(${.78 + amount * .1})`
+      : `saturate(${1.05 + amount * .35}) hue-rotate(${hue * .35}deg) brightness(${.86 + amount * .08}) contrast(${1.06 + amount * .25})`;
     ctx.drawImage(sourceCanvas, 0, 0, w, h);
     ctx.restore();
 
     if (!hit) return;
 
-    const sliceCount = 5;
+    // Many thin in-frame scan slices instead of a handful of chunky rectangles.
+    const sliceCount = 16 + Math.floor(amount * 8);
     const phase = step % 2 ? 1 : -1;
+    const maxShift = 4 + amount * 12;
+
     for (let i = 0; i < sliceCount; i++) {
-      const y = ((i + .35) / sliceCount) * h;
-      const bh = Math.max(8, h * (.035 + (i % 2) * .022));
+      const slot = h / sliceCount;
+      const bh = Math.max(2, Math.min(6, slot * (.15 + (i % 3) * .035)));
+      const rawY = i * slot + slot * (.2 + ((i * 7 + step) % 5) * .1);
+      const y = Math.max(0, Math.min(h - bh, rawY));
+      const dx = phase * maxShift * ((i % 4) / 3);
+
       ctx.save();
       ctx.beginPath();
       ctx.rect(0, y, w, bh);
       ctx.clip();
+
+      ctx.globalCompositeOperation = 'screen';
+      ctx.globalAlpha = .18 + amount * .16;
+      ctx.filter = `invert(1) sepia(1) saturate(${3 + amount * 2.5}) hue-rotate(${190 + i * 7}deg) contrast(1.35)`;
+      ctx.drawImage(sourceCanvas, dx, 0, w, h);
+
       ctx.globalCompositeOperation = 'difference';
-      ctx.globalAlpha = .32 + amount * .18;
-      ctx.fillStyle = '#fff';
+      ctx.globalAlpha = .12 + amount * .11;
+      ctx.fillStyle = i % 2 ? '#b6f3ff' : '#b8a8ff';
       ctx.fillRect(0, y, w, bh);
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.globalAlpha = .42 + amount * .18;
-      ctx.filter = 'invert(1) contrast(1.5)';
-      ctx.drawImage(sourceCanvas, phase * (10 + amount * 28), 0, w, h);
       ctx.restore();
     }
   }
