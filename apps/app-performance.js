@@ -208,6 +208,7 @@
     };
 
     load('./strobe-fx.js?v=20260824-3', 'data-distortion-strobe-pack');
+    load('./mkv-loader.js?v=20260826-1', 'data-distortion-mkv-loader');
     load('./clip-trim.js?v=20260825-1', 'data-distortion-clip-trim');
     load('./extra-strobes.js?v=20260825-2', 'data-distortion-extra-strobes');
   };
