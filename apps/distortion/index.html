@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DISTORTION v1.18 — Unified Audio Loader</title>
+  <title>DISTORTION v1.19 — Fluid FX Engine</title>
   <link rel="stylesheet" href="styles.css" />
 
 
@@ -273,12 +273,13 @@ textarea, option, label, html body *::before, html body *::after {
           </label>
           <label>RECORDING QUALITY
             <select id="recordQualitySelect" aria-describedby="recordFormatNote">
+              <option value="fluid" selected>FLUID 60 FPS — RECOMMENDED</option>
               <option value="maximum">MAXIMUM — LEAST COMPRESSION</option>
               <option value="high">HIGH</option>
               <option value="standard">STANDARD</option>
             </select>
           </label>
-          <p id="recordFormatNote" class="record-format-note">Full canvas resolution · 60 FPS · available formats depend on this browser.</p>
+          <p id="recordFormatNote" class="record-format-note">Full-size output · 60 FPS · Auto Fluidity scales only the internal FX work.</p>
           <div class="transport">
             <button id="recordBtn" class="btn accent">START RECORDING</button>
             <button id="stopRecordBtn" class="btn danger" disabled>STOP</button>
@@ -424,7 +425,8 @@ textarea, option, label, html body *::before, html body *::after {
         <section data-help="record">
           <h2>RECORDING</h2>
           <p>Select the frame shape, then choose any MP4 or WebM encoder supported by your browser. Unsupported choices are hidden automatically. If MP4 is unavailable, DISTORTION automatically uses a supported WebM encoder.</p>
-          <p>Maximum Quality keeps the full canvas resolution at 60 FPS and requests the highest recording bitrate. Browser recording still requires a video codec, so the result is minimally compressed rather than mathematically uncompressed.</p>
+          <p><strong>Fluid 60 FPS</strong> is the recommended default. It keeps the full output size while using a lighter, high-quality encoder target. Maximum Quality is available when your computer has enough headroom.</p>
+          <p><strong>Auto Fluidity</strong> watches frame timing and reduces only the hidden FX working surfaces as effects are stacked. Video playback time, framing, chroma, hot cues, transitions, and export dimensions stay unchanged.</p>
           <p>For reliable audio recording, press PLAY once before starting the recording so the browser can activate its audio engine.</p>
         </section>
         <section data-help="trouble">
@@ -434,7 +436,7 @@ textarea, option, label, html body *::before, html body *::after {
             <li><strong>No detached window:</strong> allow pop-ups for this page.</li>
             <li><strong>No recording audio:</strong> start the song once before recording and use Chrome or Edge.</li>
             <li><strong>Audio will not load:</strong> the Media status reports whether the browser can decode the file. Try WAV or MP3 if another format fails.</li>
-            <li><strong>Video is lagging:</strong> reduce Master Distortion, disable Feedback, or use a lower-resolution video.</li>
+            <li><strong>Video is lagging:</strong> Auto Fluidity should step the FX and chroma workload down automatically. Close other video-heavy tabs and use Fluid 60 FPS recording for the most headroom.</li>
             <li><strong>Key color is still visible:</strong> use Pick Color on the exact background shade, then raise Color Range gradually.</li>
             <li><strong>Too much of the top clip disappears:</strong> lower Color Range, then use a little Edge Softness instead.</li>
             <li><strong>Keyboard shortcuts type into controls:</strong> click the video output to return focus to performance mode.</li>
@@ -476,6 +478,6 @@ textarea, option, label, html body *::before, html body *::after {
     </div>
   </dialog>
 
-  <script src="app.js?v=43"></script>
+  <script src="app.js?v=44"></script>
 </body>
 </html>
