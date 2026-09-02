@@ -3,24 +3,21 @@
 
   const $ = (id) => document.getElementById(id);
   const canvas = $('outputCanvas');
-  const ctx = canvas.getContext('2d', { alpha: false });
+  const contextOptions = { alpha: false, desynchronized: true };
+  const ctx = canvas.getContext('2d', contextOptions);
   const sourceVideo = $('sourceVideo');
   const chromaVideo = $('chromaVideo');
   const song = $('song');
   const timeline = $('timelineCanvas');
   const tctx = timeline.getContext('2d');
   const bufferA = document.createElement('canvas');
-  const bufferB = document.createElement('canvas');
-  const bctxA = bufferA.getContext('2d');
-  const bctxB = bufferB.getContext('2d');
-  const pixelCanvas = document.createElement('canvas');
-  const pctx = pixelCanvas.getContext('2d');
+  const bctxA = bufferA.getContext('2d', contextOptions);
   // Dedicated ping-pong canvases let every numbered effect process the
   // completed result of the previous effect instead of erasing it.
   const fxStackA = document.createElement('canvas');
   const fxStackB = document.createElement('canvas');
-  const fxctxA = fxStackA.getContext('2d');
-  const fxctxB = fxStackB.getContext('2d');
+  const fxctxA = fxStackA.getContext('2d', contextOptions);
+  const fxctxB = fxStackB.getContext('2d', contextOptions);
   // Chroma keying runs on a capped-resolution buffer so two videos and the
   // full distortion stack can keep performing smoothly on typical laptops.
   const chromaSourceCanvas = document.createElement('canvas');
@@ -111,9 +108,17 @@
   ];
 
   const recordingQualityProfiles = {
-    maximum: { label: 'maximum quality', videoBitsPerSecond: 80000000, audioBitsPerSecond: 320000 },
-    high: { label: 'high quality', videoBitsPerSecond: 40000000, audioBitsPerSecond: 256000 },
-    standard: { label: 'standard quality', videoBitsPerSecond: 16000000, audioBitsPerSecond: 192000 }
+    fluid: { label: 'fluid 60 FPS', videoBitsPerSecond: 18000000, audioBitsPerSecond: 256000 },
+    maximum: { label: 'maximum quality', videoBitsPerSecond: 32000000, audioBitsPerSecond: 320000 },
+    high: { label: 'high quality', videoBitsPerSecond: 20000000, audioBitsPerSecond: 256000 },
+    standard: { label: 'standard quality', videoBitsPerSecond: 10000000, audioBitsPerSecond: 192000 }
+  };
+
+  const renderScales = [1, .85, .72, .60, .50];
+  const effectCosts = {
+    datamosh: 1.7, mirrorshards: 2.6, mirrorgrid: 2.1, crush: 1.2,
+    splitzoom: 1.7, blocks: 1.7, videotear: 2.5, invert: 1.3,
+    colorsurge: 2.6, strobe: 1.1
   };
 
   let supportedRecordingFormats = [];
@@ -171,17 +176,24 @@
     recordedChunks: [],
     recordStartedAt: 0,
     recordTimer: null,
+    recordingVideoTrack: null,
+    manualRecordingFrames: false,
     audioContext: null,
     songSource: null,
     analyser: null,
     audioDest: null,
     audioLevel: 0,
+    audioData: null,
+    lastAudioSampleAt: 0,
     freezeFrame: false,
     loopTimers: new Map(),
     channel: null,
     detachedWindow: null,
-    lastFrameTime: performance.now(),
-    feedbackReady: false,
+    renderScale: 1,
+    renderCostEma: 0,
+    frameIntervalEma: 16.7,
+    lastAnimationFrameAt: 0,
+    lastRenderScaleChangeAt: 0,
     moshSeed: 1,
     moshNextAt: 0,
     moshSlices: []
@@ -232,13 +244,13 @@
     });
 
     let savedFormat = 'auto';
-    let savedQuality = 'maximum';
+    let savedQuality = 'fluid';
     try {
       savedFormat = localStorage.getItem('distortion-record-format') || 'auto';
-      savedQuality = localStorage.getItem('distortion-record-quality') || 'maximum';
+      savedQuality = localStorage.getItem('distortion-record-quality-v2') || 'fluid';
     } catch {}
     select.value = [...select.options].some(option => option.value === savedFormat) ? savedFormat : 'auto';
-    qualitySelect.value = Object.hasOwn(recordingQualityProfiles, savedQuality) ? savedQuality : 'maximum';
+    qualitySelect.value = Object.hasOwn(recordingQualityProfiles, savedQuality) ? savedQuality : 'fluid';
     updateRecordingFormatNote();
   }
 
@@ -258,10 +270,11 @@
     const note = $('recordFormatNote');
     if (!note) return;
     const format = selectedRecordingFormat();
-    const quality = recordingQualityProfiles[$('recordQualitySelect')?.value] || recordingQualityProfiles.maximum;
+    const quality = recordingQualityProfiles[$('recordQualitySelect')?.value] || recordingQualityProfiles.fluid;
     const mbps = Math.round(quality.videoBitsPerSecond / 1000000);
     const resolution = `${canvas.width}×${canvas.height}`;
-    note.textContent = `${format.label} · ${resolution} · 60 FPS · target ${mbps} Mbps video / ${Math.round(quality.audioBitsPerSecond / 1000)} kbps audio`;
+    const fxScale = Math.round(state.renderScale * 100);
+    note.textContent = `${format.label} · ${resolution} output · 60 FPS · Auto Fluidity ${fxScale}% FX scale · target ${mbps} Mbps`;
   }
 
   function setRecordingControlsDisabled(disabled) {
@@ -364,29 +377,112 @@
     if (state.audioContext.state === 'suspended') state.audioContext.resume();
   }
 
-  function updateAudioLevel() {
+  function updateAudioLevel(now) {
     if (!state.analyser) { state.audioLevel *= 0.9; return; }
-    const data = new Uint8Array(state.analyser.frequencyBinCount);
-    state.analyser.getByteFrequencyData(data);
+    if (now - state.lastAudioSampleAt < 33) return;
+    state.lastAudioSampleAt = now;
+    if (!state.audioData || state.audioData.length !== state.analyser.frequencyBinCount) {
+      state.audioData = new Uint8Array(state.analyser.frequencyBinCount);
+    }
+    state.analyser.getByteFrequencyData(state.audioData);
     let sum = 0;
-    for (let i = 0; i < data.length; i++) sum += data[i];
-    state.audioLevel = (sum / data.length) / 255;
+    for (let i = 0; i < state.audioData.length; i++) sum += state.audioData[i];
+    state.audioLevel = (sum / state.audioData.length) / 255;
+  }
+
+  function isRecording() {
+    return Boolean(state.recorder && state.recorder.state === 'recording');
+  }
+
+  function workloadRenderScale() {
+    let cost = 0;
+    state.activeEffects.forEach(id => { cost += effectCosts[id] || 1; });
+    let scale = cost === 0 ? 1 : cost <= 2.6 ? .85 : cost <= 5 ? .72 : cost <= 8 ? .60 : .50;
+    if (isRecording()) {
+      const index = renderScales.indexOf(scale);
+      scale = renderScales[Math.min(renderScales.length - 1, index + 1)];
+    }
+    return scale;
+  }
+
+  function resizeChromaSurfaces(force = false) {
+    const cap = isRecording() || state.renderScale <= .60 ? 480 : 640;
+    const scale = Math.min(1, cap / Math.max(canvas.width, canvas.height));
+    const width = Math.max(1, Math.round(canvas.width * scale));
+    const height = Math.max(1, Math.round(canvas.height * scale));
+    if (!force && chromaSourceCanvas.width === width && chromaSourceCanvas.height === height) return;
+    chromaSourceCanvas.width = width;
+    chromaSourceCanvas.height = height;
+    chromaKeyCanvas.width = width;
+    chromaKeyCanvas.height = height;
+    state.chromaDirty = true;
+  }
+
+  function resizeRenderSurfaces(scale, force = false) {
+    const safeScale = renderScales.includes(scale) ? scale : renderScales[renderScales.length - 1];
+    const width = Math.max(2, Math.round(canvas.width * safeScale / 2) * 2);
+    const height = Math.max(2, Math.round(canvas.height * safeScale / 2) * 2);
+    const changed = force || bufferA.width !== width || bufferA.height !== height;
+    if (changed) {
+      [bufferA, fxStackA, fxStackB].forEach(surface => {
+        surface.width = width;
+        surface.height = height;
+      });
+      state.renderScale = safeScale;
+      state.moshSlices = [];
+      state.moshNextAt = 0;
+      if ($('recordFormatNote')) updateRecordingFormatNote();
+    }
+    resizeChromaSurfaces(force);
+  }
+
+  function nextLowerScale(scale) {
+    const index = Math.max(0, renderScales.indexOf(scale));
+    return renderScales[Math.min(renderScales.length - 1, index + 1)];
+  }
+
+  function nextHigherScale(scale) {
+    const index = Math.max(0, renderScales.indexOf(scale));
+    return renderScales[Math.max(0, index - 1)];
+  }
+
+  function adjustRenderScale(now) {
+    if (document.hidden) return;
+    const workloadCap = workloadRenderScale();
+    let next = state.renderScale;
+    if (next > workloadCap) next = workloadCap;
+    const sinceChange = now - state.lastRenderScaleChangeAt;
+    const underPressure = state.renderCostEma > 15 || state.frameIntervalEma > 21.5;
+    const hasHeadroom = state.renderCostEma < 9 && state.frameIntervalEma < 18.8;
+    if (underPressure && sinceChange > 650) next = nextLowerScale(next);
+    else if (hasHeadroom && sinceChange > 2400 && next < workloadCap) next = Math.min(workloadCap, nextHigherScale(next));
+    else if (state.activeEffects.size === 0 && !isRecording() && sinceChange > 400) next = 1;
+
+    if (next !== state.renderScale) {
+      resizeRenderSurfaces(next);
+      state.lastRenderScaleChangeAt = now;
+    } else {
+      resizeChromaSurfaces();
+    }
+  }
+
+  function finishRenderedFrame(now, startedAt) {
+    const renderCost = performance.now() - startedAt;
+    state.renderCostEma = state.renderCostEma ? state.renderCostEma * .9 + renderCost * .1 : renderCost;
+    if (state.lastAnimationFrameAt) {
+      const interval = Math.min(100, now - state.lastAnimationFrameAt);
+      state.frameIntervalEma = state.frameIntervalEma * .92 + interval * .08;
+    }
+    state.lastAnimationFrameAt = now;
+    if (state.manualRecordingFrames && state.recordingVideoTrack?.readyState === 'live') {
+      try { state.recordingVideoTrack.requestFrame(); } catch (_) {}
+    }
   }
 
   function setCanvasAspect(aspect) {
     const dims = aspect === '9:16' ? [720,1280] : aspect === '1:1' ? [1080,1080] : [1280,720];
     canvas.width = dims[0]; canvas.height = dims[1];
-    bufferA.width = dims[0]; bufferA.height = dims[1];
-    bufferB.width = dims[0]; bufferB.height = dims[1];
-    fxStackA.width = dims[0]; fxStackA.height = dims[1];
-    fxStackB.width = dims[0]; fxStackB.height = dims[1];
-    const chromaScale = Math.min(1, 640 / Math.max(dims[0], dims[1]));
-    chromaSourceCanvas.width = Math.max(1, Math.round(dims[0] * chromaScale));
-    chromaSourceCanvas.height = Math.max(1, Math.round(dims[1] * chromaScale));
-    chromaKeyCanvas.width = chromaSourceCanvas.width;
-    chromaKeyCanvas.height = chromaSourceCanvas.height;
-    state.chromaDirty = true;
-    state.feedbackReady = false;
+    resizeRenderSurfaces(workloadRenderScale(), true);
     if ($('recordFormatNote')) updateRecordingFormatNote();
   }
 
@@ -537,12 +633,13 @@
 
   function drawLogo(targetCtx) {
     if (!state.logo || !state.logoVisible) return;
-    const maxW = canvas.width * state.logoScale;
+    const surface = targetCtx.canvas;
+    const maxW = surface.width * state.logoScale;
     const ratio = state.logo.naturalWidth / state.logo.naturalHeight || 1;
     const w = maxW;
     const h = w / ratio;
-    const x = state.logoX * canvas.width - w / 2;
-    const y = state.logoY * canvas.height - h / 2;
+    const x = state.logoX * surface.width - w / 2;
+    const y = state.logoY * surface.height - h / 2;
     targetCtx.save();
     targetCtx.globalAlpha = state.logoOpacity;
     targetCtx.drawImage(state.logo, x, y, w, h);
@@ -550,29 +647,31 @@
   }
 
   function applyLiquid(src, out, amount, time) {
-    out.clearRect(0,0,canvas.width,canvas.height);
-    const slice = Math.max(3, Math.floor(canvas.height / 90));
-    for (let y = 0; y < canvas.height; y += slice) {
+    const w = out.canvas.width, h = out.canvas.height;
+    out.clearRect(0,0,w,h);
+    const slice = Math.max(3, Math.floor(h / 90));
+    for (let y = 0; y < h; y += slice) {
       const dx = Math.sin(y * 0.035 + time * 0.004) * 28 * amount;
-      out.drawImage(src, 0, y, canvas.width, slice, dx, y, canvas.width, slice);
+      out.drawImage(src, 0, y, w, slice, dx, y, w, slice);
     }
   }
 
   function applyGlitch(src, out, amount, time) {
-    out.clearRect(0,0,canvas.width,canvas.height);
+    const w = out.canvas.width, h = out.canvas.height;
+    out.clearRect(0,0,w,h);
     out.drawImage(src,0,0);
     const count = Math.floor(6 + amount * 22);
     for (let i=0;i<count;i++) {
-      const h = 4 + Math.random() * 35;
-      const y = Math.random() * (canvas.height-h);
+      const bandH = 4 + Math.random() * 35;
+      const y = Math.random() * (h-bandH);
       const xoff = (Math.random()-.5) * 160 * amount;
-      out.drawImage(src, 0,y,canvas.width,h, xoff,y,canvas.width,h);
+      out.drawImage(src, 0,y,w,bandH, xoff,y,w,bandH);
     }
   }
 
   function applyKaleido(src, out, amount) {
-    out.clearRect(0,0,canvas.width,canvas.height);
-    const w = canvas.width, h = canvas.height;
+    const w = out.canvas.width, h = out.canvas.height;
+    out.clearRect(0,0,w,h);
     const zoom = 1 + amount * .35;
     const quadrants = [
       [0,0,false,false],[w/2,0,true,false],[0,h/2,false,true],[w/2,h/2,true,true]
@@ -588,12 +687,9 @@
 
 
   function drawMirrorShards(src, target, amount, now) {
-    const w = canvas.width, h = canvas.height;
+    const w = target.canvas.width, h = target.canvas.height;
     const shards = 7;
     const pulse = .05 + amount * .22 + Math.sin(now * .006) * .025;
-    target.clearRect(0, 0, w, h);
-    target.fillStyle = '#000';
-    target.fillRect(0, 0, w, h);
 
     for (let i = 0; i < shards; i++) {
       const left = i * w / shards;
@@ -624,7 +720,7 @@
   }
 
   function drawMirrorHall(src, target, amount, now) {
-    const w = canvas.width, h = canvas.height;
+    const w = target.canvas.width, h = target.canvas.height;
     const centerW = w * (.42 - amount * .08);
     const centerH = h * (.56 - amount * .08);
     const drift = Math.sin(now * .0037) * w * .035 * amount;
@@ -686,7 +782,7 @@
   }
 
   function drawVideoTear(src, target, amount, now) {
-    const w = canvas.width, h = canvas.height;
+    const w = target.canvas.width, h = target.canvas.height;
     const phase = Math.floor(now / 68);
 
     // Every visible block is sampled from the live video. No solid-color fills.
@@ -723,7 +819,7 @@
   }
 
   function drawColorSurge(src, target, amount, now) {
-    const w = canvas.width, h = canvas.height;
+    const w = target.canvas.width, h = target.canvas.height;
     const hue = (now * .075) % 360;
     const pulse = .5 + .5 * Math.sin(now * .009);
 
@@ -778,8 +874,7 @@
 
   function applyRandomMosh(src, out, amount, now, intensity = 1) {
     refreshMoshPattern(now, intensity);
-    const w=canvas.width, h=canvas.height;
-    out.clearRect(0,0,w,h);
+    const w=out.canvas.width, h=out.canvas.height;
     out.globalAlpha = .78 - intensity * .12;
     out.drawImage(src,0,0);
     out.globalAlpha = 1;
@@ -794,7 +889,7 @@
   }
 
   function resetEffectContext(target) {
-    const w = canvas.width, h = canvas.height;
+    const w = target.canvas.width, h = target.canvas.height;
     target.setTransform(1, 0, 0, 1, 0, 0);
     target.globalAlpha = 1;
     target.globalCompositeOperation = 'source-over';
@@ -806,9 +901,8 @@
   }
 
   function drawMirrorGridPass(src, target, amount) {
-    const w = canvas.width, h = canvas.height;
+    const w = target.canvas.width, h = target.canvas.height;
     const cols = 3, rows = 3, cw = w / cols, ch = h / rows;
-    resetEffectContext(target);
     for (let gy = 0; gy < rows; gy++) for (let gx = 0; gx < cols; gx++) {
       target.save();
       target.beginPath();
@@ -823,7 +917,7 @@
   }
 
   function applyNumberedEffect(id, src, target, amount, now) {
-    const w = canvas.width, h = canvas.height;
+    const w = target.canvas.width, h = target.canvas.height;
     resetEffectContext(target);
 
     if (id === 'datamosh') {
@@ -923,32 +1017,43 @@
 
   function renderFrame(now) {
     requestAnimationFrame(renderFrame);
-    updateAudioLevel();
+    const renderStartedAt = performance.now();
+    adjustRenderScale(now);
+    updateAudioLevel(now);
     const rec = activeVideoRecord();
     const w = canvas.width, h = canvas.height;
+    const renderW = bufferA.width, renderH = bufferA.height;
     const reactive = 1 + state.audioLevel * state.audioReact * 1.8;
     const amount = Math.min(1, state.master * reactive);
 
     if (!rec || sourceVideo.readyState < 2) {
       ctx.fillStyle = '#000'; ctx.fillRect(0,0,w,h);
+      finishRenderedFrame(now, renderStartedAt);
       return;
     }
 
     if (!state.freezeFrame) {
-      bctxA.fillStyle = '#000'; bctxA.fillRect(0,0,w,h);
+      bctxA.setTransform(1, 0, 0, 1, 0, 0);
+      bctxA.globalAlpha = 1;
+      bctxA.globalCompositeOperation = 'source-over';
+      bctxA.filter = 'none';
+      bctxA.fillStyle = '#000'; bctxA.fillRect(0,0,renderW,renderH);
       let shakeX = 0, shakeY = 0, zoom = 1, rotation = 0;
       if (state.transition) {
         const p = Math.min(1, (now - state.transition.started) / (state.transitionDuration * 1000));
         const s = Math.pow(1 - p, 2.4);
         const hit = state.transitionStrength;
-        if (state.transition.id === 'shake') { shakeX = (Math.random()-.5)*110*s*hit; shakeY = (Math.random()-.5)*76*s*hit; }
+        if (state.transition.id === 'shake') {
+          shakeX = (Math.random()-.5) * renderW * .086 * s * hit;
+          shakeY = (Math.random()-.5) * renderH * .106 * s * hit;
+        }
         if (state.transition.id === 'zoom') zoom = 1 + .72*s*hit;
         if (state.transition.id === 'spin') rotation = s * .62 * hit;
         if (p >= 1) state.transition = null;
       }
       const frame = getFraming('base') || { zoom: 1, x: 0, y: 0 };
-      drawCover(bctxA, sourceVideo, w, h, shakeX, shakeY, zoom * frame.zoom, rotation, frame.x, frame.y);
-      drawChromaLayer(bctxA, w, h, shakeX, shakeY, zoom, rotation, now);
+      drawCover(bctxA, sourceVideo, renderW, renderH, shakeX, shakeY, zoom * frame.zoom, rotation, frame.x, frame.y);
+      drawChromaLayer(bctxA, renderW, renderH, shakeX, shakeY, zoom, rotation, now);
       if (state.logoAffected) drawLogo(bctxA);
     }
 
@@ -968,6 +1073,8 @@
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
     ctx.filter = 'none';
+    ctx.imageSmoothingEnabled = true;
+    if ('imageSmoothingQuality' in ctx) ctx.imageSmoothingQuality = 'medium';
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, w, h);
     ctx.drawImage(srcCanvas, 0, 0, w, h);
@@ -990,6 +1097,7 @@
       }
     }
     ctx.restore();
+    finishRenderedFrame(now, renderStartedAt);
   }
 
   function rebuildTimeline() {
@@ -1479,12 +1587,22 @@
     try {
       if (!window.MediaRecorder) throw new Error('MediaRecorder is not available in this browser.');
       setupAudioGraph();
-      const canvasStream = canvas.captureStream(60);
-      const tracks = [...canvasStream.getVideoTracks()];
+      let canvasStream;
+      try { canvasStream = canvas.captureStream(0); }
+      catch (_) { canvasStream = canvas.captureStream(60); }
+      let videoTrack = canvasStream.getVideoTracks()[0] || null;
+      state.manualRecordingFrames = Boolean(videoTrack && typeof videoTrack.requestFrame === 'function');
+      if (!state.manualRecordingFrames && videoTrack?.getSettings?.().frameRate !== 60) {
+        canvasStream.getTracks().forEach(track => track.stop());
+        canvasStream = canvas.captureStream(60);
+        videoTrack = canvasStream.getVideoTracks()[0] || null;
+      }
+      state.recordingVideoTrack = videoTrack;
+      const tracks = videoTrack ? [videoTrack] : [];
       if (state.audioDest) tracks.push(...state.audioDest.stream.getAudioTracks());
       const stream = new MediaStream(tracks);
       const format = selectedRecordingFormat();
-      const quality = recordingQualityProfiles[$('recordQualitySelect').value] || recordingQualityProfiles.maximum;
+      const quality = recordingQualityProfiles[$('recordQualitySelect').value] || recordingQualityProfiles.fluid;
       const options = {
         videoBitsPerSecond: quality.videoBitsPerSecond,
         audioBitsPerSecond: quality.audioBitsPerSecond
@@ -1512,9 +1630,12 @@
         anchor.click();
         anchor.remove();
         setTimeout(() => URL.revokeObjectURL(url), 5000);
+        if (state.recordingVideoTrack) state.recordingVideoTrack.stop();
+        state.recordingVideoTrack = null;
+        state.manualRecordingFrames = false;
         setStatus(`recording saved — ${extension.toUpperCase()} / ${quality.label}`);
       };
-      state.recorder.start(1000);
+      state.recorder.start(2000);
       state.recordStartedAt = Date.now();
       setRecordingControlsDisabled(true);
       $('recordBtn').disabled = true;
@@ -1523,9 +1644,16 @@
       state.recordTimer = setInterval(() => {
         $('recordTimer').textContent = formatTime((Date.now() - state.recordStartedAt) / 1000);
       }, 250);
+      if (state.manualRecordingFrames) {
+        try { state.recordingVideoTrack.requestFrame(); } catch (_) {}
+      }
+      state.lastRenderScaleChangeAt = 0;
       setStatus(`recording ${format.label} — ${quality.label}`);
     } catch (err) {
       console.error(err);
+      if (state.recordingVideoTrack) state.recordingVideoTrack.stop();
+      state.recordingVideoTrack = null;
+      state.manualRecordingFrames = false;
       setRecordingControlsDisabled(false);
       alert(`Recording could not start: ${err.message}`);
       setStatus('recording failed');
@@ -1541,6 +1669,7 @@
     $('recordBtn').disabled = false;
     $('stopRecordBtn').disabled = true;
     $('recordBadge').classList.add('hidden');
+    state.lastRenderScaleChangeAt = 0;
     setStatus('finalizing recording');
   }
 
@@ -1823,7 +1952,7 @@
     updateRecordingFormatNote();
   });
   $('recordQualitySelect').addEventListener('change', e => {
-    try { localStorage.setItem('distortion-record-quality', e.target.value); } catch {}
+    try { localStorage.setItem('distortion-record-quality-v2', e.target.value); } catch {}
     updateRecordingFormatNote();
   });
   $('recordBtn').addEventListener('click',startRecording); $('stopRecordBtn').addEventListener('click',stopRecording);
