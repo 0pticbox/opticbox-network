@@ -1,6 +1,17 @@
-DISTORTION v1.18 — UNIFIED AUDIO LOADER
+DISTORTION v1.19 — FLUID FX ENGINE
 
 Open index.html in a modern desktop browser.
+
+V1.19 FLUID FX ENGINE
+- Added Auto Fluidity for smoother playback while several effects are stacked.
+- The selected full output and recording dimensions stay unchanged; only hidden FX working surfaces scale under load.
+- Auto Fluidity watches real render cost and frame timing, then restores detail when performance headroom returns.
+- Chroma processing steps from a 640px to 480px working edge during heavy stacks or recording.
+- Recording prefers completed-frame submission instead of asking the encoder for duplicate frames during a slow effect pass.
+- Added Fluid 60 FPS as the recommended default recording profile.
+- Reduced the old 80 Mbps default encoder load: Maximum is now 32 Mbps, Fluid 18 Mbps, High 20 Mbps, and Standard 10 Mbps.
+- Reused the audio-analysis buffer and samples it at 30 Hz instead of allocating new data every animation frame.
+- Preserved MKV importing, unified audio loading, clip trimming, chroma, framing, custom mapping, hot cues, and the current effects.
 
 V1.18 UNIFIED AUDIO LOADER
 - DISTORTION now has one audio picker in the Media tab.
